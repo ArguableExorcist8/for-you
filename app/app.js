@@ -3,6 +3,11 @@
 const { url, key } = window.CC_CONFIG;
 const D = window.CC_DATA;
 const sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+window.googleSignIn = async () => {
+  const m = document.getElementById('authMsg'); if (m) m.textContent = 'Opening Google…';
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + location.search } });
+  if (error && m) m.textContent = 'Google sign-in failed: ' + error.message;
+};
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -537,9 +542,3 @@ $('#hugOverlay').onclick = () => $('#hugOverlay').classList.add('hidden');
 sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booting) { show('#authView'); if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗'; } });
 })();
 
-// Google sign-in
-document.getElementById('googleBtn')?.addEventListener('click', async () => {
-  const redirectTo = location.origin + location.pathname + location.search;
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
-  if (error) { const m = document.getElementById('authMsg'); if (m) m.textContent = 'Google sign-in failed: ' + error.message; }
-});
