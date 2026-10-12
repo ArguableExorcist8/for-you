@@ -150,3 +150,4 @@ details{margin-top:10px;text-align:left}summary{cursor:pointer;font-weight:bold;
 .goal{background:#fff7fa;border-radius:14px;padding:10px;margin:8px 0;text-align:left}
 select{display:block;width:100%;padding:10px;border-radius:18px;border:2px solid #ffb3c6;font-size:16px;font-family:inherit;color:#8b2252;background:#fffafc;margin:6px 0}
 .calgrid div:not(.hd){display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px}
+.todayq{text-align:center;padding:14px 12px;line-height:1.45}.todayq b{display:block;margin:6px 0;font-size:17px}
