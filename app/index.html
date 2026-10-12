@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div id="app">
@@ -119,13 +119,118 @@
     </div>
 
     <div class="tab hidden" id="tab-play">
-      <div class="card"><h2>💯 Love-o-meter</h2><p class="muted">Tap as fast as you can!</p>
-        <div class="meter"><div id="bar"></div></div><button id="meterBtn">Tap 💗</button><p id="meterTxt"></p></div>
-      <div class="card"><h2>🧠 Memory match</h2><div id="mem" class="mem"></div>
-        <p id="memTxt" class="muted"></p><button class="soft" id="memReset">New game</button></div>
-      <div class="card"><h2>💖 Reasons I love you</h2><div id="reason" class="daily">Tap for a reason</div>
-        <button id="reasonBtn">Another reason</button></div>
-      <div class="card"><h2>🤗 Virtual hug</h2><p class="muted">Emergency hug delivery, 24/7</p><button id="hugBtn">Hug me</button></div>
+      <div id="gameHome">
+        <div class="card"><h2>🎮 Let's play</h2><p class="muted">Games for two — scores, notes & surprises sync with <span class="pname"></span> 💞</p></div>
+        <h3 class="gsec">🏆 Compete together</h3>
+        <div class="ggrid">
+          <button class="gtile" data-game="catch"><b>🎯</b>Catch my heart<small id="tb-catch"></small></button>
+          <button class="gtile" data-game="balloons"><b>🎈</b>Pop the balloons<small id="tb-balloons"></small></button>
+          <button class="gtile" data-game="quiz"><b>📝</b>Love quiz<small id="tb-quiz"></small></button>
+          <button class="gtile" data-game="bear"><b>🧸</b>Poke the bear<small id="tb-bear"></small></button>
+          <button class="gtile" data-game="meter"><b>💯</b>Love-o-meter</button>
+          <button class="gtile" data-game="memory"><b>🧠</b>Memory match<small id="tb-memory"></small></button>
+        </div>
+        <h3 class="gsec">💌 Surprise each other</h3>
+        <div class="ggrid">
+          <button class="gtile" data-game="openwhen"><b>✉️</b>Open when…<small id="tb-openwhen"></small></button>
+          <button class="gtile" data-game="scratch"><b>🎟️</b>Scratch card<small id="tb-scratch"></small></button>
+          <button class="gtile" data-game="draw"><b>🎨</b>Draw me a heart<small id="tb-draw"></small></button>
+          <button class="gtile" data-game="question"><b>💍</b>Important question<small id="tb-question"></small></button>
+          <button class="gtile" data-game="fortune"><b>🥠</b>Fortune cookie<small id="tb-fortune"></small></button>
+          <button class="gtile" data-game="wheel"><b>🎡</b>Date wheel<small id="tb-wheel"></small></button>
+        </div>
+        <h3 class="gsec">✨ Just for fun</h3>
+        <div class="ggrid">
+          <button class="gtile" data-game="compat"><b>🔮</b>Compatibility</button>
+          <button class="gtile" data-game="reasons"><b>💖</b>Reasons</button>
+          <button class="gtile" data-game="hug"><b>🤗</b>Virtual hug</button>
+          <button class="gtile" data-game="finale"><b>🎆</b>One last thing…</button>
+        </div>
+        <p class="muted" id="eggHint" style="margin-top:14px">psst… try tapping the title at the top 5 times 🥚</p>
+      </div>
+
+      <div id="gamePanel" class="hidden">
+        <button class="soft mini gback" id="gameBack">← All games</button>
+
+        <div class="card game" data-panel="catch"><h2>🎯 Catch my heart</h2><p class="muted">Catch hearts, dodge the 🧅 (morning breath, −3)</p>
+          <div id="gArea" class="playfield"></div><p id="gScore"><b>Score: 0</b></p><button id="gStart">Start game</button>
+          <div class="board" id="board-catch"></div></div>
+
+        <div class="card game" data-panel="balloons"><h2>🎈 Pop the balloons</h2><p class="muted">20 seconds. Pop as many as you can! Each hides a little message.</p>
+          <div id="sky" class="playfield sky"></div><p id="balScore"><b>Ready?</b></p><button id="balStart">Start popping</button>
+          <div class="board" id="board-balloons"></div></div>
+
+        <div class="card game" data-panel="quiz"><h2>📝 The love quiz</h2>
+          <div class="seg" id="quizSeg"><button data-q="play" class="on">Answer</button><button data-q="write">Write</button><button data-q="score">Scores</button></div>
+          <div id="quizPlay"></div>
+          <div id="quizWrite" class="hidden"><p class="muted">Write questions about <b>yourself</b> — <span class="pname"></span> has to guess!</p>
+            <input id="qzQ" maxlength="200" placeholder="e.g. What's my comfort food?">
+            <div id="qzOpts"></div>
+            <p class="muted">Tap the ✓ next to the correct answer. 2–4 options.</p>
+            <button id="qzAdd">Add question 💡</button><div id="qzMine" class="list"></div></div>
+          <div id="quizScore" class="hidden"></div></div>
+
+        <div class="card game" data-panel="bear"><h2>🧸 Poke the love bear</h2><span class="big tap" id="bearEl">🧸</span><p id="bearTxt">Tap him. He's shy.</p>
+          <div class="vs" id="pokeVs"></div><p class="muted">Pokes sync live — watch the counter move when <span class="pname"></span> pokes too 👀</p></div>
+
+        <div class="card game" data-panel="meter"><h2>💯 Love-o-meter</h2><p class="muted">Tap as fast as you can!</p>
+          <div class="meter"><div id="bar"></div></div><button id="meterBtn">Tap 💗</button><p id="meterTxt"></p></div>
+
+        <div class="card game" data-panel="memory"><h2>🧠 Memory match</h2><div id="mem" class="mem"></div>
+          <p id="memTxt" class="muted"></p><button class="soft" id="memReset">New game</button>
+          <div class="board" id="board-memory"></div></div>
+
+        <div class="card game" data-panel="openwhen"><h2>✉️ Open when…</h2>
+          <div class="seg" id="owSeg"><button data-o="in" class="on">For me</button><button data-o="out">Write one</button></div>
+          <div id="owIn"></div>
+          <div id="owOut" class="hidden"><p class="muted">Write a letter <span class="pname"></span> can open at the right moment 💌</p>
+            <div class="row2"><input id="owEmoji" class="short" maxlength="4" value="😢"><input id="owTitle" maxlength="80" placeholder="Open when… you're sad"></div>
+            <textarea id="owBody" maxlength="3000" placeholder="Your letter…"></textarea><button id="owAdd">Seal envelope ✉️</button>
+            <div id="owSent" class="list"></div></div></div>
+
+        <div class="card game" data-panel="scratch"><h2>🎟️ Scratch card</h2>
+          <p class="muted" id="scrFrom">Scratch to reveal your prize</p>
+          <div class="scratch"><span id="scrTxt"></span><canvas id="scr"></canvas></div><button class="soft" id="scrNew">Next card</button>
+          <details><summary>🎁 Hide a prize for <span class="pname"></span></summary>
+            <input id="scrPrize" maxlength="200" placeholder="e.g. Breakfast in bed this Sunday 🥞"><button id="scrAdd">Hide prize 🤫</button>
+            <div id="scrSent" class="list"></div></details></div>
+
+        <div class="card game" data-panel="draw"><h2>🎨 Draw me a heart</h2><p class="muted">Draw something and send it to <span class="pname"></span>'s gallery</p>
+          <div class="colors" id="drawColors"></div>
+          <canvas id="draw"></canvas>
+          <input id="drawCap" maxlength="200" placeholder="Caption (optional)">
+          <button id="drawSend">Send 💌</button><button class="soft" id="drawRate">Rate it</button><button class="soft" id="drawClear">Clear</button>
+          <p id="drawTxt"></p><h3 class="gsec">🖼️ Our gallery</h3><div id="drawGal" class="gallery"></div></div>
+
+        <div class="card game" data-panel="question"><h2>💍 Important question</h2>
+          <p id="bqFrom" class="muted"></p><p id="bqText" class="bq"></p>
+          <div id="qa" class="qa"><button id="bqYes">Yes 💖</button><button id="bqNo" class="soft">No</button></div><p id="bqRes"></p>
+          <details><summary>❓ Ask <span class="pname"></span> something</summary>
+            <input id="bqAsk" maxlength="200" placeholder="Will you love me even when I steal your fries?"><button id="bqAdd">Ask 💍</button>
+            <div id="bqSent" class="list"></div></details></div>
+
+        <div class="card game" data-panel="fortune"><h2>🥠 Fortune cookie</h2><span class="big tap" id="cookie">🥠</span><p id="fortune" class="daily">Crack it open</p>
+          <details><summary>✍️ Bake fortunes for <span class="pname"></span></summary>
+            <input id="ftTxt" maxlength="300" placeholder="You will receive a forehead kiss within 24 hours"><button id="ftAdd">Bake it 🍪</button>
+            <div id="ftList" class="list"></div></details></div>
+
+        <div class="card game" data-panel="wheel"><h2>🎡 What we do next</h2><div id="wheelOut" class="daily">?</div><button id="spinBtn">Spin! 🎡</button>
+          <details><summary>📝 Our date ideas (shared)</summary>
+            <input id="ideaTxt" maxlength="150" placeholder="New idea, e.g. Sunset picnic 🧺"><button id="ideaAdd">Add idea</button>
+            <div id="ideaList" class="list"></div></details>
+          <details><summary>📜 Spin history</summary><div id="spinLog" class="list"></div></details></div>
+
+        <div class="card game" data-panel="compat"><h2>🔮 Compatibility calculator</h2><p class="muted">Very scientific. Peer reviewed by us.</p>
+          <input id="cpN1" maxlength="40"><input id="cpN2" maxlength="40"><button id="calcBtn">Calculate</button><p id="calcTxt" class="bq"></p></div>
+
+        <div class="card game" data-panel="reasons"><h2>💖 Reasons I love you</h2><div id="reason" class="daily">Tap for a reason</div>
+          <button id="reasonBtn">Another reason</button></div>
+
+        <div class="card game" data-panel="hug"><h2>🤗 Virtual hug</h2><p class="muted">Emergency hug delivery, 24/7</p><button id="hugBtn">Hug me</button>
+          <button class="soft" id="hugSend">Send a hug ping to <span class="pname"></span></button></div>
+
+        <div class="card game" data-panel="finale"><h2>🎆 One last thing…</h2><p>Only press when you're ready</p><button id="finaleBtn" class="pulse">Press me 💝</button></div>
+      </div>
     </div>
 
     <div class="tab hidden" id="tab-me">
@@ -158,11 +263,12 @@
 <div id="heartOverlay" class="overlay hidden"><div class="bigheart">💗</div><h2 id="heartTxt"></h2><p>(tap to close)</p></div>
 <div id="hugOverlay" class="overlay hidden"><div class="bigheart">🤗</div><h2>Squeeeeeze</h2><p>(tap to let go... if you must)</p></div>
 <div id="modal" class="modal hidden"><div class="card" id="modalBox"></div></div>
+<div id="finale" class="hidden"><canvas id="fw"></canvas><div class="msg" id="fMsg"></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=6"></script>
-<script src="data.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="config.js?v=7"></script>
+<script src="data.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

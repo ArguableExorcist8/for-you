@@ -68,3 +68,47 @@ details{margin-top:10px;text-align:left}summary{cursor:pointer;font-weight:bold;
 .uiBtns{display:flex;gap:10px}.uiBtns button{flex:1;padding:11px;border-radius:30px;border:none;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit}
 .uiNo{background:#ffe4ec;color:#8b2252}.uiYes{background:#e75480;color:#fff}
 @keyframes uiF{from{opacity:0}}@keyframes uiP{from{transform:scale(.8);opacity:0}}
+
+/* ===== games (v7) ===== */
+.gsec{margin:18px 4px 6px;font-size:16px;text-align:left}
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gtile{margin:0;background:#fff;color:#8b2252;border-radius:20px;padding:12px 4px 10px;font-size:13px;box-shadow:0 6px 18px rgba(200,50,100,.15);display:flex;flex-direction:column;align-items:center;gap:2px;min-height:96px}
+.gtile b{font-size:32px;line-height:1.1}.gtile small{font-size:11px;font-weight:normal;color:#b45a82;min-height:13px}
+.gtile small.new{color:#fff;background:#e75480;border-radius:10px;padding:0 6px}
+.gback{display:block;margin:6px 0}
+.game{display:none}.game.on{display:block}
+.tap{cursor:pointer;user-select:none;transition:transform .15s}.tap:active{transform:scale(1.25) rotate(-10deg)}
+.playfield{height:260px;background:#fff0f5;border-radius:16px;position:relative;overflow:hidden;touch-action:none;margin:8px 0}
+.sky{background:linear-gradient(#e0f4ff,#fff0f5);touch-action:manipulation}
+.fall{position:absolute;font-size:32px;cursor:pointer;user-select:none;line-height:1}
+.bal{position:absolute;font-size:40px;cursor:pointer;user-select:none;animation:bob 2s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-12px)}}
+.balmsg{position:absolute;font-size:13px;font-weight:bold;white-space:nowrap;transform:translateX(-30%);pointer-events:none;animation:fadeout 1.6s forwards}
+@keyframes fadeout{70%{opacity:1}to{opacity:0;transform:translate(-30%,-20px)}}
+.board{margin-top:10px;background:#fff7fa;border-radius:16px;padding:10px}
+.vs{display:flex;gap:8px;justify-content:center;align-items:stretch;margin:8px 0}
+.vs>div{flex:1;background:#ffe4ec;border-radius:14px;padding:8px 4px}.vs b{display:block;font-size:24px}.vs .lead{background:#e75480;color:#fff}
+.vs small{font-size:12px}
+.scratch{position:relative;height:140px;border-radius:16px;overflow:hidden;background:#fff0f5;display:flex;align-items:center;justify-content:center;padding:14px;font-size:18px;font-weight:bold}
+.scratch canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#draw{width:100%;height:240px;background:#fff0f5;border-radius:16px;touch-action:none;cursor:crosshair;display:block;margin:8px 0}
+.qa{position:relative;height:130px}.qa button{position:absolute;top:40px}#bqYes{left:14%}#bqNo{left:58%}
+.bq{font-size:20px;font-weight:bold;min-height:28px}
+.env{display:inline-block;width:46%;margin:2%;padding:14px 6px;border-radius:14px;background:#ffe4ec;cursor:pointer;user-select:none;font-size:15px;transition:transform .2s;vertical-align:top}
+.env:active{transform:scale(.95)}.env b{display:block;font-size:30px}.env.unread{box-shadow:0 0 0 3px #e75480}
+.row2{display:flex;gap:8px;align-items:center}.row2 input:not(.short){flex:1}
+.opt{display:block;width:100%;margin:6px 0;background:#ffb3c6;color:#8b2252}
+.optrow{display:flex;gap:6px;align-items:center}.optrow input{flex:1}
+.optrow button{margin:0;padding:8px 12px;background:#ffe4ec;color:#8b2252}.optrow button.on{background:#8fd694;color:#fff}
+.dr img{background:#fff0f5}
+.secret{animation:rainbow 2s linear infinite}@keyframes rainbow{to{filter:hue-rotate(360deg)}}
+.heart{position:fixed;font-size:26px;pointer-events:none;animation:up 4s linear forwards;z-index:96}
+@keyframes up{to{transform:translateY(-110vh) rotate(40deg);opacity:0}}
+.conf{position:fixed;width:9px;height:14px;z-index:97;pointer-events:none;top:-20px;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translateY(110vh) rotate(720deg)}}
+#finale{position:fixed;inset:0;z-index:98;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#2b0a1e;color:#fff;padding:20px;overflow:hidden}
+#finale canvas{position:absolute;inset:0;width:100%;height:100%}
+#finale .msg{position:relative;font-size:26px;opacity:0;transition:opacity 1.5s;max-width:400px}
+.pulse{font-size:20px;padding:16px 30px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.08);box-shadow:0 0 25px #ff8fab}}
+#coupleTitle{cursor:pointer;user-select:none}
