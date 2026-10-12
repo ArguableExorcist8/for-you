@@ -536,3 +536,10 @@ $('#hugOverlay').onclick = () => $('#hugOverlay').classList.add('hidden');
 // initial session (onAuthStateChange also fires INITIAL_SESSION)
 sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booting) { show('#authView'); if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗'; } });
 })();
+
+// Google sign-in
+document.getElementById('googleBtn')?.addEventListener('click', async () => {
+  const redirectTo = location.origin + location.pathname + location.search;
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+  if (error) { const m = document.getElementById('authMsg'); if (m) m.textContent = 'Google sign-in failed: ' + error.message; }
+});
