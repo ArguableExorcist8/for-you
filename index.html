@@ -51,6 +51,27 @@ input{padding:10px;border-radius:20px;border:2px solid #ffb3c6;font-size:16px;wi
 #finaleBtn{font-size:20px;padding:16px 30px;animation:pulse 1.2s infinite}
 @keyframes pulse{50%{transform:scale(1.08);box-shadow:0 0 25px #ff8fab}}
 .secret{animation:rainbow 2s linear infinite}@keyframes rainbow{to{filter:hue-rotate(360deg)}}
+.edit{background:#ffe4ec;color:#8b2252;padding:7px 12px;font-size:14px}
+.note{font-size:12px;opacity:.7;margin:4px 0}
+#gal{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:10px 0}
+.pol{perspective:800px;cursor:pointer;aspect-ratio:.85}
+.pin{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.pol.flip .pin{transform:rotateY(180deg)}
+.pf,.pb{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;padding:7px 7px 26px;box-shadow:0 4px 12px rgba(0,0,0,.18);border-radius:4px}
+.pol:nth-child(odd) .pin{rotate:-2deg}.pol:nth-child(even) .pin{rotate:2deg}
+.pf img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px}
+.pb{transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;font-family:'Segoe Print','Bradley Hand','Comic Sans MS',cursive;font-size:15px;background:#fffaf0}
+.pb button{padding:5px 10px;font-size:12px;margin:3px}
+.empty{padding:20px;border:2px dashed #ffb3c6;border-radius:14px;opacity:.8;grid-column:1/-1}
+#story{text-align:left;border-left:3px solid #ffb3c6;margin:12px 4px 12px 14px;padding-left:16px}
+.mom{position:relative;margin:0 0 16px;cursor:pointer;background:#fff7fa;border-radius:12px;padding:10px}
+.mom:before{content:'💗';position:absolute;left:-29px;top:8px;font-size:18px}
+.mom small{opacity:.7}.mom b{display:block}.mom.ex{border:1px dashed #e75480}
+.cd{display:flex;justify-content:center;gap:8px;margin:10px 0}.cd div{background:#ffe4ec;border-radius:12px;padding:8px 4px;min-width:62px}.cd b{display:block;font-size:26px}
+.letter{font-family:'Segoe Print','Bradley Hand','Comic Sans MS',cursive;background:repeating-linear-gradient(#fffaf0 0 27px,#f3d6e0 27px 28px);padding:14px 16px;border-radius:8px;text-align:left;white-space:pre-wrap;font-size:17px;line-height:28px;box-shadow:inset 0 0 0 1px #f3d6e0}
+.fm input,.fm textarea{width:100%;margin:5px 0;display:block}
+textarea{padding:10px;border-radius:14px;border:2px solid #ffb3c6;font-size:16px;font-family:inherit;color:#8b2252;min-height:110px;resize:vertical}
+#daily{font-size:19px;min-height:50px;padding:10px;background:#fff7fa;border-radius:14px}
 </style></head><body><div id="bg"></div><button id="sound" class="alt" aria-label="sound">🔊</button><div class="wrap">
 <h1 id="title">Hey you 💕</h1><p>Warning: this page contains dangerous levels of love. Proceed with snacks.</p>
 
@@ -85,6 +106,18 @@ input{padding:10px;border-radius:20px;border:2px solid #ffb3c6;font-size:16px;wi
 <div class="card"><h2>🔮 Compatibility calculator</h2><p>Very scientific. Peer reviewed by me.</p><input id="n1" placeholder="You" value="You"><input id="n2" placeholder="Me" value="Me"><br><button id="calc">Calculate</button><p id="calcTxt" style="font-size:20px;min-height:28px"></p></div>
 
 <div class="card"><h2>🎫 Love coupon book</h2><p>Redeemable anytime. No expiry. No refunds.</p><div id="coupons"></div></div>
+
+<div class="card"><h2>📸 Our photos</h2><div id="gal"></div><label class="edit" style="display:inline-block;border-radius:30px;cursor:pointer;font-weight:bold">✏️ Add photos<input type="file" id="photoIn" accept="image/*" multiple style="display:none"></label><p class="note">Tap a polaroid to flip it</p></div>
+
+<div class="card"><h2>📖 Our story</h2><div id="story"></div><button class="edit" id="momAdd">✏️ Add a moment</button></div>
+
+<div class="card"><h2>⏳ Countdown</h2><p id="cdLabel" style="font-size:19px;font-weight:bold"></p><div id="cdBox"></div><button class="edit" id="cdEdit">✏️ Edit</button></div>
+
+<div class="card"><h2>🔐 Secret letter</h2><div id="letterBox"></div></div>
+
+<div class="card"><h2>🌞 Daily surprise</h2><p class="note" id="dailyDate"></p><p id="daily"></p><button class="edit" id="dailyAdd">✏️ Add my own message</button><p class="note" id="dailyCount"></p></div>
+
+<div class="card"><h2>💾 Your edits</h2><p class="note">Your photos, story, countdown, letter and messages are saved on this device only (in this browser). Export a backup file so you never lose them, and import it on another device.</p><button class="edit" id="exp">⬇️ Export</button><label class="edit" style="display:inline-block;border-radius:30px;cursor:pointer;font-weight:bold;padding:7px 12px;font-size:14px;margin:5px">⬆️ Import<input type="file" id="impIn" accept="application/json,.json" style="display:none"></label></div>
 
 <div class="card"><h2>🎆 One last thing...</h2><p>Only press when you're ready</p><button id="finaleBtn">Press me 💝</button></div>
 </div>
@@ -226,4 +259,100 @@ quizShow();memNew();balNew();
 window.addEventListener('load',()=>{scrReset();drawSize()});
 let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawSize,200)});
 setInterval(()=>hearts(1),1800);
-</script></body></html>
+</script><script>
+/* ===== Editable sections (saved in localStorage) ===== */
+const LKEY='loveData';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const defaults=()=>({photos:[],story:[
+ {id:uid(),date:'',title:'The day we met — tap to edit',text:'Example moment. Tap me to write what really happened 💕',ex:true},
+ {id:uid(),date:'',title:'Our first date — tap to edit',text:'Example moment. Who was more nervous? 😳',ex:true},
+ {id:uid(),date:'',title:'The proposal 💍 — tap to edit',text:'Example moment. Tap to edit or delete.',ex:true}],
+ countdown:{date:'',label:'Our wedding 💍'},letter:null,daily:[]});
+let LD;try{LD=Object.assign(defaults(),JSON.parse(localStorage.getItem(LKEY)||'{}'))}catch(e){LD=defaults()}
+function saveLD(){try{localStorage.setItem(LKEY,JSON.stringify(LD));return true}catch(e){toast('Storage is full 😢 Try deleting a photo or exporting a backup');return false}}
+/* form modal: fields=[{k,label,type,val}] -> cb(values) ; extra buttons */
+function formModal(title,fields,onSave,onDelete){
+ let h='<h2>'+title+'</h2><div class="fm">'+fields.map(f=>'<label class="note" style="display:block;text-align:left">'+esc(f.label)+'</label>'+(f.type==='textarea'?'<textarea data-k="'+f.k+'">'+esc(f.val)+'</textarea>':'<input data-k="'+f.k+'" type="'+(f.type||'text')+'" value="'+esc(f.val)+'">')).join('')+'</div><button id="fmSave">Save 💾</button>'+(onDelete?'<button id="fmDel" class="alt">Delete 🗑️</button>':'');
+ modal(h);const b=$('mBody');
+ $('fmSave').onclick=()=>{const v={};b.querySelectorAll('[data-k]').forEach(i=>v[i.dataset.k]=i.value);if(onSave(v)!==false)$('modal').style.display='none'};
+ if(onDelete)$('fmDel').onclick=()=>{if(confirm('Delete this?')){onDelete();$('modal').style.display='none'}};
+ const first=b.querySelector('[data-k]');if(first&&matchMedia('(pointer:fine)').matches)first.focus()}
+/* ---------- photos ---------- */
+function renderPhotos(){const g=$('gal');g.innerHTML='';
+ if(!LD.photos.length){g.innerHTML='<div class="empty">📷 No photos yet!<br>Add your favorite pictures of us and they\'ll show up here as little polaroids.</div>';return}
+ LD.photos.forEach(p=>{const d=document.createElement('div');d.className='pol';
+  d.innerHTML='<div class="pin"><div class="pf"><img alt="" src="'+p.src+'"></div><div class="pb"><div>'+(p.cap?esc(p.cap):'<i>No caption yet</i>')+'</div><div><button class="edit" data-a="cap">✏️</button><button class="alt" data-a="del">🗑️</button></div></div></div>';
+  d.onclick=e=>{const a=e.target.closest('button')?.dataset.a;
+   if(a==='cap'){formModal('✏️ Caption',[{k:'cap',label:'Caption',val:p.cap}],v=>{p.cap=v.cap.slice(0,200);saveLD();renderPhotos()});return}
+   if(a==='del'){if(confirm('Delete this photo?')){LD.photos=LD.photos.filter(x=>x!==p);saveLD();renderPhotos()}return}
+   d.classList.toggle('flip');snd('tick')};g.appendChild(d)})}
+function compress(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const img=new Image();
+ img.onload=()=>{const m=800,s=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',.75))};
+ img.onerror=()=>{URL.revokeObjectURL(url);rej()};img.src=url})}
+$('photoIn').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let n=0;
+ for(const f of fs){try{const src=await compress(f);LD.photos.push({id:uid(),src,cap:''});if(!saveLD()){LD.photos.pop();break}n++}catch(err){toast("Couldn't read that image 😕")}}
+ renderPhotos();if(n){hearts(8);snd('win');toast(n+' photo'+(n>1?'s':'')+' added 📸')}};
+/* ---------- story ---------- */
+function renderStory(){const s=$('story');s.innerHTML='';
+ if(!LD.story.length){s.innerHTML='<p class="note">No moments yet. Add our first one!</p>';return}
+ [...LD.story].sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')).forEach(m=>{const d=document.createElement('div');d.className='mom'+(m.ex?' ex':'');
+  const dt=m.date?new Date(m.date+'T00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'Pick a date';
+  d.innerHTML='<small>'+esc(dt)+(m.ex?' · example ✏️':'')+'</small><b>'+esc(m.title)+'</b><span>'+esc(m.text)+'</span>';
+  d.onclick=()=>editMoment(m);s.appendChild(d)})}
+function editMoment(m){const isNew=!m;
+ formModal(isNew?'✏️ New moment':'✏️ Edit moment',[{k:'date',label:'Date',type:'date',val:m?.date||''},{k:'title',label:'Title',val:m&&!m.ex?m.title:(m?.title||'')},{k:'text',label:'Short story',type:'textarea',val:m?.text||''}],
+  v=>{if(!v.title.trim()){toast('Give it a title 💕');return false}const o=m||{id:uid()};o.date=v.date;o.title=v.title.slice(0,120);o.text=v.text.slice(0,1000);o.ex=false;if(isNew)LD.story.push(o);saveLD();renderStory();hearts(5);snd('ding')},
+  isNew?null:()=>{LD.story=LD.story.filter(x=>x!==m);saveLD();renderStory()})}
+$('momAdd').onclick=()=>editMoment(null);
+/* ---------- countdown ---------- */
+let cdIv=null;
+function renderCD(){$('cdLabel').textContent=LD.countdown.label||'Our wedding 💍';const box=$('cdBox');clearInterval(cdIv);
+ if(!LD.countdown.date){box.innerHTML='<button id="cdSet">📅 Set the date</button>';$('cdSet').onclick=editCD;$('cdEdit').style.display='none';return}
+ $('cdEdit').style.display='';box.innerHTML='<div class="cd"><div><b id="cdD">0</b>days</div><div><b id="cdH">0</b>hrs</div><div><b id="cdM">0</b>min</div><div><b id="cdS">0</b>sec</div></div><p class="note" id="cdNote"></p>';
+ const target=new Date(LD.countdown.date).getTime();
+ const tick=()=>{let ms=target-Date.now();if(isNaN(target)){$('cdNote').textContent='Hmm, that date looks odd. Tap edit.';return}
+  if(ms<=0){$('cdNote').textContent='It\'s here!! 🎉💖';ms=0;clearInterval(cdIv)}
+  const s=Math.floor(ms/1000);$('cdD').textContent=Math.floor(s/86400);$('cdH').textContent=Math.floor(s%86400/3600);$('cdM').textContent=Math.floor(s%3600/60);$('cdS').textContent=s%60};
+ tick();cdIv=setInterval(tick,1000)}
+function editCD(){formModal('✏️ Countdown',[{k:'label',label:'What are we counting down to?',val:LD.countdown.label},{k:'date',label:'Date & time',type:'datetime-local',val:LD.countdown.date}],
+ v=>{LD.countdown={label:v.label.slice(0,80)||'Our wedding 💍',date:v.date};saveLD();renderCD();snd('ding')},LD.countdown.date?()=>{LD.countdown.date='';saveLD();renderCD()}:null)}
+$('cdEdit').onclick=editCD;
+/* ---------- secret letter ----------
+   NOTE: this is cute privacy, NOT real security. The password is only lightly hashed
+   and the letter is stored in plain text in localStorage; anyone with the device and
+   dev tools (or the exported JSON) can read it. */
+function pwHash(s){let h=5381;for(const c of s)h=(h*33^c.codePointAt(0))>>>0;return h.toString(36)}
+function renderLetter(open){const b=$('letterBox');
+ if(!LD.letter){b.innerHTML='<span class="big">💌</span><p>No letter yet. Write one and lock it with a password.</p><button class="edit" id="lNew">✏️ Write the letter</button>';
+  $('lNew').onclick=()=>formModal('✏️ Secret letter',[{k:'pw',label:'Choose a password',type:'password',val:''},{k:'text',label:'The letter',type:'textarea',val:''}],
+   v=>{if(!v.pw){toast('Pick a password 🔑');return false}LD.letter={pw:pwHash(v.pw),text:v.text.slice(0,20000)};saveLD();renderLetter(false);toast('Sealed with a kiss 💋');snd('win')});return}
+ if(!open){b.innerHTML='<span class="big">🔒✉️</span><p>This letter is locked.</p><input id="lPw" type="password" placeholder="Password" style="width:60%"><br><button id="lOpen">Open 💌</button>';
+  const go=()=>{if(pwHash($('lPw').value)===LD.letter.pw){renderLetter(true);hearts(20);snd('win')}else{toast('Wrong password 🙈');snd('bad');$('lPw').value=''}};
+  $('lOpen').onclick=go;$('lPw').onkeydown=e=>{if(e.key==='Enter')go()};return}
+ b.innerHTML='<div class="letter" id="lTxt"></div><button class="edit" id="lEdit">✏️ Edit</button><button class="alt" id="lLock">🔒 Lock</button><button class="alt" id="lDel">🗑️</button>';
+ $('lTxt').textContent=LD.letter.text||'(empty letter... write something sweet ✏️)';
+ $('lLock').onclick=()=>renderLetter(false);
+ $('lDel').onclick=()=>{if(confirm('Delete the letter and password?')){LD.letter=null;saveLD();renderLetter(false)}};
+ $('lEdit').onclick=()=>formModal('✏️ Edit letter',[{k:'text',label:'The letter',type:'textarea',val:LD.letter.text},{k:'pw',label:'New password (leave empty to keep)',type:'password',val:''}],
+  v=>{LD.letter.text=v.text.slice(0,20000);if(v.pw)LD.letter.pw=pwHash(v.pw);saveLD();renderLetter(true);snd('ding')})}
+/* ---------- daily surprise ---------- */
+const dailyBase=["Good morning, gorgeous. Today is lucky to have you ☀️","Reminder: you are loved. Like, a LOT.","I'd still pick you. In every universe.","Drink some water, beautiful 💧","You're my favorite hello and my hardest goodbye","Someone is thinking about you right now. It's me.","You make my heart do the silly dance 💃","Today's forecast: 100% chance of me missing you","You're doing amazing, even if it doesn't feel like it","If kisses were snowflakes, I'd send you a blizzard ❄️","You + coffee = unstoppable ☕","I love your laugh. Go make it happen today.","You're the best thing that ever happened to me","Fun fact: you're cute. That's it. That's the fact.","Can't wait to see your face again","Every day with you is my favorite day","You deserve the biggest cake today 🍰","You're my person. Always.","I'm proud of you. Just because.","Today, be as kind to yourself as you are to me","You still give me butterflies 🦋","Hug coupon valid all day today 🫂","I love the way your mind works","You're the plot twist I didn't see coming","Breaking news: local man still obsessed with you 📰","Let's grow old and annoying together","You make home feel like home","Thank you for being you","I'd share my fries with you. That's true love 🍟","You light up every room. Especially mine.","My favorite place is next to you","You're cuter than a puppy in a sweater 🐶","Today is a good day to steal a kiss 😘","Nobody does 'you' better than you","Even on your worst day, you're my best thing","You're the answer to all my 'what ifs'","Smile! (I know you just did 😏)","Let's make a silly memory soon","I fall for you a little more every day","You and me against the world 🌍","Go conquer today, then come tell me all about it","Somewhere, I'm smiling because of you right now"];
+const dayKey=()=>{const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate()};
+function renderDaily(){const pool=dailyBase.concat(LD.daily);const k=dayKey();let h=k;h=((h^61)^(h>>>16))*9;h^=h>>>4;h=Math.imul(h,0x27d4eb2d);h^=h>>>15;
+ $('daily').textContent=pool[(h>>>0)%pool.length];$('dailyDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+ $('dailyCount').textContent=pool.length+' messages in the pool'+(LD.daily.length?' ('+LD.daily.length+' from you 💕)':'')+' · come back tomorrow for a new one'}
+$('dailyAdd').onclick=()=>formModal('✏️ Add a daily message',[{k:'m',label:'Your message',type:'textarea',val:''}],v=>{const m=v.m.trim();if(!m){toast('Write something sweet first 💕');return false}LD.daily.push(m.slice(0,300));saveLD();renderDaily();toast('Added to the pool 🌞');snd('ding')});
+/* ---------- export / import ---------- */
+$('exp').onclick=()=>{const data={app:'love-page',version:1,exported:new Date().toISOString(),data:LD,coupons:JSON.parse(localStorage.getItem('loveCoupons')||'[]')};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));a.download='our-love-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('Backup downloaded 💾')};
+$('impIn').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const r=new FileReader();
+ r.onload=()=>{try{const j=JSON.parse(r.result);const d=j.data||j;if(typeof d!=='object'||!d)throw 0;if(!confirm('Replace the data on this device with this backup?'))return;
+  const old=LD;LD=Object.assign(defaults(),d);['photos','story','daily'].forEach(k=>{if(!Array.isArray(LD[k]))LD[k]=[]});if(typeof LD.countdown!=='object'||!LD.countdown)LD.countdown=defaults().countdown;
+  if(!saveLD()){LD=old;return}if(Array.isArray(j.coupons))try{localStorage.setItem('loveCoupons',JSON.stringify(j.coupons))}catch(x){}
+  renderAll();confetti(60);toast('Backup restored 🎉 (coupons update after reload)')}catch(err){toast("That file doesn't look like a backup 😕")}};r.readAsText(f)};
+function renderAll(){renderPhotos();renderStory();renderCD();renderLetter(false);renderDaily()}
+renderAll();
+</script>
+</body></html>
