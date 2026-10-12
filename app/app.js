@@ -232,7 +232,8 @@ const TABLES = {
   jokes: { order: 'term', asc: true },
   song_week: { order: 'week', asc: false, limit: 60 },
   events: { order: 'starts_at', asc: true, limit: 500 },
-  trivia_results: { order: 'day', asc: false, limit: 200 }
+  trivia_results: { order: 'day', asc: false, limit: 200 },
+  couple_nicknames: { order: 'updated_at', asc: false }
 };
 const PROGRESS_TABLES = ['daily_answers', 'moods', 'gratitude', 'weekly_checkins', 'q36_answers'];
 const GIFT_TOASTS = { open_when: 'wrote you an Open-when letter ✉️', drawings: 'sent you a drawing 🎨', scratch_cards: 'hid a scratch-card prize for you 🎟️', big_questions: 'asked you an important question 💍', quiz_questions: 'added a quiz question about themselves 📝' };
@@ -246,12 +247,20 @@ async function loadTable(t) {
   S.data[t] = data;
   RENDER[t] && RENDER[t]();
 }
-const nameOf = (uid) => uid === S.user.id ? 'You' : (S.partner?.display_name || 'Your love');
-const emojiOf = (uid) => uid === S.user.id ? S.me.emoji : (S.partner?.emoji || '💗');
+const nickFor = (uid) => (S.data.couple_nicknames || []).find((n) => n.target_user === uid);
+const partnerName = () => nickFor(S.partner?.id)?.nickname || S.partner?.display_name || 'Your love';
+const partnerEmoji = () => nickFor(S.partner?.id)?.emoji || S.partner?.emoji || '💗';
+function applyNames() {
+  if (!S.partner) return;
+  $('#coupleTitle').textContent = `${S.me.emoji} ${S.me.display_name} 💕 ${partnerName()} ${partnerEmoji()}`;
+  $$('.pname').forEach((el) => (el.textContent = partnerName()));
+}
+window.CC_partnerName = () => (S.partner ? partnerName() : null);
+const nameOf = (uid) => uid === S.user.id ? 'You' : (partnerName() || 'Your love');
+const emojiOf = (uid) => uid === S.user.id ? S.me.emoji : (partnerEmoji() || '💗');
 
 async function enterCouple() {
-  $('#coupleTitle').textContent = `${S.me.emoji} ${S.me.display_name} 💕 ${S.partner.display_name} ${S.partner.emoji}`;
-  $$('.pname').forEach((el) => (el.textContent = S.partner.display_name));
+  applyNames();
   renderMe();
   show('#mainView');
   initGames();
@@ -266,9 +275,12 @@ function subscribeCouple() {
   Object.keys(TABLES).forEach((t) => {
     ch.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: `couple_id=eq.${S.couple.id}` }, (payload) => {
       if (t === 'pings' && payload.eventType === 'INSERT' && payload.new.to_user === S.user.id) showPingFrom(payload.new);
-      if (GIFT_TOASTS[t] && payload.eventType === 'INSERT' && payload.new.created_by && payload.new.created_by !== S.user.id) toast(`${S.partner.display_name} ${GIFT_TOASTS[t]}`, 4000);
+      if (GIFT_TOASTS[t] && payload.eventType === 'INSERT' && payload.new.created_by && payload.new.created_by !== S.user.id) toast(`${partnerName()} ${GIFT_TOASTS[t]}`, 4000);
       loadTable(t);
       if (PROGRESS_TABLES.includes(t)) refreshProgress();
+      if (t === 'couple_nicknames' && payload.new?.target_user === S.user.id && payload.new?.set_by !== S.user.id) {
+        toast(`${partnerName()} renamed you to “${payload.new.nickname}” ${payload.new.emoji || ''} 🥰`, 5000); hearts(12);
+      }
       if (t === 'time_capsules') loadLocked();
       if (t === 'lovemap_answers') loadLMProgress();
     });
@@ -297,13 +309,13 @@ async function sendPing() {
   if (error) { toast('Ping failed: ' + errMsg(error)); return false; }
   floatHearts(document.body, 14);
   notify('ping', D.pingLines[Math.floor(Math.random() * D.pingLines.length)]);
-  toast(`Ping sent to ${S.partner.display_name}! 💗`);
+  toast(`Ping sent to ${partnerName()}! 💗`);
   return true;
 }
 $('#pingBtn').onclick = () => sendPing();
 function showPingFrom(p) {
   const line = D.pingLines[Math.floor(Math.random() * D.pingLines.length)];
-  $('#heartTxt').textContent = `${S.partner.display_name} ${line}`;
+  $('#heartTxt').textContent = `${partnerName()} ${line}`;
   const o = $('#heartOverlay'); o.classList.remove('hidden'); floatHearts(o, 24);
   if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
 }
@@ -321,7 +333,7 @@ RENDER.pings = () => {
   const l = S.data.pings || [];
   const today = l.filter((p) => new Date(p.created_at).toDateString() === new Date().toDateString());
   $('#pingHint').textContent = `Today: you sent ${today.filter((p) => p.created_by === S.user.id).length}, got ${today.filter((p) => p.created_by !== S.user.id).length} 💞`;
-  $('#pingList').innerHTML = l.length ? l.map((p) => `<div class="row"><span>${esc(emojiOf(p.created_by))} ${p.created_by === S.user.id ? 'You pinged ' + esc(S.partner.display_name) : esc(S.partner.display_name) + ' pinged you'}</span><small>${fmtTime(p.created_at)}</small></div>`).join('') : '<p class="muted">No pings yet. Tap the big heart!</p>';
+  $('#pingList').innerHTML = l.length ? l.map((p) => `<div class="row"><span>${esc(emojiOf(p.created_by))} ${p.created_by === S.user.id ? 'You pinged ' + esc(partnerName()) : esc(partnerName()) + ' pinged you'}</span><small>${fmtTime(p.created_at)}</small></div>`).join('') : '<p class="muted">No pings yet. Tap the big heart!</p>';
 };
 async function runPendingAction() {
   const a = localStorage.getItem(ACTION_KEY);
@@ -329,7 +341,7 @@ async function runPendingAction() {
   localStorage.removeItem(ACTION_KEY);
   if (a === 'ping') {
     if (await sendPing()) {
-      $('#heartTxt').textContent = `Ping sent to ${S.partner.display_name}! 💌`;
+      $('#heartTxt').textContent = `Ping sent to ${partnerName()}! 💌`;
       const o = $('#heartOverlay'); o.classList.remove('hidden');
       setTimeout(() => o.classList.add('hidden'), 2500);
     }
@@ -487,7 +499,7 @@ const couponHtml = (c, mine) => `<div class="coupon${c.redeemed_at ? ' used' : '
 RENDER.coupons = () => {
   const l = S.data.coupons || [];
   const mine = l.filter((c) => c.to_user === S.user.id), given = l.filter((c) => c.created_by === S.user.id);
-  $('#cpMine').innerHTML = mine.length ? mine.map((c) => couponHtml(c, true)).join('') : `<p class="muted">No coupons yet… hint hint, ${esc(S.partner.display_name)} 😏</p>`;
+  $('#cpMine').innerHTML = mine.length ? mine.map((c) => couponHtml(c, true)).join('') : `<p class="muted">No coupons yet… hint hint, ${esc(partnerName())} 😏</p>`;
   $('#cpGiven').innerHTML = given.length ? given.map((c) => couponHtml(c, false)).join('') : '<p class="muted">Make one above!</p>';
 };
 $('#cpMine').onclick = async (e) => {
@@ -533,7 +545,7 @@ RENDER.letters = () => {
   $('#letterStatus').textContent = mine ? `Sealed ${fmtTime(mine.updated_at)}. Writing again replaces it (you'll need to retype it).` : 'Encrypted on your phone. Only someone with the password can read it.';
   if (mine && mine.hint && !$('#letterHint').value) $('#letterHint').value = mine.hint;
   const box = $('#letterIn');
-  if (!theirs) { box.innerHTML = `<p class="muted">${esc(S.partner.display_name)} hasn't written one yet 👀</p>`; return; }
+  if (!theirs) { box.innerHTML = `<p class="muted">${esc(partnerName())} hasn't written one yet 👀</p>`; return; }
   box.innerHTML = `<div class="big">💌</div>${theirs.hint ? `<p class="muted">Hint: ${esc(theirs.hint)}</p>` : ''}<input id="unlockPw" type="password" placeholder="Password"><button id="unlockBtn">Unlock 🔓</button>`;
   $('#unlockBtn').onclick = async () => {
     try {
@@ -545,9 +557,39 @@ RENDER.letters = () => {
 };
 
 // ---- profile / partner ----
+const NICK_SUGG = ['Honey', 'Baby', 'My Love', 'Sunshine', 'Habibi', 'Habibti', 'Bae', 'Cutie', 'My Heart'];
+function renderNick() {
+  if (!S.partner) return; const theirs = nickFor(S.partner.id), mineN = nickFor(S.user.id);
+  $('#nickBox').innerHTML = `<details><summary>✏️ Give them a name</summary><p class="muted">Only you see this name for ${esc(S.partner.display_name)} — everywhere in the app.</p>
+    <div class="chips" id="nickChips">${NICK_SUGG.map((n) => `<span data-nick="${esc(n)}" class="${theirs?.nickname === n ? 'on' : ''}">${esc(n)}</span>`).join('')}</div>
+    <div class="row2"><input id="nickEmoji" class="short" maxlength="4" placeholder="💗" value="${esc(theirs?.emoji || '')}"><input id="nickIn" maxlength="40" placeholder="Custom name…" value="${esc(theirs?.nickname || '')}"></div>
+    <button id="nickSave">Save name 🥰</button>${theirs ? '<button class="soft" id="nickClear">Use their real name</button>' : ''}</details>`;
+  $('#myNick').innerHTML = mineN ? `💕 Your partner calls you: <b>${esc(mineN.nickname)}</b> ${esc(mineN.emoji || '')}` : `<span class="muted">${esc(partnerName())} hasn't given you a pet name yet 👀</span>`;
+}
+document.addEventListener('click', async (e) => {
+  const chip = e.target.closest('#nickChips [data-nick]'); if (chip) { $('#nickIn').value = chip.dataset.nick; $$('#nickChips span').forEach((x) => x.classList.toggle('on', x === chip)); return; }
+  if (e.target.id === 'nickSave') {
+    const nickname = $('#nickIn').value.trim().slice(0, 40), emoji = $('#nickEmoji').value.trim().slice(0, 16) || null; if (!nickname) return toast('Pick or type a name 💕');
+    const ex = nickFor(S.partner.id);
+    const { error } = ex ? await sb.from('couple_nicknames').update({ nickname, emoji, updated_at: new Date().toISOString() }).eq('couple_id', S.couple.id).eq('target_user', S.partner.id)
+      : await sb.from('couple_nicknames').insert({ nickname, emoji });
+    if (error) return toast(errMsg(error)); toast(`They're “${nickname}” now 🥰`); hearts(10); notify('generic', `renamed you to “${nickname}” 🥰`); loadTable('couple_nicknames');
+  }
+  if (e.target.id === 'nickClear') {
+    if (!await uiConfirm(`Go back to calling them ${S.partner.display_name}?`)) return;
+    const { error } = await sb.from('couple_nicknames').delete().eq('couple_id', S.couple.id).eq('target_user', S.partner.id);
+    if (error) toast(errMsg(error)); else loadTable('couple_nicknames');
+  }
+});
+RENDER.couple_nicknames = () => {
+  applyNames(); renderMe();
+  Object.entries(RENDER).forEach(([k, f]) => { if (k !== 'couple_nicknames' && S.data[k]) try { f(); } catch (e) { /* */ } });
+  if (S.partner) { $('#cpN2').value = partnerName(); }
+};
 function renderMe() {
   $('#pfName').value = S.me.display_name; $('#pfUser').value = S.me.username; $('#pfEmoji').value = S.me.emoji; $('#pfCode').textContent = S.me.invite_code;
-  $('#partnerBox').innerHTML = S.partner ? `<div class="person"><span class="em">${esc(S.partner.emoji)}</span><div class="info"><b>${esc(S.partner.display_name)}</b><br><small>@${esc(S.partner.username)} · together since ${fmtDate(S.couple.created_at)}${S.couple.reunited_at ? `<br>got back together on ${fmtDate(S.couple.reunited_at)} 💞${S.couple.reunions > 1 ? ` (reunion #${S.couple.reunions})` : ''}` : ''}</small></div></div>` : '';
+  $('#partnerBox').innerHTML = S.partner ? `<div class="person"><span class="em">${esc(partnerEmoji())}</span><div class="info"><b>${esc(partnerName())}</b>${nickFor(S.partner.id) ? ` <small class="muted">(${esc(S.partner.display_name)})</small>` : ''}<br><small>@${esc(S.partner.username)} · together since ${fmtDate(S.couple.created_at)}${S.couple.reunited_at ? `<br>got back together on ${fmtDate(S.couple.reunited_at)} 💞${S.couple.reunions > 1 ? ` (reunion #${S.couple.reunions})` : ''}` : ''}</small></div></div>` : '';
+  renderNick();
   $('#shortcutUrl').textContent = location.origin + location.pathname + '?action=ping';
 }
 $('#pfSave').onclick = async () => {
@@ -558,7 +600,7 @@ $('#pfSave').onclick = async () => {
   S.me = data; renderMe(); toast('Saved ✨');
 };
 $('#disconnectBtn').onclick = async () => {
-  if (!await uiConfirm(`Break up with ${S.partner.display_name}? 💔 Your shared space will be saved in case you get back together.`)) return;
+  if (!await uiConfirm(`Break up with ${partnerName()}? 💔 Your shared space will be saved in case you get back together.`)) return;
   const { error } = await sb.rpc('disconnect');
   if (error) return toast(errMsg(error));
   toast('You broke up 💔 Everything is saved in case you get back together.', 4000);
@@ -595,10 +637,10 @@ function confetti(n = 80) {
   for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'conf'; d.style.left = Math.random() * 100 + 'vw'; d.style.background = rnd(c); d.style.animationDuration = (2 + Math.random() * 2) + 's'; d.style.animationDelay = Math.random() * .5 + 's'; document.body.appendChild(d); setTimeout(() => d.remove(), 5000); }
 }
 const mine = (r) => r.created_by === S.user.id;
-const pn = () => esc(S.partner?.display_name || 'Your love');
+const pn = () => esc(partnerName() || 'Your love');
 const vsHtml = (a, b, la = 'You', lb = null, fmt = (v) => v) => {
   lb = lb || pn();
-  return `<div class="vs"><div class="${a > b ? 'lead' : ''}"><small>${esc(S.me.emoji)} ${la}</small><b>${fmt(a)}</b></div><div class="${b > a ? 'lead' : ''}"><small>${esc(S.partner?.emoji || '💗')} ${lb}</small><b>${fmt(b)}</b></div></div>`;
+  return `<div class="vs"><div class="${a > b ? 'lead' : ''}"><small>${esc(S.me.emoji)} ${la}</small><b>${fmt(a)}</b></div><div class="${b > a ? 'lead' : ''}"><small>${esc(partnerEmoji() || '💗')} ${lb}</small><b>${fmt(b)}</b></div></div>`;
 };
 function setBadge(id, txt, isNew) { const el = document.getElementById('tb-' + id); if (!el) return; el.textContent = txt || ''; el.classList.toggle('new', !!isNew); }
 
@@ -633,9 +675,9 @@ function renderBoard(game, low = false) {
   const cmp = (x) => x == null ? (low ? Infinity : -Infinity) : (low ? -x : x);
   const recent = (S.data.game_scores || []).filter((s) => s.game === game).slice(0, 5);
   el.innerHTML = `<b>🏆 ${low ? 'Fewest moves' : 'High scores'}</b>` +
-    `<div class="vs"><div class="${cmp(a) > cmp(b) ? 'lead' : ''}"><small>${esc(S.me.emoji)} You</small><b>${a ?? '—'}</b></div><div class="${cmp(b) > cmp(a) ? 'lead' : ''}"><small>${esc(S.partner.emoji)} ${pn()}</small><b>${b ?? '—'}</b></div></div>` +
+    `<div class="vs"><div class="${cmp(a) > cmp(b) ? 'lead' : ''}"><small>${esc(S.me.emoji)} You</small><b>${a ?? '—'}</b></div><div class="${cmp(b) > cmp(a) ? 'lead' : ''}"><small>${esc(partnerEmoji())} ${pn()}</small><b>${b ?? '—'}</b></div></div>` +
     (recent.length ? recent.map((s) => `<div class="row"><span>${esc(emojiOf(s.created_by))} ${esc(nameOf(s.created_by))}: <b>${s.score}</b></span><small>${fmtTime(s.created_at)}</small></div>`).join('') : '<p class="muted">No games yet — set the first record!</p>');
-  const leader = a == null && b == null ? '' : cmp(a) >= cmp(b) ? 'You lead 👑' : `${S.partner.display_name} leads`;
+  const leader = a == null && b == null ? '' : cmp(a) >= cmp(b) ? 'You lead 👑' : `${partnerName()} leads`;
   setBadge(game, leader);
 }
 RENDER.game_scores = () => { renderBoard('catch'); renderBoard('balloons'); renderBoard('memory', true); };
@@ -761,7 +803,7 @@ $('#bearEl').onclick = (e) => {
 $('#cookie').onclick = (e) => {
   const fromP = (S.data.fortunes || []).filter((f) => !mine(f));
   let txt;
-  if (fromP.length && Math.random() < .75) { const f = rnd(fromP); txt = `${f.message}  — ${S.partner.display_name} 💌`; }
+  if (fromP.length && Math.random() < .75) { const f = rnd(fromP); txt = `${f.message}  — ${partnerName()} 💌`; }
   else txt = rnd(D.fortunes);
   $('#fortune').textContent = txt; hearts(4, e.clientX, e.clientY); snd('pop');
 };
@@ -773,7 +815,7 @@ $('#ftAdd').onclick = async () => {
 RENDER.fortunes = () => {
   const l = S.data.fortunes || [], m = l.filter(mine), p = l.filter((f) => !mine(f));
   $('#ftList').innerHTML = m.length ? m.map((f) => `<div class="row"><span>${esc(f.message)}</span><button class="mini soft" data-del="fortunes:${f.id}">✕</button></div>`).join('') : '<p class="muted">No fortunes baked yet.</p>';
-  setBadge('fortune', p.length ? p.length + ' from ' + S.partner.display_name : '');
+  setBadge('fortune', p.length ? p.length + ' from ' + partnerName() : '');
 };
 
 // ---- date wheel (shared ideas + spin log) ----
@@ -786,7 +828,7 @@ $('#spinBtn').onclick = () => {
     if (++n > 18) {
       clearInterval(iv); spinning = false; hearts(8); snd('ding');
       const { error } = await sb.from('date_spins').insert({ idea: $('#wheelOut').textContent.slice(0, 150) });
-      if (error) toast(errMsg(error)); else toast(`Saved! ${S.partner.display_name} will see it too 🎡`);
+      if (error) toast(errMsg(error)); else toast(`Saved! ${partnerName()} will see it too 🎡`);
     }
   }, 80 + n * 4);
 };
@@ -822,7 +864,7 @@ function renderBQ() {
   const l = S.data.big_questions || [];
   bqCur = l.filter((q) => q.to_user === S.user.id && !q.answered_at).sort((a, b) => a.created_at.localeCompare(b.created_at))[0] || null;
   bqNo = 0; $('#bqNo').style.display = ''; $('#bqNo').style.left = ''; $('#bqNo').style.top = ''; $('#bqNo').textContent = 'No'; $('#bqYes').style.transform = ''; $('#bqRes').textContent = '';
-  $('#bqFrom').textContent = bqCur ? `${S.partner.display_name} asks…` : 'No pending questions — here is a classic:';
+  $('#bqFrom').textContent = bqCur ? `${partnerName()} asks…` : 'No pending questions — here is a classic:';
   $('#bqText').textContent = bqCur ? bqCur.question : 'Will you love me even when I steal your fries?';
   const sent = l.filter(mine);
   $('#bqSent').innerHTML = sent.map((q) => `<div class="row"><span>${esc(q.question)}<br><small class="muted">${q.answered_at ? `💖 YES! (${q.no_attempts} "no" attempts) ${fmtTime(q.answered_at)}` : 'Waiting for an answer…'}</small></span><button class="mini soft" data-del="big_questions:${q.id}">✕</button></div>`).join('');
@@ -839,7 +881,7 @@ $('#bqYes').onclick = async () => {
   $('#bqNo').style.display = 'none'; hearts(40); confetti(60); snd('win');
   if (bqCur) {
     const { error } = await sb.from('big_questions').update({ answered_at: new Date().toISOString(), no_attempts: bqNo }).eq('id', bqCur.id);
-    $('#bqRes').textContent = error ? errMsg(error) : `Correct answer! ${S.partner.display_name} will see your YES 💖`;
+    $('#bqRes').textContent = error ? errMsg(error) : `Correct answer! ${partnerName()} will see your YES 💖`;
     bqCur = null; setTimeout(() => loadTable('big_questions'), 2500);
   } else $('#bqRes').textContent = 'Correct answer! Your fries are officially half mine 🍟❤️';
 };
@@ -859,7 +901,7 @@ function scrReset() {
   const pending = (S.data.scratch_cards || []).filter((c) => c.to_user === S.user.id && !c.scratched_at).sort((a, b) => a.created_at.localeCompare(b.created_at));
   scrCard = pending[0] || null;
   $('#scrTxt').textContent = scrCard ? scrCard.prize : rnd(D.prizes);
-  $('#scrFrom').textContent = scrCard ? `🎁 ${S.partner.display_name} hid a prize for you! (${pending.length} waiting)` : 'Scratch to reveal your prize';
+  $('#scrFrom').textContent = scrCard ? `🎁 ${partnerName()} hid a prize for you! (${pending.length} waiting)` : 'Scratch to reveal your prize';
 }
 function scrAt(e) { const r = scr.getBoundingClientRect(); sx.globalCompositeOperation = 'destination-out'; sx.beginPath(); sx.arc((e.clientX - r.left) * scr.width / r.width, (e.clientY - r.top) * scr.height / r.height, 20, 0, 7); sx.fill(); }
 async function scrCheck() {
@@ -867,7 +909,7 @@ async function scrCheck() {
   for (let i = 3; i < d.length; i += 64) { tot++; if (d[i] === 0) c++; }
   if (c / tot > .5) {
     scrDone = true; scr.style.transition = 'opacity .6s'; scr.style.opacity = 0; hearts(12); snd('win');
-    if (scrCard) { const id = scrCard.id; scrCard = null; const { error } = await sb.from('scratch_cards').update({ scratched_at: new Date().toISOString() }).eq('id', id); if (error) toast(errMsg(error)); else toast(`${S.partner.display_name} will know you scratched it 😘`); }
+    if (scrCard) { const id = scrCard.id; scrCard = null; const { error } = await sb.from('scratch_cards').update({ scratched_at: new Date().toISOString() }).eq('id', id); if (error) toast(errMsg(error)); else toast(`${partnerName()} will know you scratched it 😘`); }
   }
 }
 scr.addEventListener('pointerdown', (e) => { scrDown = true; scr.setPointerCapture && scr.setPointerCapture(e.pointerId); scrAt(e); });
@@ -928,7 +970,7 @@ $('#qzAdd').onclick = async () => {
   const options = [], map = {}; raw.forEach((v, i) => { if (v) { map[i] = options.length; options.push(v); } });
   if (options.length < 2) return toast('Add at least 2 options');
   const { error } = await sb.from('quiz_questions').insert({ question, options, correct: map[qzCorrect] });
-  if (error) return toast(errMsg(error)); $('#qzQ').value = ''; qzCorrect = 0; qzOptsRender(); toast(`Question added — ${S.partner.display_name} can answer it now 🧠`); notify('quiz', 'added a love-quiz question about themselves 📝');
+  if (error) return toast(errMsg(error)); $('#qzQ').value = ''; qzCorrect = 0; qzOptsRender(); toast(`Question added — ${partnerName()} can answer it now 🧠`); notify('quiz', 'added a love-quiz question about themselves 📝');
 };
 let classicI = 0, classicS = 0;
 function renderQuiz() {
@@ -1001,7 +1043,7 @@ $('#drawSend').onclick = async () => {
   const { error } = await sb.from('drawings').insert({ image, caption: $('#drawCap').value.trim() || null });
   $('#drawSend').disabled = false;
   if (error) return toast(errMsg(error));
-  $('#drawCap').value = ''; $('#drawClear').onclick(); hearts(10); snd('win'); toast(`Sent to ${S.partner.display_name}'s gallery 🖼️`); notify('drawing', 'drew something for you 🎨');
+  $('#drawCap').value = ''; $('#drawClear').onclick(); hearts(10); snd('win'); toast(`Sent to ${partnerName()}'s gallery 🖼️`); notify('drawing', 'drew something for you 🎨');
 };
 RENDER.drawings = () => {
   const l = S.data.drawings || [];
@@ -1018,7 +1060,7 @@ $('#drawGal').onclick = (e) => {
 function hashStr(s) { let h = 5381; for (const c of s) h = (Math.imul(h, 33) ^ c.codePointAt(0)) >>> 0; return h; }
 $('#calcBtn').onclick = () => {
   const a = $('#cpN1').value.trim().toLowerCase(), b = $('#cpN2').value.trim().toLowerCase(); const t = $('#calcTxt');
-  const us = S.me && S.partner && [S.me.display_name.toLowerCase(), S.partner.display_name.toLowerCase()].sort().join('|') === [a, b].sort().join('|');
+  const us = S.me && S.partner && [S.me.display_name.toLowerCase(), partnerName().toLowerCase()].sort().join('|') === [a, b].sort().join('|');
   const target = us ? 100 + hashStr(S.couple.id) % 900 : 50 + hashStr([a, b].sort().join('|')) % 51;
   let p = 0; const iv = setInterval(() => {
     p += Math.ceil((target - p) / 8) || 1; t.textContent = 'Calculating… ' + p + '%'; snd('tick');
@@ -1041,7 +1083,7 @@ function fwLoop() { if (!fwRun) return; fx.fillStyle = 'rgba(43,10,30,.2)'; fx.f
 let fwDone = false;
 $('#finaleBtn').onclick = () => {
   const f = $('#finale'); f.classList.remove('hidden'); fc.width = innerWidth; fc.height = innerHeight; parts = []; fwRun = true; fwDone = false; fwLoop();
-  const msg = $('#fMsg'); msg.style.opacity = 0; const p = S.partner?.display_name || 'my love';
+  const msg = $('#fMsg'); msg.style.opacity = 0; const p = partnerName() || 'my love';
   const lines = ['You made it to the end… 💫', "But this isn't the end.", `It's just the beginning of ${S.me?.display_name || 'you'} & ${p}.`, 'Today, tomorrow, and every fry-stealing day after. ❤️', '(tap anywhere to go back)'];
   fwTimers.forEach(clearTimeout); fwTimers = [];
   for (let i = 0; i < 12; i++) fwTimers.push(setTimeout(() => { fwBurst(Math.random() * fc.width, Math.random() * fc.height * .6); snd('pop'); }, i * 450));
@@ -1053,7 +1095,7 @@ $('#finale').onclick = () => { if (!fwDone) return; fwRun = false; fwTimers.forE
 
 // compat default names once couple loads
 function initGames() {
-  $('#cpN1').value = S.me.display_name; $('#cpN2').value = S.partner.display_name; $('#calcTxt').textContent = '';
+  $('#cpN1').value = S.me.display_name; $('#cpN2').value = partnerName(); $('#calcTxt').textContent = '';
   renderPokes(); renderBQ(); renderQuiz();
 }
 
@@ -1173,8 +1215,8 @@ RENDER.moods = () => {
   $('#homeMood').innerHTML = `<div class="side">${card(lm, 'You')}${card(lp, pn())}</div><p class="muted" style="margin:4px 0 0">Quick mood check-in:</p>`;
   const days = Array.from({ length: 7 }, (_, i) => addDays(dayStr(), i - 6));
   const row = (uid, label) => `<small>${label}</small>` + days.map((d) => { const m = (S.data.moods || []).find((x) => x.created_by === uid && x.day === d); return `<span title="${d}">${m ? esc(m.mood) : '·'}</span>`; }).join('');
-  $('#moodWeek').innerHTML = `<div class="mweek"><span></span>${days.map((d) => `<small>${parseDay(d).toLocaleDateString(undefined, { weekday: 'narrow' })}</small>`).join('')}${row(S.user.id, 'You')}${row(S.partner.id, esc(S.partner.emoji))}</div>`;
-  setFB('mood', lp ? `${S.partner.display_name}: ${lp.mood}` : '', lp && lp.signal && Date.now() - new Date(lp.created_at) < 86400000);
+  $('#moodWeek').innerHTML = `<div class="mweek"><span></span>${days.map((d) => `<small>${parseDay(d).toLocaleDateString(undefined, { weekday: 'narrow' })}</small>`).join('')}${row(S.user.id, 'You')}${row(S.partner.id, esc(partnerEmoji()))}</div>`;
+  setFB('mood', lp ? `${partnerName()}: ${lp.mood}` : '', lp && lp.signal && Date.now() - new Date(lp.created_at) < 86400000);
   renderStreak();
 };
 
@@ -1209,7 +1251,7 @@ RENDER.journal = () => {
   if (!$('#jBody').value) $('#jDate').onchange();
   $('#jList').innerHTML = days.length ? days.map((d) => { const m = l.find((j) => mine(j) && j.day === d), p = l.find((j) => !mine(j) && j.day === d);
     return `<h3 class="gsec">${fmtDay(d)}</h3><div class="side"><div class="ans"><small>You ${m ? `<a href="#" data-jedit="${d}">✏️</a>` : ''}</small>${m ? esc(m.body) : '<i>—</i>'}</div><div class="ans"><small>${pn()}</small>${p ? esc(p.body) : '<i>—</i>'}</div></div>`; }).join('') : '<p class="muted">Start your shared diary ✨</p>';
-  const t = l.find((j) => !mine(j) && j.day === dayStr()); setFB('journal', t ? `${S.partner.display_name} wrote today` : '', !!t);
+  const t = l.find((j) => !mine(j) && j.day === dayStr()); setFB('journal', t ? `${partnerName()} wrote today` : '', !!t);
 };
 $('#jList').onclick = (e) => { const d = e.target.dataset.jedit; if (!d) return; e.preventDefault(); $('#jDate').value = d; $('#jDate').onchange(); $('#jBody').focus(); window.scrollTo(0, 0); };
 
@@ -1273,7 +1315,7 @@ function renderQ36() {
   if (!S.couple) return; const l = S.data.q36_answers || [];
   const mineSet = new Set(l.filter(mine).map((a) => a.qnum)), pSet = new Set([...(S.prog.q36 || []), ...l.filter((a) => !mine(a)).map((a) => a.qnum)]);
   const both = [...mineSet].filter((n) => pSet.has(n)).length;
-  $('#q36Bar').style.width = (both / 36 * 100) + '%'; $('#q36Prog').textContent = `Together: ${both}/36 · You ${mineSet.size} · ${S.partner.display_name} ${pSet.size}`;
+  $('#q36Bar').style.width = (both / 36 * 100) + '%'; $('#q36Prog').textContent = `Together: ${both}/36 · You ${mineSet.size} · ${partnerName()} ${pSet.size}`;
   const set = q36i <= 12 ? 'Set I' : q36i <= 24 ? 'Set II' : 'Set III';
   $('#q36Num').textContent = `${set} · #${q36i}`; $('#q36Text').textContent = D.q36[q36i - 1];
   const me = l.find((a) => mine(a) && a.qnum === q36i), them = l.find((a) => !mine(a) && a.qnum === q36i);
@@ -1518,7 +1560,7 @@ async function renderSongWeek() {
   if (!S.partner) return; const wk = isoWeek();
   if (!swTurnId || renderSongWeek.wk !== wk) { const { data } = await sb.rpc('song_turn', { wk }); swTurnId = data; renderSongWeek.wk = wk; }
   const l = S.data.song_week || [], cur = l.find((s) => s.week === wk), myTurn = swTurnId === S.user.id;
-  $('#swTurn').textContent = `Week ${wk.split('-W')[1]} · ${myTurn ? "It's your turn to pick 🎶" : `${S.partner.display_name}'s turn to pick`}`;
+  $('#swTurn').textContent = `Week ${wk.split('-W')[1]} · ${myTurn ? "It's your turn to pick 🎶" : `${partnerName()}'s turn to pick`}`;
   const songHtml = (s) => `<div class="ans"><small>${esc(nameOf(s.created_by))} · ${s.week}</small><b>🎵 ${esc(s.title)}</b>${s.artist ? ' — ' + esc(s.artist) : ''} ${linkHtml(s.url)}${s.note ? `<br><i>${esc(s.note)}</i>` : ''}</div>`;
   $('#swCur').innerHTML = cur ? songHtml(cur) : `<p class="muted">No song yet this week.</p>`;
   $('#swForm').classList.toggle('hidden', !myTurn || (!!cur && !mine(cur)));
@@ -1620,7 +1662,7 @@ $('#evSave').onclick = async () => {
   const row = { title, starts_at: new Date(w).toISOString(), emoji: $('#evEmoji').value.trim() || '📅', location: $('#evLoc').value.trim() || null, note: $('#evNote').value.trim() || null };
   const { error } = evEditing ? await sb.from('events').update(row).eq('id', evEditing) : await sb.from('events').insert(row);
   if (error) return toast(errMsg(error));
-  if (!evEditing && await uiConfirm(`Notify ${S.partner.display_name} about this plan? 🔔`)) notify('generic', `added a plan: ${row.emoji} ${title} (${fmtTime(row.starts_at)})`);
+  if (!evEditing && await uiConfirm(`Notify ${partnerName()} about this plan? 🔔`)) notify('generic', `added a plan: ${row.emoji} ${title} (${fmtTime(row.starts_at)})`);
   evReset(); toast('Saved 📅'); loadTable('events');
 };
 

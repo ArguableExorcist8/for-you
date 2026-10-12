@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div id="app">
@@ -398,18 +398,19 @@
     </div>
 
     <div class="tab hidden" id="tab-me">
-      <div class="card"><h2>Your profile</h2>
+      <div class="card"><h2>Your profile</h2><p id="myNick"></p>
         <input id="pfName" maxlength="40" placeholder="Display name">
         <input id="pfUser" maxlength="24" placeholder="username" autocapitalize="none">
         <input id="pfEmoji" maxlength="4" class="short">
         <button id="pfSave">Save</button>
         <p class="muted">Invite code: <b id="pfCode"></b></p></div>
+      <div class="card"><h2>✨ Cute effects</h2><p class="muted">Floating hearts, sparkles, peeking stickers and little surprise bubbles.</p><button id="cuteToggle">✨ Cute effects: ON</button></div>
       <div class="card"><h2>🔔 Notifications</h2><p class="muted" id="pushInfo">Get notified when your partner pings, writes, answers or sends something.</p>
         <button id="pushBtn">Enable notifications</button><button class="soft hidden" id="pushOff">Turn off on this device</button>
         <p class="muted">📱 iPhone: notifications only work after you tap Share → <b>Add to Home Screen</b> and open the app from that icon (iOS 16.4+).</p></div>
       <div class="card"><h2>📍 Distance & time</h2><p class="muted">Share your approximate location (rounded to ~10 km city level) so you can see how far apart you are and each other's local time.</p>
         <button id="locShare">Share my location</button><button class="soft hidden" id="locStop">Stop sharing</button><p class="muted" id="locInfo"></p></div>
-      <div class="card"><h2>Your partner</h2><div id="partnerBox"></div>
+      <div class="card"><h2>Your partner</h2><div id="partnerBox"></div><div id="nickBox"></div>
         <button class="danger" id="disconnectBtn">Break up 💔</button></div>
       <div class="card"><h2>iPhone shortcut</h2><p class="muted">Open this link from a Shortcut to send a ping instantly:</p>
         <div class="code small" id="shortcutUrl"></div></div>
@@ -437,9 +438,10 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=9"></script>
-<script src="data.js?v=9"></script>
-<script src="trivia.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="config.js?v=10"></script>
+<script src="data.js?v=10"></script>
+<script src="trivia.js?v=10"></script>
+<script src="app.js?v=10"></script>
+<script src="cute.js?v=10"></script>
 </body>
 </html>
