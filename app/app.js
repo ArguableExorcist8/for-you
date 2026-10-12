@@ -258,6 +258,7 @@ async function enterCouple() {
   await Promise.all(Object.keys(TABLES).map(loadTable));
   initConnect();
   subscribeCouple();
+  welcomeBack();
   runPendingAction();
 }
 function subscribeCouple() {
@@ -273,12 +274,13 @@ function subscribeCouple() {
     });
   });
   ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${S.couple.id}` }, (p) => {
-    if (!p.new.active) { toast('You are no longer connected 💔'); boot(); }
+    if (!p.new.active) { toast('You broke up 💔 Your shared space is saved in case you get back together.', 4000); boot(); }
   });
   ch.subscribe();
   S.channel = ch;
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.couple) { Object.keys(TABLES).forEach(loadTable); refreshProgress(); loadLocked(); } });
+document.addEventListener('visibilitychange', async () => { if (!document.hidden && S.couple) {
+  const { data: still } = await sb.from('couples').select('id').eq('id', S.couple.id).eq('active', true).maybeSingle(); if (!still) { boot(); return; } Object.keys(TABLES).forEach(loadTable); refreshProgress(); loadLocked(); } });
 
 // ---- tabs ----
 $$('.nav button').forEach((b) => b.onclick = () => {
@@ -545,7 +547,7 @@ RENDER.letters = () => {
 // ---- profile / partner ----
 function renderMe() {
   $('#pfName').value = S.me.display_name; $('#pfUser').value = S.me.username; $('#pfEmoji').value = S.me.emoji; $('#pfCode').textContent = S.me.invite_code;
-  $('#partnerBox').innerHTML = S.partner ? `<div class="person"><span class="em">${esc(S.partner.emoji)}</span><div class="info"><b>${esc(S.partner.display_name)}</b><br><small>@${esc(S.partner.username)} · together since ${fmtDate(S.couple.created_at)}</small></div></div>` : '';
+  $('#partnerBox').innerHTML = S.partner ? `<div class="person"><span class="em">${esc(S.partner.emoji)}</span><div class="info"><b>${esc(S.partner.display_name)}</b><br><small>@${esc(S.partner.username)} · together since ${fmtDate(S.couple.created_at)}${S.couple.reunited_at ? `<br>got back together on ${fmtDate(S.couple.reunited_at)} 💞${S.couple.reunions > 1 ? ` (reunion #${S.couple.reunions})` : ''}` : ''}</small></div></div>` : '';
   $('#shortcutUrl').textContent = location.origin + location.pathname + '?action=ping';
 }
 $('#pfSave').onclick = async () => {
@@ -556,12 +558,19 @@ $('#pfSave').onclick = async () => {
   S.me = data; renderMe(); toast('Saved ✨');
 };
 $('#disconnectBtn').onclick = async () => {
-  if (!await uiConfirm(`Disconnect from ${S.partner.display_name}? Your shared space will be hidden.`)) return;
+  if (!await uiConfirm(`Break up with ${S.partner.display_name}? 💔 Your shared space will be saved in case you get back together.`)) return;
   const { error } = await sb.rpc('disconnect');
   if (error) return toast(errMsg(error));
+  toast('You broke up 💔 Everything is saved in case you get back together.', 4000);
   boot();
 };
 
+function welcomeBack() {
+  const r = S.couple?.reunited_at; if (!r || Date.now() - new Date(r) > 3 * 86400000) return;
+  const key = 'cc_welcome_' + S.couple.id; if (localStorage.getItem(key) === r) return; localStorage.setItem(key, r);
+  openModal(`<div class="big">💞</div><h2>Welcome back together 💞</h2><p>Everything is right where you left it — your photos, notes, games and memories.</p><p class="muted">Together since ${fmtDate(S.couple.created_at)}</p><button data-close>Yay 🥹</button>`);
+  setTimeout(() => { confetti(120); hearts(30); }, 200);
+}
 // ================= GAMES =================
 // ---- fx helpers ----
 const rnd = (a) => a[Math.floor(Math.random() * a.length)];
