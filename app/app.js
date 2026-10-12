@@ -3,6 +3,24 @@
 const { url, key } = window.CC_CONFIG;
 const D = window.CC_DATA;
 const sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+
+// pretty dialogs
+function uiDialog(msg, withInput) {
+  return new Promise(res => {
+    const o = document.createElement('div'); o.className = 'uiDlg';
+    o.innerHTML = `<div class="uiBox"><div class="uiHeart">💕</div><p></p>${withInput ? '<input class="uiIn" maxlength="300" placeholder="Type here…">' : ''}<div class="uiBtns"><button class="uiNo">Cancel</button><button class="uiYes">OK</button></div></div>`;
+    o.querySelector('p').textContent = msg;
+    document.body.appendChild(o);
+    const inp = o.querySelector('.uiIn'); setTimeout(() => (inp || o.querySelector('.uiYes')).focus(), 50);
+    const done = v => { o.remove(); res(v); };
+    o.querySelector('.uiYes').onclick = () => done(withInput ? inp.value : true);
+    o.querySelector('.uiNo').onclick = () => done(withInput ? null : false);
+    o.onclick = e => { if (e.target === o) done(withInput ? null : false); };
+    if (inp) inp.onkeydown = e => { if (e.key === 'Enter') done(inp.value); };
+  });
+}
+const uiConfirm = m => uiDialog(m, false);
+const uiPrompt = m => uiDialog(m, true);
 window.googleSignIn = async () => {
   const m = document.getElementById('authMsg'); if (m) m.textContent = 'Opening Google…';
   const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + location.search } });
@@ -292,7 +310,7 @@ $('#surpriseAdd').onclick = async () => {
 };
 document.addEventListener('click', async (e) => {
   const d = e.target.dataset?.del; if (!d) return;
-  if (!confirm('Delete this?')) return;
+  if (!await uiConfirm('Delete this?')) return;
   const [t, id] = d.split(':');
   if (t === 'photos') {
     const ph = (S.data.photos || []).find((p) => p.id === id);
@@ -365,7 +383,7 @@ $('#photoIn').onchange = async (e) => {
       const path = `${S.couple.id}/${crypto.randomUUID()}.jpg`;
       const { error } = await sb.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg' });
       if (error) throw error;
-      const caption = files.length === 1 ? (prompt('Add a caption? 💕') || '').slice(0, 300) : '';
+      const caption = files.length === 1 ? ((await uiPrompt('Add a caption? 💕')) || '').slice(0, 300) : '';
       const { error: e2 } = await sb.from('photos').insert({ path, caption });
       if (e2) throw e2;
     } catch (err) { toast('Upload failed: ' + errMsg(err)); }
@@ -426,7 +444,7 @@ RENDER.coupons = () => {
 };
 $('#cpMine').onclick = async (e) => {
   const id = e.target.dataset.redeem; if (!id) return;
-  if (!confirm('Redeem this coupon now? 🎉')) return;
+  if (!await uiConfirm('Redeem this coupon now? 🎉')) return;
   const { error } = await sb.from('coupons').update({ redeemed_at: new Date().toISOString() }).eq('id', id);
   if (error) toast(errMsg(error)); else { toast('Redeemed! Go collect 😘'); floatHearts(document.body, 10); }
 };
@@ -492,7 +510,7 @@ $('#pfSave').onclick = async () => {
   S.me = data; renderMe(); toast('Saved ✨');
 };
 $('#disconnectBtn').onclick = async () => {
-  if (!confirm(`Disconnect from ${S.partner.display_name}? Your shared space will be hidden.`)) return;
+  if (!await uiConfirm(`Disconnect from ${S.partner.display_name}? Your shared space will be hidden.`)) return;
   const { error } = await sb.rpc('disconnect');
   if (error) return toast(errMsg(error));
   boot();

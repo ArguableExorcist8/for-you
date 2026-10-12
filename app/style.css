@@ -61,3 +61,10 @@ details{margin-top:10px;text-align:left}summary{cursor:pointer;font-weight:bold;
 .modal img{max-width:100%;border-radius:10px}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:#8b2252;color:#fff;padding:12px 18px;border-radius:20px;opacity:0;transition:.3s;z-index:90;max-width:90%;pointer-events:none}#toast.show{opacity:1}
 [hidden],input[type=file]{display:none!important}
+
+.uiDlg{position:fixed;inset:0;background:rgba(139,34,82,.35);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;animation:uiF .2s}
+.uiBox{background:#fff;border-radius:26px;padding:22px 20px 18px;width:min(88vw,340px);text-align:center;box-shadow:0 12px 40px rgba(231,84,128,.35);animation:uiP .25s cubic-bezier(.2,1.4,.4,1)}
+.uiHeart{font-size:34px}.uiBox p{color:#8b2252;font-size:17px;margin:8px 0 14px;line-height:1.4}
+.uiBtns{display:flex;gap:10px}.uiBtns button{flex:1;padding:11px;border-radius:30px;border:none;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit}
+.uiNo{background:#ffe4ec;color:#8b2252}.uiYes{background:#e75480;color:#fff}
+@keyframes uiF{from{opacity:0}}@keyframes uiP{from{transform:scale(.8);opacity:0}}
