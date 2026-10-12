@@ -686,21 +686,28 @@ RENDER.game_scores = () => { renderBoard('catch'); renderBoard('balloons'); rend
 let catchRun = false, catchTimers = [];
 function stopCatch() { catchTimers.forEach(clearInterval); catchTimers = []; catchRun = false; const g = $('#gArea'); if (g) g.innerHTML = ''; }
 $('#gStart').onclick = () => {
-  if (catchRun) return; catchRun = true; let score = 0, t = 0; const g = $('#gArea'); g.innerHTML = ''; $('#gScore').innerHTML = '<b>Score: 0</b>';
+  if (catchRun) return; catchRun = true; let score = 0, t = 0, combo = 0; const g = $('#gArea'); const prevBest = S.partner ? Math.max(bestOf('catch', S.user.id) ?? -Infinity, bestOf('catch', S.partner.id) ?? -Infinity) : -Infinity; g.innerHTML = ''; $('#gScore').innerHTML = '<b>Score: 0</b>';
   const iv = setInterval(() => {
     const it = document.createElement('div'); const bad = Math.random() < .25;
     it.className = 'fall'; it.textContent = bad ? '🧅' : ['❤️', '💖', '💘'][t % 3];
     it.style.left = Math.random() * (g.clientWidth - 36) + 'px'; it.style.top = '-36px'; g.appendChild(it);
     let y = -36; const speed = 3 + t / 12;
-    const mv = setInterval(() => { y += speed; it.style.top = y + 'px'; if (y > g.clientHeight) { clearInterval(mv); it.remove(); } }, 16); catchTimers.push(mv);
-    it.addEventListener('pointerdown', (ev) => { ev.preventDefault(); clearInterval(mv); it.remove(); score += bad ? -3 : 1; $('#gScore').innerHTML = '<b>Score: ' + score + '</b>'; if (bad) { toast('Ew onion breath 🤢 −3'); snd('bad'); } else snd('pop'); });
+    let tr = 0;
+    const mv = setInterval(() => { y += speed; it.style.top = y + 'px';
+      if (!bad && ++tr % 6 === 0 && window.FX && FX.heavy() && g.childElementCount < 60) { const s2 = document.createElement('div'); s2.className = 'trail'; s2.textContent = '✨'; s2.style.left = (parseFloat(it.style.left) + 10) + 'px'; s2.style.top = (y - 6) + 'px'; g.appendChild(s2); setTimeout(() => s2.remove(), 520); }
+      if (y > g.clientHeight) { clearInterval(mv); it.remove(); if (!bad && catchRun) { combo = 0; g.classList.remove('combo', 'combo2'); window.FX && FX.shake(g, 300); } } }, 16); catchTimers.push(mv);
+    it.addEventListener('pointerdown', (ev) => { ev.preventDefault(); clearInterval(mv); it.remove(); score += bad ? -3 : 1; $('#gScore').innerHTML = '<b>Score: ' + score + '</b>'; if (window.FX) FX.pop($('#gScore b'));
+      if (bad) { combo = 0; g.classList.remove('combo', 'combo2'); toast('Ew onion breath 🤢 −3'); snd('bad'); if (window.FX) { FX.floatText(ev.clientX, ev.clientY, '−3', '#c0264f'); FX.shake(g); FX.burst(ev.clientX, ev.clientY, ['💨', '🤢'], 6, 40); } }
+      else { combo++; snd('pop'); g.classList.toggle('combo', combo >= 5 && combo < 10); g.classList.toggle('combo2', combo >= 10);
+        if (window.FX) { FX.floatText(ev.clientX, ev.clientY, combo >= 5 ? `+1 ×${combo} 🔥` : '+1'); FX.burst(ev.clientX, ev.clientY, ['✨', '💖', '💗'], combo >= 5 ? 10 : 6, 45); } } });
     if (++t > 30) {
       clearInterval(iv);
       setTimeout(() => {
         if (!catchRun) return; catchRun = false;
         const best = S.partner ? bestOf('catch', S.partner.id) : null;
         $('#gScore').innerHTML = `<b>Final: ${score}</b> ${best != null ? (score > best ? `— you beat ${pn()}'s ${best}! 😎` : `— ${pn()}'s best is ${best}`) : ''}`;
-        hearts(15); snd('win'); saveScore('catch', score);
+        hearts(15); snd('win'); saveScore('catch', score); g.classList.remove('combo', 'combo2');
+        if (score > prevBest && score > 0 && window.FX) { FX.confetti(100); FX.fireworks(4); toast('🏆 New couple record! ' + score); }
       }, 2200);
     }
   }, 500);
@@ -716,11 +723,13 @@ $('#balStart').onclick = () => {
   const spawn = () => {
     if (s.querySelectorAll('.bal').length > 8) s.querySelector('.bal').remove();
     const b = document.createElement('div'); b.className = 'bal'; const gold = Math.random() < .12;
-    b.textContent = gold ? '💗' : '🎈'; b.style.left = (3 + Math.random() * 82) + '%'; b.style.top = (5 + Math.random() * 70) + '%';
+    b.classList.add('spawn'); b.textContent = gold ? '💗' : '🎈'; b.style.left = (3 + Math.random() * 82) + '%'; b.style.top = (5 + Math.random() * 70) + '%';
     b.onpointerdown = (e) => {
       e.preventDefault(); if (!balRun) return; score += gold ? 3 : 1; upd();
       const m = document.createElement('div'); m.className = 'balmsg'; m.style.left = b.style.left; m.style.top = b.style.top; m.textContent = gold ? '+3 ' + rnd(D.balMsgs) : rnd(D.balMsgs);
       b.remove(); s.appendChild(m); setTimeout(() => m.remove(), 1700); snd('pop');
+      if (window.FX) { const rp = document.createElement('div'); rp.className = 'ripple'; const rr = s.getBoundingClientRect(); rp.style.left = (e.clientX - rr.left) + 'px'; rp.style.top = (e.clientY - rr.top) + 'px'; s.appendChild(rp); setTimeout(() => rp.remove(), 520);
+        FX.burst(e.clientX, e.clientY, gold ? ['💗', '✨', '💖', '🌟'] : ['🎈', '✨', '💥', '🟥'], gold ? 12 : 8, 55); FX.floatText(e.clientX, e.clientY, gold ? '+3 💗' : '+1'); }
     };
     s.appendChild(b); setTimeout(() => b.remove(), 2600);
   };
@@ -729,7 +738,9 @@ $('#balStart').onclick = () => {
     left--; upd();
     if (left <= 0) {
       const sc = score; stopBalloons();
-      $('#balScore').innerHTML = `<b>Time! ${sc} popped 🎉</b>`; confetti(40); snd('win'); saveScore('balloons', sc);
+      const pb = S.partner ? Math.max(bestOf('balloons', S.user.id) ?? -Infinity, bestOf('balloons', S.partner.id) ?? -Infinity) : -Infinity;
+      $('#balScore').innerHTML = `<b>Time! <span id="balFinal">0</span> popped 🎉</b>`; window.FX ? FX.countUp($('#balFinal'), sc, 900) : ($('#balFinal').textContent = sc); confetti(40); snd('win'); saveScore('balloons', sc);
+      if (sc > pb && sc > 0 && window.FX) { FX.fireworks(5); toast('🏆 New couple record! ' + sc); }
     }
   }, 1000));
 };
@@ -738,11 +749,12 @@ $('#balStart').onclick = () => {
 let meter = 0, meterTimer = null;
 const meterLines = [[20, 'Warming up… 😊'], [50, 'Getting toasty 🔥'], [80, 'Dangerously in love 😍'], [100, 'OFF THE CHARTS 💯💗']];
 $('#meterBtn').onclick = (e) => {
-  meter = Math.min(100, meter + 7); $('#bar').style.width = meter + '%'; snd('tick'); hearts(1, e.clientX, e.clientY);
+  meter = Math.min(100, meter + 7); $('#bar').style.width = meter + '%'; snd('tick'); hearts(1, e.clientX, e.clientY); $('#bar').classList.add('beat');
+  if (window.FX) { FX.floatText(e.clientX, e.clientY - 10, '+' + 7 + '%'); if (meter >= 100) FX.fireworks(3); }
   $('#meterTxt').textContent = (meterLines.find(([v]) => meter <= v) || meterLines[3])[1];
   if (meter >= 100) { hearts(12); snd('win'); }
   clearInterval(meterTimer);
-  meterTimer = setInterval(() => { meter = Math.max(0, meter - 2); $('#bar').style.width = meter + '%'; if (!meter) clearInterval(meterTimer); }, 200);
+  meterTimer = setInterval(() => { meter = Math.max(0, meter - 2); $('#bar').style.width = meter + '%'; if (!meter) { clearInterval(meterTimer); $('#bar').classList.remove('beat'); } }, 200);
 };
 
 // ---- memory match (scores = fewest moves) ----
@@ -760,7 +772,8 @@ $('#mem').onclick = (e) => {
   memMoves++; const [a, b] = memOpen; memOpen = [];
   if (a.dataset.ic === b.dataset.ic) {
     a.classList.replace('open', 'done'); b.classList.replace('open', 'done'); snd('ding');
-    if (!$$('#mem .mc:not(.done)').length) { $('#memTxt').textContent = `You won in ${memMoves} moves! Prize: one kiss 💋`; hearts(12); confetti(50); snd('win'); saveScore('memory', memMoves); }
+    setTimeout(() => { a.classList.add('matched'); b.classList.add('matched'); if (window.FX) { FX.burstAt(a, ['✨', '💖'], 8, 40); FX.burstAt(b, ['✨', '💖'], 8, 40); } }, 320);
+    if (!$$('#mem .mc:not(.done)').length) { $('#memTxt').textContent = `You won in ${memMoves} moves! Prize: one kiss 💋`; hearts(12); confetti(50); snd('win'); saveScore('memory', memMoves); window.FX && FX.fireworks(6); }
   } else { memLock = true; setTimeout(() => { a.classList.remove('open'); b.classList.remove('open'); memLock = false; }, 800); }
 };
 $('#memReset').onclick = memReset; memReset();
@@ -781,7 +794,9 @@ const pokeOf = (uid) => Number((S.data.poke_counts || []).find((p) => p.created_
 function renderPokes() {
   if (!S.partner) return;
   const a = pokeOf(S.user.id) + pokePending, b = pokeOf(S.partner.id);
-  $('#pokeVs').innerHTML = vsHtml(a, b) + `<p class="muted">Together: <b>${a + b}</b> pokes 🐻</p>`;
+  $('#pokeVs').innerHTML = vsHtml(a, b) + `<p class="muted">Together: <b id="pokeTot">${renderPokes.last ?? a + b}</b> pokes 🐻</p>`;
+  if (window.FX) { FX.countUp($('#pokeTot'), a + b, 500); if (renderPokes.lastB != null && b > renderPokes.lastB) FX.pop($$('#pokeVs .vs b')[1]); if (renderPokes.lastA != null && a > renderPokes.lastA) FX.pop($$('#pokeVs .vs b')[0]); }
+  renderPokes.last = a + b; renderPokes.lastA = a; renderPokes.lastB = b;
   setBadge('bear', (a + b) + ' pokes');
 }
 RENDER.poke_counts = renderPokes;
@@ -796,6 +811,7 @@ async function flushPokes() {
 }
 $('#bearEl').onclick = (e) => {
   $('#bearTxt').textContent = D.bearLines[bearI++ % D.bearLines.length]; hearts(4, e.clientX, e.clientY); snd('boing');
+  if (window.FX) { FX.cls($('#bearEl'), 'squish', 450); FX.burst(e.clientX, e.clientY, ['💗', '💕', '🐻'], 7, 60); FX.floatText(e.clientX, e.clientY - 20, '+1 poke'); }
   pokePending++; renderPokes(); if (!pokeTimer) pokeTimer = setTimeout(flushPokes, 700);
 };
 
@@ -806,6 +822,7 @@ $('#cookie').onclick = (e) => {
   if (fromP.length && Math.random() < .75) { const f = rnd(fromP); txt = `${f.message}  — ${partnerName()} 💌`; }
   else txt = rnd(D.fortunes);
   $('#fortune').textContent = txt; hearts(4, e.clientX, e.clientY); snd('pop');
+  if (window.FX) { FX.cls($('#cookie'), 'crack', 600); FX.cls($('#fortune'), 'paper', 600); FX.burstAt($('#cookie'), ['🥠', '✨', '⭐'], 8, 50); }
 };
 $('#ftAdd').onclick = async () => {
   const message = $('#ftTxt').value.trim(); if (!message) return;
@@ -822,15 +839,17 @@ RENDER.fortunes = () => {
 const ideas = () => { const l = (S.data.date_ideas || []).map((i) => i.idea); return l.length ? l : D.dates; };
 let spinning = false;
 $('#spinBtn').onclick = () => {
-  if (spinning) return; spinning = true; const pool = ideas(); let n = 0;
-  const iv = setInterval(async () => {
-    $('#wheelOut').textContent = rnd(pool); snd('tick');
-    if (++n > 18) {
-      clearInterval(iv); spinning = false; hearts(8); snd('ding');
+  if (spinning) return; spinning = true; const pool = ideas(); let n = 0; const total = 22 + Math.floor(Math.random() * 6); const out = $('#wheelOut'); out.classList.remove('win');
+  const tick = async () => {
+    out.textContent = rnd(pool); snd('tick'); window.FX && FX.cls(out, 'spin', 100);
+    if (++n <= total) { setTimeout(tick, 50 + Math.pow(n / total, 3) * 380); return; }
+    {
+      spinning = false; hearts(8); snd('ding'); if (window.FX) { FX.cls(out, 'win', 1300); FX.burstAt(out, ['🎉', '💖', '✨', '🎡'], 14, 90); }
       const { error } = await sb.from('date_spins').insert({ idea: $('#wheelOut').textContent.slice(0, 150) });
       if (error) toast(errMsg(error)); else toast(`Saved! ${partnerName()} will see it too 🎡`);
     }
-  }, 80 + n * 4);
+  };
+  tick();
 };
 $('#ideaAdd').onclick = async () => {
   const idea = $('#ideaTxt').value.trim(); if (!idea) return;
@@ -874,11 +893,11 @@ RENDER.big_questions = renderBQ;
 function bqRun(e) {
   e.preventDefault(); const no = $('#bqNo'), qa = $('#qa'); bqNo++;
   no.style.left = Math.random() * (qa.clientWidth - 90) + 'px'; no.style.top = Math.random() * 85 + 'px';
-  no.textContent = noTxt[bqNo % noTxt.length]; $('#bqYes').style.transform = 'scale(' + Math.min(1 + bqNo * .12, 2.2) + ')'; snd('boing');
+  no.textContent = noTxt[bqNo % noTxt.length]; window.FX && FX.cls(no, 'squash', 350); $('#bqYes').style.transform = 'scale(' + Math.min(1 + bqNo * .12, 2.2) + ')'; snd('boing');
 }
 $('#bqNo').addEventListener('pointerdown', bqRun); $('#bqNo').addEventListener('mouseenter', bqRun);
 $('#bqYes').onclick = async () => {
-  $('#bqNo').style.display = 'none'; hearts(40); confetti(60); snd('win');
+  $('#bqNo').style.display = 'none'; hearts(40); confetti(60); snd('win'); if (window.FX) { FX.burstAt($('#bqYes'), ['💖', '💍', '💕', '✨', '😍'], 24, 140); FX.fireworks(4); }
   if (bqCur) {
     const { error } = await sb.from('big_questions').update({ answered_at: new Date().toISOString(), no_attempts: bqNo }).eq('id', bqCur.id);
     $('#bqRes').textContent = error ? errMsg(error) : `Correct answer! ${partnerName()} will see your YES 💖`;
@@ -897,7 +916,7 @@ function scrReset() {
   const r = scr.getBoundingClientRect(); scr.width = r.width || 300; scr.height = r.height || 140; scrDone = false; scr.style.transition = ''; scr.style.opacity = 1;
   const gr = sx.createLinearGradient(0, 0, scr.width, scr.height); gr.addColorStop(0, '#c0c0c0'); gr.addColorStop(.5, '#eee'); gr.addColorStop(1, '#b0b0b0');
   sx.globalCompositeOperation = 'source-over'; sx.fillStyle = gr; sx.fillRect(0, 0, scr.width, scr.height);
-  sx.fillStyle = '#8b2252'; sx.font = 'bold 20px Trebuchet MS'; sx.textAlign = 'center'; sx.fillText('✨ Scratch here ✨', scr.width / 2, scr.height / 2 + 7);
+  scr.parentElement.classList.remove('revealed'); sx.fillStyle = '#8b2252'; sx.font = 'bold 20px Trebuchet MS'; sx.textAlign = 'center'; sx.fillText('✨ Scratch here ✨', scr.width / 2, scr.height / 2 + 7);
   const pending = (S.data.scratch_cards || []).filter((c) => c.to_user === S.user.id && !c.scratched_at).sort((a, b) => a.created_at.localeCompare(b.created_at));
   scrCard = pending[0] || null;
   $('#scrTxt').textContent = scrCard ? scrCard.prize : rnd(D.prizes);
@@ -909,6 +928,7 @@ async function scrCheck() {
   for (let i = 3; i < d.length; i += 64) { tot++; if (d[i] === 0) c++; }
   if (c / tot > .5) {
     scrDone = true; scr.style.transition = 'opacity .6s'; scr.style.opacity = 0; hearts(12); snd('win');
+    scr.parentElement.classList.add('revealed'); if (window.FX) { FX.burstAt(scr, ['✨', '🌟', '💖', '🎁'], 16, 100); FX.confetti(30); }
     if (scrCard) { const id = scrCard.id; scrCard = null; const { error } = await sb.from('scratch_cards').update({ scratched_at: new Date().toISOString() }).eq('id', id); if (error) toast(errMsg(error)); else toast(`${partnerName()} will know you scratched it 😘`); }
   }
 }
@@ -1027,7 +1047,7 @@ $('#drawColors').onclick = (e) => { const c = e.target.dataset.dc; if (!c) retur
 function drawSize() { const r = dc.getBoundingClientRect(); if (!r.width) return; let img = null; try { if (dc.width && dc.height) img = dx.getImageData(0, 0, dc.width, dc.height); } catch (e) { /* */ } dc.width = r.width; dc.height = r.height; if (img) dx.putImageData(img, 0, 0); }
 function dPos(e) { const r = dc.getBoundingClientRect(); return [(e.clientX - r.left) * dc.width / r.width, (e.clientY - r.top) * dc.height / r.height]; }
 dc.addEventListener('pointerdown', (e) => { dDown = true; dc.setPointerCapture && dc.setPointerCapture(e.pointerId); dLast = dPos(e); });
-dc.addEventListener('pointermove', (e) => { if (!dDown) return; const p = dPos(e); dx.strokeStyle = dColor === 'rainbow' ? 'hsl(' + (330 + Math.sin(dCount / 20) * 30) + ',80%,55%)' : dColor; dx.lineWidth = 6; dx.lineCap = 'round'; dx.beginPath(); dx.moveTo(dLast[0], dLast[1]); dx.lineTo(p[0], p[1]); dx.stroke(); dLast = p; dCount++; });
+dc.addEventListener('pointermove', (e) => { if (!dDown) return; const p = dPos(e); dx.strokeStyle = dColor === 'rainbow' ? 'hsl(' + (330 + Math.sin(dCount / 20) * 30) + ',80%,55%)' : dColor; dx.lineWidth = 6; dx.lineCap = 'round'; dx.beginPath(); dx.moveTo(dLast[0], dLast[1]); dx.lineTo(p[0], p[1]); dx.stroke(); dLast = p; dCount++; if (dCount % 9 === 0 && window.FX) FX.burst(e.clientX, e.clientY, ['✨', '💫'], 2, 18); });
 ['pointerup', 'pointercancel'].forEach((t) => dc.addEventListener(t, () => dDown = false));
 let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(drawSize, 200); });
 $('#drawClear').onclick = () => { dx.clearRect(0, 0, dc.width, dc.height); dCount = 0; $('#drawTxt').textContent = ''; };
@@ -1064,7 +1084,7 @@ $('#calcBtn').onclick = () => {
   const target = us ? 100 + hashStr(S.couple.id) % 900 : 50 + hashStr([a, b].sort().join('|')) % 51;
   let p = 0; const iv = setInterval(() => {
     p += Math.ceil((target - p) / 8) || 1; t.textContent = 'Calculating… ' + p + '%'; snd('tick');
-    if (p >= target) { clearInterval(iv); t.textContent = target + '% compatible! ' + (us ? rnd(['The machine is crying 🥹', 'Soulmates confirmed 💞', 'Off the charts. Literally.']) : 'Not bad… but not you two 😏'); hearts(15); snd('win'); }
+    if (p >= target) { clearInterval(iv); t.textContent = target + '% compatible! ' + (us ? rnd(['The machine is crying 🥹', 'Soulmates confirmed 💞', 'Off the charts. Literally.']) : 'Not bad… but not you two 😏'); hearts(15); snd('win'); if (window.FX) { FX.cls(t, 'calcglow', 1300); FX.burstAt(t, ['💞', '💖', '✨', '🔮'], 14, 90); } }
   }, 60);
 };
 
@@ -1176,7 +1196,7 @@ $('#dqBox').onclick = async (e) => {
   if (e.target.id === 'dqSave') {
     const answer = $('#dqAns').value.trim(); if (!answer) return;
     const { error } = await sb.from('daily_answers').insert({ day: t, qidx: dqIndex(t), answer });
-    if (error) return toast(errMsg(error)); hearts(8); snd('ding'); notify('daily', 'answered today\'s question ❓');
+    if (error) return toast(errMsg(error)); hearts(8); snd('ding'); window.FX && FX.burstAt($('#dqText'), ['💬', '💖', '✨'], 12, 90); notify('daily', 'answered today\'s question ❓');
     await loadTable('daily_answers'); refreshProgress();
   } else if (e.target.id === 'dqEdit') {
     const me = (S.data.daily_answers || []).find((a) => mine(a) && a.day === t);
@@ -1197,7 +1217,7 @@ $('#sigPick').onclick = (e) => { const s = e.target.dataset.s; if (!s) return; s
 async function saveMood(mood, note, signal) {
   const { error } = await sb.from('moods').insert({ mood, note: note || null, signal: signal || null, day: dayStr() });
   if (error) { toast(errMsg(error)); return false; }
-  toast('Checked in 💗'); snd('ding');
+  toast('Checked in 💗'); snd('ding'); window.FX && FX.burstAt($('#homeMood') && !$('#tab-home').classList.contains('hidden') ? $('#homeMood') : $('#moodSave'), [mood, '💗', '✨'], 12, 80);
   if (signal) notify('mood', D.signals[signal]); else notify('mood', `is feeling ${mood}`);
   await loadTable('moods'); refreshProgress(); return true;
 }
@@ -1231,7 +1251,7 @@ $('#gratAdd').onclick = async () => {
 RENDER.gratitude = () => {
   const l = S.data.gratitude || [], wk = isoWeek();
   const sel = gratView === 'week' ? l.filter((g) => isoWeek(new Date(g.created_at)) === wk) : l;
-  $('#jar').innerHTML = l.slice(0, 60).map((g) => mine(g) ? '💗' : '💜').join('');
+  $('#jar').innerHTML = l.slice(0, 60).reverse().map((g, i) => `<span style="--i:${i}">${mine(g) ? '💗' : '💜'}</span>`).join('');
   $('#gratList').innerHTML = (gratView === 'week' ? `<p class="muted">This week: ${sel.filter(mine).length} from you, ${sel.filter((g) => !mine(g)).length} from ${pn()}</p>` : '') +
     (sel.length ? sel.map((g) => `<div class="row"><span>${mine(g) ? '💗 You → ' + pn() : '💜 ' + pn() + ' → you'}: ${esc(g.body)}</span>${mine(g) ? `<button class="mini soft" data-del="gratitude:${g.id}">✕</button>` : `<small>${fmtDate(g.created_at)}</small>`}</div>`).join('') : '<p class="muted">The jar is waiting for some love 🫙</p>');
   setFB('grat', l.length + ' in jar'); renderStreak();
@@ -1784,7 +1804,7 @@ $('#trBox').onclick = async (e) => {
   setTimeout(async () => {
     trState.busy = false; trState.i++;
     if (trState.i >= 10) { const picks = trState.picks; trState = null; const score = picks.filter((p) => p === 0).length;
-      const { error } = await sb.from('trivia_results').insert({ day: dayStr(), score, picks }); if (error) toast(errMsg(error)); else { confetti(50); snd('win'); notify('generic', `scored ${score}/10 in tonight's trivia 🧠 your turn!`); }
+      const { error } = await sb.from('trivia_results').insert({ day: dayStr(), score, picks }); if (error) toast(errMsg(error)); else { confetti(50); snd('win'); window.FX && FX.fireworks(score >= 7 ? 5 : 2); notify('generic', `scored ${score}/10 in tonight's trivia 🧠 your turn!`); }
       await loadTable('trivia_results'); } else renderTrivia();
   }, 900);
 };
