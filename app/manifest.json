@@ -1,0 +1,13 @@
+{
+  "name": "Couple Connect 💕",
+  "short_name": "Us 💕",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffe9f0",
+  "theme_color": "#e75480",
+  "icons": [
+    { "src": "icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

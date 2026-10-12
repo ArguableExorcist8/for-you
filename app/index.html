@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Couple Connect 💕</title>
+<meta name="theme-color" content="#e75480">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Us 💕">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- AUTH -->
+  <section id="authView" class="view hidden">
+    <div class="hero"><div class="big">💕</div><h1>Couple Connect</h1><p>A tiny world just for the two of you</p></div>
+    <div class="card">
+      <div class="seg"><button id="tabSignIn" class="on">Sign in</button><button id="tabSignUp">Sign up</button></div>
+      <form id="authForm">
+        <div id="signUpFields" class="hidden">
+          <input id="suName" placeholder="Your name (e.g. Honey)" maxlength="40">
+          <input id="suUser" placeholder="username (a-z, 0-9, _)" maxlength="24" autocapitalize="none" autocorrect="off">
+          <input id="suEmoji" placeholder="Your emoji 🐻" maxlength="4" value="🐻">
+        </div>
+        <input id="email" type="email" placeholder="Email" autocomplete="email" required>
+        <input id="password" type="password" placeholder="Password (6+ chars)" autocomplete="current-password" minlength="6" required>
+        <button type="submit" id="authBtn">Sign in 💌</button>
+      </form>
+      <p id="authMsg" class="muted"></p>
+    </div>
+  </section>
+
+  <!-- PAIRING -->
+  <section id="pairView" class="view hidden">
+    <div class="hero"><div class="big" id="pairEmoji">🐻</div><h1>Hi <span id="pairName"></span>!</h1><p>Let's find your person 💞</p></div>
+    <div class="card">
+      <h2>Your invite code</h2>
+      <div class="code" id="myCode">------</div>
+      <p class="muted">Share this code (or your username <b id="myUser"></b>) with your partner.</p>
+      <button id="copyCode" class="soft">Copy code</button>
+    </div>
+    <div class="card">
+      <h2>Find your partner</h2>
+      <input id="findQ" placeholder="Invite code or exact username" autocapitalize="none" autocorrect="off">
+      <button id="findBtn">Search 🔍</button>
+      <div id="findResult"></div>
+    </div>
+    <div class="card"><h2>Requests 💌</h2><div id="reqList" class="muted">No requests yet</div></div>
+    <button class="soft" data-action="signout">Sign out</button>
+  </section>
+
+  <!-- MAIN -->
+  <section id="mainView" class="view hidden">
+    <header class="top"><span id="coupleTitle">💕</span></header>
+
+    <div class="tab" id="tab-home">
+      <div class="card ping-card">
+        <h2>Thinking of you</h2>
+        <button id="pingBtn" class="ping">💗<small>Send a ping</small></button>
+        <p class="muted" id="pingHint"></p>
+      </div>
+      <div class="card"><h2>🌞 Daily surprise</h2><div id="daily" class="daily"></div>
+        <button class="soft" id="dailyMore">Another one</button>
+        <details><summary>Add your own surprise</summary>
+          <textarea id="surpriseTxt" maxlength="500" placeholder="A sweet message for the pool"></textarea>
+          <button id="surpriseAdd">Add 💝</button><div id="surpriseList"></div></details>
+      </div>
+      <div class="card"><h2>⏳ Countdown</h2><div id="cdList"></div>
+        <details><summary>Add countdown</summary>
+          <input id="cdLabel" placeholder="Our wedding 💍" maxlength="120">
+          <input id="cdDate" type="datetime-local"><button id="cdAdd">Add</button></details>
+      </div>
+      <div class="card"><h2>💓 Ping history</h2><div id="pingList" class="list"></div></div>
+    </div>
+
+    <div class="tab hidden" id="tab-notes">
+      <div class="card"><h2>💌 Love notes</h2>
+        <textarea id="noteTxt" maxlength="1000" placeholder="Write something sweet..."></textarea>
+        <div class="colors" id="noteColors"></div>
+        <button id="noteAdd">Post note</button></div>
+      <div id="noteWall" class="wall"></div>
+    </div>
+
+    <div class="tab hidden" id="tab-memories">
+      <div class="card"><h2>📸 Our photos</h2>
+        <label class="btn">Add photo<input type="file" id="photoIn" accept="image/*" multiple hidden></label>
+        <p class="muted" id="photoStatus"></p>
+        <div id="gallery" class="gallery"></div></div>
+      <div class="card"><h2>📖 Our story</h2>
+        <details><summary>Add a moment</summary>
+          <input id="tlDate" type="date"><input id="tlTitle" placeholder="Title" maxlength="120">
+          <textarea id="tlBody" maxlength="2000" placeholder="What happened?"></textarea>
+          <button id="tlAdd">Add moment</button></details>
+        <div id="timeline" class="timeline"></div></div>
+    </div>
+
+    <div class="tab hidden" id="tab-gifts">
+      <div class="card"><h2>🎟️ Coupons for <span class="pname"></span></h2>
+        <input id="cpTitle" placeholder="One free back massage" maxlength="120">
+        <input id="cpDesc" placeholder="Fine print (optional)" maxlength="500">
+        <input id="cpEmoji" placeholder="🎟️" maxlength="4" class="short">
+        <button id="cpAdd">Give coupon</button></div>
+      <div class="card"><h2>🎁 Coupons for you</h2><div id="cpMine"></div></div>
+      <div class="card"><h2>📤 Coupons you gave</h2><div id="cpGiven"></div></div>
+      <div class="card"><h2>🔐 Secret letter from <span class="pname"></span></h2><div id="letterIn"></div></div>
+      <div class="card"><h2>✍️ Your secret letter for <span class="pname"></span></h2>
+        <textarea id="letterTxt" class="letter" placeholder="My dearest..."></textarea>
+        <input id="letterPw" type="password" placeholder="Password to unlock" autocomplete="new-password">
+        <input id="letterHint" placeholder="Hint (optional)" maxlength="120">
+        <button id="letterSave">Seal letter 💌</button>
+        <p class="muted" id="letterStatus">Encrypted on your phone. Only someone with the password can read it.</p></div>
+    </div>
+
+    <div class="tab hidden" id="tab-play">
+      <div class="card"><h2>💯 Love-o-meter</h2><p class="muted">Tap as fast as you can!</p>
+        <div class="meter"><div id="bar"></div></div><button id="meterBtn">Tap 💗</button><p id="meterTxt"></p></div>
+      <div class="card"><h2>🧠 Memory match</h2><div id="mem" class="mem"></div>
+        <p id="memTxt" class="muted"></p><button class="soft" id="memReset">New game</button></div>
+      <div class="card"><h2>💖 Reasons I love you</h2><div id="reason" class="daily">Tap for a reason</div>
+        <button id="reasonBtn">Another reason</button></div>
+      <div class="card"><h2>🤗 Virtual hug</h2><p class="muted">Emergency hug delivery, 24/7</p><button id="hugBtn">Hug me</button></div>
+    </div>
+
+    <div class="tab hidden" id="tab-me">
+      <div class="card"><h2>Your profile</h2>
+        <input id="pfName" maxlength="40" placeholder="Display name">
+        <input id="pfUser" maxlength="24" placeholder="username" autocapitalize="none">
+        <input id="pfEmoji" maxlength="4" class="short">
+        <button id="pfSave">Save</button>
+        <p class="muted">Invite code: <b id="pfCode"></b></p></div>
+      <div class="card"><h2>Your partner</h2><div id="partnerBox"></div>
+        <button class="danger" id="disconnectBtn">Disconnect 💔</button></div>
+      <div class="card"><h2>iPhone shortcut</h2><p class="muted">Open this link from a Shortcut to send a ping instantly:</p>
+        <div class="code small" id="shortcutUrl"></div></div>
+      <button class="soft" data-action="signout">Sign out</button>
+    </div>
+
+    <nav class="nav">
+      <button data-tab="home" class="on">🏠<span>Home</span></button>
+      <button data-tab="notes">💌<span>Notes</span></button>
+      <button data-tab="memories">📸<span>Us</span></button>
+      <button data-tab="gifts">🎁<span>Gifts</span></button>
+      <button data-tab="play">🎮<span>Play</span></button>
+      <button data-tab="me">⚙️<span>Me</span></button>
+    </nav>
+  </section>
+
+  <section id="loadingView" class="view"><div class="hero"><div class="big beat">💗</div><p>Loading love...</p></div></section>
+</div>
+
+<div id="heartOverlay" class="overlay hidden"><div class="bigheart">💗</div><h2 id="heartTxt"></h2><p>(tap to close)</p></div>
+<div id="hugOverlay" class="overlay hidden"><div class="bigheart">🤗</div><h2>Squeeeeeze</h2><p>(tap to let go... if you must)</p></div>
+<div id="modal" class="modal hidden"><div class="card" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
