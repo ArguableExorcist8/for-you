@@ -60,3 +60,4 @@ details{margin-top:10px;text-align:left}summary{cursor:pointer;font-weight:bold;
 .modal{position:fixed;inset:0;background:rgba(139,34,82,.45);display:flex;align-items:center;justify-content:center;z-index:70;padding:20px}.modal .card{width:100%;max-width:420px;max-height:85vh;overflow:auto}
 .modal img{max-width:100%;border-radius:10px}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:#8b2252;color:#fff;padding:12px 18px;border-radius:20px;opacity:0;transition:.3s;z-index:90;max-width:90%;pointer-events:none}#toast.show{opacity:1}
+[hidden],input[type=file]{display:none!important}
