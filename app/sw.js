@@ -1,0 +1,18 @@
+// For Us service worker — push notifications only (no offline caching, so updates are never stale)
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener('push', (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'For Us 💕', {
+    body: d.body || 'Someone sent you love 💗', icon: 'icon.png', badge: 'icon.png', tag: d.tag || 'forus', renotify: true,
+    data: { url: new URL(d.url || './', self.registration.scope).href }
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+    for (const c of cs) if (c.url.startsWith(self.registration.scope) && 'focus' in c) return c.focus();
+    return self.clients.openWindow(url);
+  }));
+});

@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div id="app">
@@ -58,9 +58,18 @@
 
   <!-- MAIN -->
   <section id="mainView" class="view hidden">
-    <header class="top"><span id="coupleTitle">💕</span></header>
+    <header class="top"><span id="coupleTitle">💕</span><button class="gear" id="gearBtn" aria-label="Settings">⚙️</button></header>
 
     <div class="tab" id="tab-home">
+      <div class="card today"><h2>🌈 Today</h2>
+        <div id="homeStreak"></div>
+        <div class="todayq" id="homeDQ"></div>
+        <div id="homeMood"></div>
+        <div class="emojis small" id="homeMoodPick"></div>
+      </div>
+      <div id="homeBanner"></div>
+      <div class="card"><h2>🌍 Us right now</h2><div id="homeDist"></div></div>
+      <div class="card"><h2>📅 Coming up</h2><div id="homeUpcoming"></div></div>
       <div class="card ping-card">
         <h2>Thinking of you</h2>
         <button id="pingBtn" class="ping">💗<small>Send a ping</small></button>
@@ -233,6 +242,161 @@
       </div>
     </div>
 
+    <div class="tab hidden" id="tab-us">
+      <div id="usHome">
+        <div class="card"><h2>💞 Us</h2><div id="usStreak"></div></div>
+        <h3 class="gsec">📅 Every day</h3>
+        <div class="ggrid">
+          <button class="gtile" data-feat="dq"><b>❓</b>Daily question<small id="fb-dq"></small></button>
+          <button class="gtile" data-feat="mood"><b>🌤️</b>Mood check-in<small id="fb-mood"></small></button>
+          <button class="gtile" data-feat="grat"><b>🫙</b>Gratitude jar<small id="fb-grat"></small></button>
+          <button class="gtile" data-feat="journal"><b>📔</b>Our journal<small id="fb-journal"></small></button>
+        </div>
+        <h3 class="gsec">🗓️ Every week</h3>
+        <div class="ggrid">
+          <button class="gtile" data-feat="weekly"><b>🤝</b>Weekly check-in<small id="fb-weekly"></small></button>
+          <button class="gtile" data-feat="chal"><b>🌹</b>Date challenge<small id="fb-chal"></small></button>
+        </div>
+        <h3 class="gsec">💗 Grow closer</h3>
+        <div class="ggrid">
+          <button class="gtile" data-feat="q36"><b>🕯️</b>36 questions<small id="fb-q36"></small></button>
+          <button class="gtile" data-feat="ll"><b>💬</b>Love languages<small id="fb-ll"></small></button>
+          <button class="gtile" data-feat="bucket"><b>🪣</b>Bucket list<small id="fb-bucket"></small></button>
+        </div>
+        <h3 class="gsec">💝 For each other</h3>
+        <div class="ggrid">
+          <button class="gtile" data-feat="voice"><b>🎙️</b>Voice notes<small id="fb-voice"></small></button>
+          <button class="gtile" data-feat="wish"><b>🎁</b>Wishlists<small id="fb-wish"></small></button>
+          <button class="gtile" data-feat="capsule"><b>⏳</b>Time capsule<small id="fb-capsule"></small></button>
+          <button class="gtile" data-feat="songwk"><b>🎵</b>Song of the week<small id="fb-songwk"></small></button>
+          <button class="gtile" data-feat="playlist"><b>🎧</b>Our playlist<small id="fb-playlist"></small></button>
+          <button class="gtile" data-feat="lovemap"><b>🗺️</b>Love map<small id="fb-lovemap"></small></button>
+        </div>
+        <h3 class="gsec">🏡 Our life</h3>
+        <div class="ggrid">
+          <button class="gtile" data-feat="cal"><b>📅</b>Calendar<small id="fb-cal"></small></button>
+          <button class="gtile" data-feat="miles"><b>🎂</b>Milestones<small id="fb-miles"></small></button>
+          <button class="gtile" data-feat="goals"><b>🎯</b>Couple goals<small id="fb-goals"></small></button>
+          <button class="gtile" data-feat="jokes"><b>😂</b>Inside jokes<small id="fb-jokes"></small></button>
+          <button class="gtile" data-feat="trivia"><b>🧠</b>Trivia night<small id="fb-trivia"></small></button>
+          <button class="gtile" data-feat="year"><b>📖</b>Year in review</button>
+        </div>
+      </div>
+      <div id="featPanel" class="hidden">
+        <button class="soft mini gback" id="featBack">← Us</button>
+
+        <div class="card feat" data-panel="dq"><h2>❓ Daily question</h2><p class="muted" id="dqDate"></p><p class="bq" id="dqText"></p>
+          <div id="dqBox"></div>
+          <details><summary>📜 Past questions</summary><div id="dqHist" class="list"></div></details></div>
+
+        <div class="card feat" data-panel="mood"><h2>🌤️ Mood check-in</h2>
+          <div id="moodPartner"></div>
+          <p class="muted">How are you feeling?</p><div class="emojis" id="moodPick"></div>
+          <input id="moodNote" maxlength="300" placeholder="Note (optional)">
+          <div id="sigPick" class="chips"></div>
+          <button id="moodSave">Check in 💗</button>
+          <h3 class="gsec">Last 7 days</h3><div id="moodWeek"></div></div>
+
+        <div class="card feat" data-panel="grat"><h2>🫙 Gratitude jar</h2>
+          <div class="jar" id="jar"></div>
+          <textarea id="gratTxt" maxlength="500" placeholder="I appreciate you because…"></textarea><button id="gratAdd">Drop in the jar 💌</button>
+          <div class="seg" id="gratSeg"><button data-g="week" class="on">This week</button><button data-g="all">All</button></div>
+          <div id="gratList" class="list"></div></div>
+
+        <div class="card feat" data-panel="journal"><h2>📔 Our journal</h2>
+          <input id="jDate" type="date"><textarea id="jBody" maxlength="5000" placeholder="Dear diary… today we…"></textarea><button id="jSave">Save entry</button>
+          <div id="jList"></div></div>
+
+        <div class="card feat" data-panel="weekly"><h2>🤝 Weekly check-in</h2><p class="muted" id="wkLabel"></p>
+          <div id="wkForm"></div><button id="wkSave">Save my check-in</button><div id="wkReveal"></div>
+          <details><summary>📚 Past weeks</summary><div id="wkPast"></div></details></div>
+
+        <div class="card feat" data-panel="chal"><h2>🌹 This week's date challenge</h2><p class="muted" id="chWeek"></p><p class="bq" id="chText"></p>
+          <div id="chStatus"></div>
+          <input id="chNote" maxlength="500" placeholder="How did it go? (optional)">
+          <label class="btn soft">📷 Add photo<input type="file" id="chPhoto" accept="image/*" hidden></label><span class="muted" id="chPhotoName"></span>
+          <button id="chDone">We did it! ✅</button>
+          <details><summary>📜 History</summary><div id="chHist"></div></details></div>
+
+        <div class="card feat" data-panel="q36"><h2>🕯️ The 36 questions</h2><p class="muted">Three sets, each deeper than the last. Answer, then see each other's answer.</p>
+          <div class="meter"><div id="q36Bar" class="barfill"></div></div><p class="muted" id="q36Prog"></p>
+          <div class="row2"><button class="soft mini" id="q36Prev">←</button><b id="q36Num" style="flex:1"></b><button class="soft mini" id="q36Next">→</button></div>
+          <p class="bq" id="q36Text"></p><div id="q36Box"></div>
+          <details><summary>🗺️ Jump to question</summary><div id="q36Grid" class="numgrid"></div></details></div>
+
+        <div class="card feat" data-panel="ll"><h2>💬 Love languages</h2><div id="llBox"></div></div>
+
+        <div class="card feat" data-panel="bucket"><h2>🪣 Our bucket list</h2>
+          <div class="row2"><input id="bkEmoji" class="short" maxlength="4" value="✨"><input id="bkTitle" maxlength="150" placeholder="Swim in the ocean at night"></div>
+          <button id="bkAdd">Add to list</button>
+          <h3 class="gsec">🎯 To do</h3><div id="bkTodo"></div>
+          <h3 class="gsec">✅ Done</h3><div id="bkDone" class="gallery"></div></div>
+        <div class="card feat" data-panel="voice"><h2>🎙️ Voice notes</h2>
+          <div class="chips" id="vnTags"><span data-t="morning">☀️ Good morning</span><span data-t="night">🌙 Goodnight</span><span data-t="any" class="on">💗 Just because</span></div>
+          <button id="vnRec" class="ping" style="width:110px;height:110px;font-size:40px">🎙️</button><p class="muted" id="vnStatus">Tap to record (max 2 min)</p>
+          <div id="vnList"></div></div>
+
+        <div class="card feat" data-panel="wish"><h2>🎁 Wishlists</h2>
+          <div class="seg" id="wishSeg"><button data-w="theirs" class="on"><span class="pname"></span>'s</button><button data-w="mine">Mine</button></div>
+          <div id="wishTheirs"></div>
+          <div id="wishMine" class="hidden"><input id="wTitle" maxlength="150" placeholder="Something I'd love"><input id="wUrl" maxlength="500" placeholder="Link (optional)"><div class="row2"><input id="wPrice" maxlength="30" placeholder="Price"><input id="wNote" maxlength="300" placeholder="Size, color…"></div><button id="wAdd">Add wish ✨</button><div id="wishMineList"></div>
+            <p class="muted">🤫 If <span class="pname"></span> marks something “I got this”, you'll never see it — surprises stay surprises.</p></div></div>
+
+        <div class="card feat" data-panel="capsule"><h2>⏳ Time capsule</h2>
+          <div id="capIn"></div>
+          <details><summary>✍️ Bury a capsule for <span class="pname"></span></summary>
+            <input id="capTitle" maxlength="120" placeholder="Open on our anniversary 💍"><textarea id="capBody" maxlength="5000" placeholder="Dear future us…"></textarea>
+            <label class="muted">Unlocks on</label><input id="capDate" type="datetime-local">
+            <label class="btn soft">📷 Photo<input type="file" id="capPhoto" accept="image/*" hidden></label><span class="muted" id="capPhotoName"></span>
+            <button id="capAdd">Bury it 🔒</button><div id="capSent"></div></details></div>
+
+        <div class="card feat" data-panel="songwk"><h2>🎵 Our song of the week</h2><p class="muted" id="swTurn"></p><div id="swCur"></div>
+          <div id="swForm"><input id="swTitle" maxlength="150" placeholder="Song title"><input id="swArtist" maxlength="150" placeholder="Artist"><input id="swUrl" maxlength="500" placeholder="https://open.spotify.com/… or YouTube/Apple link"><input id="swNote" maxlength="300" placeholder="Why this song?"><button id="swSave">Pick it 🎵</button></div>
+          <details><summary>📜 History</summary><div id="swHist"></div></details></div>
+
+        <div class="card feat" data-panel="playlist"><h2>🎧 Our playlist</h2>
+          <input id="plTitle" maxlength="150" placeholder="Song title"><input id="plArtist" maxlength="150" placeholder="Artist"><input id="plUrl" maxlength="500" placeholder="Link (Spotify/YouTube/Apple)"><input id="plNote" maxlength="300" placeholder="It reminds me of us because…"><button id="plAdd">Add song</button>
+          <div id="plList"></div></div>
+
+        <div class="card feat" data-panel="lovemap"><h2>🗺️ Love map</h2><p class="muted">How well do you know each other's world?</p>
+          <div class="seg" id="lmSeg"><button data-l="guess" class="on">Guess</button><button data-l="me">About me</button><button data-l="score">Score</button></div>
+          <div id="lmGuess"></div><div id="lmMe" class="hidden"></div><div id="lmScore" class="hidden"></div></div>
+
+        <div class="card feat" data-panel="cal"><h2>📅 Our calendar</h2>
+          <div class="row2"><button class="soft mini" id="calPrev">←</button><b id="calMonth" style="flex:1"></b><button class="soft mini" id="calNext">→</button></div>
+          <div class="calgrid" id="calGrid"></div><div id="calDay"></div>
+          <details id="calFormBox"><summary>➕ Add a plan</summary>
+            <div class="row2"><input id="evEmoji" class="short" maxlength="4" value="📅"><input id="evTitle" maxlength="120" placeholder="Dinner at our spot"></div>
+            <input id="evWhen" type="datetime-local"><input id="evLoc" maxlength="200" placeholder="Location (optional)"><textarea id="evNote" maxlength="1000" placeholder="Note" style="min-height:60px"></textarea>
+            <button id="evSave">Save plan</button><button class="soft hidden" id="evCancel">Cancel edit</button></details>
+          <h3 class="gsec">⏭️ Upcoming</h3><div id="calUpcoming"></div></div>
+
+        <div class="card feat" data-panel="miles"><h2>🎂 Anniversaries & milestones</h2>
+          <label class="muted">Together since</label><input id="msSince" type="date"><button class="soft" id="msSinceSave">Save date</button>
+          <div id="msToday"></div><h3 class="gsec">⏭️ Upcoming</h3><div id="msUpcoming"></div>
+          <details><summary>➕ Custom milestone</summary><div class="row2"><input id="msEmoji" class="short" maxlength="4" value="🎉"><input id="msTitle" maxlength="120" placeholder="First kiss"></div><input id="msDate" type="date"><button id="msAdd">Add</button><div id="msList"></div></details></div>
+
+        <div class="card feat" data-panel="goals"><h2>🎯 Couple goals</h2>
+          <div id="goalList"></div>
+          <details><summary>➕ New goal</summary>
+            <div class="seg" id="goalKind"><button data-k="savings" class="on">💰 Savings</button><button data-k="habit">🔁 Habit</button></div>
+            <div class="row2"><input id="gEmoji" class="short" maxlength="4" value="🏝️"><input id="gTitle" maxlength="120" placeholder="Trip to Bali"></div>
+            <div class="row2"><input id="gTarget" type="number" min="1" step="any" placeholder="Target (amount or count)"><input id="gCur" class="short" maxlength="8" placeholder="EGP"></div>
+            <button id="gAdd">Create goal</button></details></div>
+
+        <div class="card feat" data-panel="jokes"><h2>😂 Inside jokes & nicknames</h2>
+          <input id="jkSearch" placeholder="🔎 Search…">
+          <div id="jkList"></div>
+          <details><summary>➕ Add entry</summary><div class="row2"><input id="jkEmoji" class="short" maxlength="4" value="😂"><input id="jkTerm" maxlength="80" placeholder="Term or nickname"></div>
+            <input id="jkMeaning" maxlength="500" placeholder="What it means"><textarea id="jkOrigin" maxlength="1000" placeholder="Origin story…" style="min-height:60px"></textarea><button id="jkAdd">Add to dictionary</button></details></div>
+
+        <div class="card feat" data-panel="trivia"><h2>🧠 Trivia night</h2><p class="muted" id="trDate"></p><div id="trBox"></div>
+          <h3 class="gsec">⚔️ Head to head</h3><div id="trH2H"></div><details><summary>📜 Rounds</summary><div id="trHist"></div></details></div>
+
+        <div class="card feat" data-panel="year"><h2>📖 Year in review</h2><select id="yrSel"></select><button id="yrGo">Play our story ▶️</button><div id="yrSummary"></div></div>
+      </div>
+    </div>
+
     <div class="tab hidden" id="tab-me">
       <div class="card"><h2>Your profile</h2>
         <input id="pfName" maxlength="40" placeholder="Display name">
@@ -240,6 +404,11 @@
         <input id="pfEmoji" maxlength="4" class="short">
         <button id="pfSave">Save</button>
         <p class="muted">Invite code: <b id="pfCode"></b></p></div>
+      <div class="card"><h2>🔔 Notifications</h2><p class="muted" id="pushInfo">Get notified when your partner pings, writes, answers or sends something.</p>
+        <button id="pushBtn">Enable notifications</button><button class="soft hidden" id="pushOff">Turn off on this device</button>
+        <p class="muted">📱 iPhone: notifications only work after you tap Share → <b>Add to Home Screen</b> and open the app from that icon (iOS 16.4+).</p></div>
+      <div class="card"><h2>📍 Distance & time</h2><p class="muted">Share your approximate location (rounded to ~10 km city level) so you can see how far apart you are and each other's local time.</p>
+        <button id="locShare">Share my location</button><button class="soft hidden" id="locStop">Stop sharing</button><p class="muted" id="locInfo"></p></div>
       <div class="card"><h2>Your partner</h2><div id="partnerBox"></div>
         <button class="danger" id="disconnectBtn">Disconnect 💔</button></div>
       <div class="card"><h2>iPhone shortcut</h2><p class="muted">Open this link from a Shortcut to send a ping instantly:</p>
@@ -250,10 +419,10 @@
     <nav class="nav">
       <button data-tab="home" class="on">🏠<span>Home</span></button>
       <button data-tab="notes">💌<span>Notes</span></button>
-      <button data-tab="memories">📸<span>Us</span></button>
+      <button data-tab="us">💞<span>Us</span></button>
+      <button data-tab="memories">📸<span>Photos</span></button>
       <button data-tab="gifts">🎁<span>Gifts</span></button>
       <button data-tab="play">🎮<span>Play</span></button>
-      <button data-tab="me">⚙️<span>Me</span></button>
     </nav>
   </section>
 
@@ -264,11 +433,13 @@
 <div id="hugOverlay" class="overlay hidden"><div class="bigheart">🤗</div><h2>Squeeeeeze</h2><p>(tap to let go... if you must)</p></div>
 <div id="modal" class="modal hidden"><div class="card" id="modalBox"></div></div>
 <div id="finale" class="hidden"><canvas id="fw"></canvas><div class="msg" id="fMsg"></div></div>
+<div id="story" class="hidden"><div class="storybar" id="storyBar"></div><div class="slide" id="storySlide"></div><p class="muted" style="color:#fff">tap → next · swipe down/✕ to close</p><button class="gear" id="storyClose" style="color:#fff;top:10px;right:10px;position:absolute">✕</button></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=7"></script>
-<script src="data.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="config.js?v=8"></script>
+<script src="data.js?v=8"></script>
+<script src="trivia.js?v=8"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
