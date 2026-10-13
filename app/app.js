@@ -114,6 +114,7 @@ const kv = (() => {
   const tx = async (mode, fn) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction('kv', mode); const r = fn(t.objectStore('kv')); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
   return {
     get: async (k) => { try { return await tx('readonly', (s) => s.get(k)); } catch { try { return JSON.parse(localStorage.getItem('cc_kv_' + k)); } catch { return undefined; } } },
+    clear: async () => { try { await tx('readwrite', (s) => s.clear()); } catch { Object.keys(localStorage).filter((k) => k.startsWith('cc_kv_')).forEach((k) => localStorage.removeItem(k)); } },
     set: async (k, v) => { try { await tx('readwrite', (s) => s.put(v, k)); } catch { try { localStorage.setItem('cc_kv_' + k, JSON.stringify(v)); } catch { /* full */ } } },
   };
 })();
@@ -179,12 +180,12 @@ async function runOp(t, op, args, chain) {
   return q;
 }
 function queuedBuilder(t, op, args) {
-  if (op === 'insert' && TABLES[t]) { // client ids make retries idempotent
+  if (op === 'insert' && TABLES[t] && t !== 'couple_settings') { // client ids make retries idempotent
     const add = (r) => (r && typeof r === 'object' && !r.id ? { id: crypto.randomUUID(), ...r } : r);
     args = [Array.isArray(args[0]) ? args[0].map(add) : add(args[0]), ...args.slice(1)];
   }
   const chain = []; let p = null;
-  const exec = async () => {
+  const exec0 = async () => {
     const wantSingle = chain.some((c) => c.m === 'single' || c.m === 'maybeSingle');
     const queueIt = () => {
       enqueue({ kind: 'db', t, op, args, chain }); setOffline(true, true); window.__ccQueuedAt = Date.now();
@@ -195,6 +196,7 @@ function queuedBuilder(t, op, args) {
     try { const r = await runOp(t, op, args, chain); if (r.error && isNetErr(r.error)) return queueIt(); return r; }
     catch (e) { if (isNetErr(e)) return queueIt(); throw e; }
   };
+  const exec = async () => { const r = await exec0(); if (r && !r.error && (op === 'insert' || op === 'upsert')) autoNotify(t, args[0]); return r; };
   const proxy = new Proxy({}, { get(_, m) {
     if (m === 'then') return (a, b) => (p = p || exec()).then(a, b);
     if (m === 'catch') return (b) => (p = p || exec()).catch(b);
@@ -788,7 +790,7 @@ document.addEventListener('click', async (e) => {
     const ex = nickFor(S.partner.id);
     const { error } = ex ? await sb.from('couple_nicknames').update({ nickname, emoji, updated_at: new Date().toISOString() }).eq('couple_id', S.couple.id).eq('target_user', S.partner.id)
       : await sb.from('couple_nicknames').insert({ nickname, emoji });
-    if (error) return toast(errMsg(error)); toast(`They're “${nickname}” now 🥰`); hearts(10); notify('generic', `renamed you to “${nickname}” 🥰`); loadTable('couple_nicknames');
+    if (error) return toast(errMsg(error)); toast(`They're “${nickname}” now 🥰`); hearts(10); notify('nickname', `renamed you to “${nickname}” 🥰`); loadTable('couple_nicknames');
   }
   if (e.target.id === 'nickClear') {
     if (!await uiConfirm(`Go back to calling them ${S.partner.display_name}?`)) return;
@@ -802,6 +804,7 @@ RENDER.couple_nicknames = () => {
   if (S.partner) { $('#cpN2').value = partnerName(); }
 };
 function renderMe() {
+  renderSettingsUI();
   $('#pfName').value = S.me.display_name; $('#pfUser').value = S.me.username; $('#pfEmoji').value = S.me.emoji; $('#pfCode').textContent = S.me.invite_code;
   $('#partnerBox').innerHTML = S.partner ? `<div class="person"><span class="em">${esc(partnerEmoji())}</span><div class="info"><b>${esc(partnerName())}</b>${nickFor(S.partner.id) ? ` <small class="muted">(${esc(S.partner.display_name)})</small>` : ''}<br><small>@${esc(S.partner.username)} · together since ${fmtDate(S.couple.created_at)}${S.couple.reunited_at ? `<br>got back together on ${fmtDate(S.couple.reunited_at)} 💞${S.couple.reunions > 1 ? ` (reunion #${S.couple.reunions})` : ''}` : ''}</small></div></div>` : '';
   renderNick();
@@ -1021,6 +1024,7 @@ async function flushPokes() {
   const { data, error } = await sb.rpc('poke_bear', { n });
   pokePending -= n;
   if (error) { toast(errMsg(error)); renderPokes(); return; }
+  if (Date.now() - (flushPokes.lastPush || 0) > 120000) { flushPokes.lastPush = Date.now(); notify('poke', 'poked the bear 🧸 poke back!'); }
   const row = (S.data.poke_counts ||= []).find((p) => p.created_by === S.user.id);
   if (row) row.count = data; else S.data.poke_counts.push({ created_by: S.user.id, count: data });
   renderPokes(); if (pokePending) pokeTimer = setTimeout(flushPokes, 300);
@@ -1123,7 +1127,7 @@ $('#bqYes').onclick = async () => {
 $('#bqAdd').onclick = async () => {
   const question = $('#bqAsk').value.trim(); if (!question) return;
   const { error } = await sb.from('big_questions').insert({ question });
-  if (error) return toast(errMsg(error)); $('#bqAsk').value = ''; toast('Question sent 💍 (the No button runs away 😏)'); notify('generic', 'has an important question for you 💍');
+  if (error) return toast(errMsg(error)); $('#bqAsk').value = ''; toast('Question sent 💍 (the No button runs away 😏)'); notify('question', 'has an important question for you 💍');
 };
 
 // ---- scratch card (partner hides prizes) ----
@@ -1412,7 +1416,7 @@ $('#dqBox').onclick = async (e) => {
   if (e.target.id === 'dqSave') {
     const answer = $('#dqAns').value.trim(); if (!answer) return;
     const { error } = await sb.from('daily_answers').insert({ day: t, qidx: dqIndex(t), answer });
-    if (error) return toast(errMsg(error)); hearts(8); snd('ding'); window.FX && FX.burstAt($('#dqText'), ['💬', '💖', '✨'], 12, 90); notify('daily', 'answered today\'s question ❓');
+    if (error) return toast(errMsg(error)); hearts(8); snd('ding'); window.FX && FX.burstAt($('#dqText'), ['💬', '💖', '✨'], 12, 90); notify('daily', 'answered today\'s question 💬');
     await loadTable('daily_answers'); refreshProgress();
   } else if (e.target.id === 'dqEdit') {
     const me = (S.data.daily_answers || []).find((a) => mine(a) && a.day === t);
@@ -1649,8 +1653,44 @@ const linkHtml = (u) => u && /^https:\/\//.test(u) ? `<a href="${esc(u)}" target
 const cleanUrl = (u) => { u = (u || '').trim(); if (!u) return null; if (!/^https:\/\//i.test(u)) u = 'https://' + u.replace(/^http:\/\//i, ''); return u.slice(0, 500); };
 
 // ---- push notifications ----
+const IMPORTANT_KINDS = ['chat', 'ping', 'hug', 'poke'];
+const notifyLevel = () => (S.data.couple_settings?.[0]?.notify_level === 'everything' ? 'everything' : 'important');
+// tables with no hand-written notify(): push on insert (server drops these unless the couple chose "Everything 🔔")
+const nq = (v, n = 50) => { v = String(v || '').trim(); return v ? ': ' + (v.length > n ? v.slice(0, n) + '…' : v) : ''; };
+const AUTO_N = {
+  notes: ['note', () => 'left you a love note 💌'],
+  bucket_items: ['bucket', (r) => 'added to our bucket list 🪣' + nq(r.title || r.item)],
+  photos: ['photo', () => 'added a new memory to Photos 📸'],
+  coupons: ['coupon', (r) => 'gave you a love coupon 🎟️' + nq(r.title)],
+  game_scores: ['game', (r) => `just played ${r.game || 'a game'} 🎮${r.score != null ? ' — score ' + r.score : ''} · your turn!`],
+  milestones: ['milestone', (r) => 'added a milestone 🏆' + nq(r.title)],
+  journal: ['journal', () => 'wrote in our journal 📔'],
+  wishlist: ['wishlist', (r) => 'added to their wishlist 🎁' + nq(r.title || r.item)],
+  goals: ['goal', (r) => 'started a couple goal 🎯' + nq(r.title)],
+  goal_contribs: ['goal', () => 'added progress to our goal 🎯'],
+  jokes: ['joke', (r) => 'saved an inside joke 😂' + nq(r.term)],
+  playlist: ['playlist', (r) => 'added a song to our playlist 🎵' + nq(r.title)],
+  date_ideas: ['date', (r) => 'added a date idea 💡' + nq(r.idea)],
+  date_spins: ['date', (r) => 'spun the date wheel 🎡' + nq(r.idea)],
+  timeline: ['milestone', (r) => 'added a moment to our story 📖' + nq(r.title)],
+  countdowns: ['countdown', (r) => 'started a countdown ⏳' + nq(r.title)],
+  surprises: ['surprise', () => 'hid a new surprise for you 🎁'],
+  fortunes: ['fortune', () => 'wrote you a fortune cookie 🥠'],
+  q36_answers: ['q36', () => 'answered one of the 36 questions 💞'],
+  lovemap_answers: ['lovemap', () => 'answered a Love Map question 🗺️'],
+  love_languages: ['lovelang', () => 'took the love-language quiz 💗'],
+  quiz_answers: ['quiz', () => 'answered your love-quiz 📝'],
+};
+const autoLast = {};
+function autoNotify(t, rows) {
+  const a = AUTO_N[t]; if (!a || !S.couple || notifyLevel() !== 'everything') return;
+  if (Date.now() - (autoLast[t] || 0) < 90000) return; autoLast[t] = Date.now(); // no push storms (games, quick multi-adds)
+  const r = (Array.isArray(rows) ? rows[0] : rows) || {};
+  try { const txt = a[1](r); if (txt) notify(a[0], txt.slice(0, 140)); } catch { /* */ }
+}
 async function notify(kind, text) {
   if (!S.couple) return;
+  if (notifyLevel() === 'important' && !IMPORTANT_KINDS.includes(kind)) return; // saves a call; the function enforces this too
   if (!navigator.onLine) return enqueue({ kind: 'fn', name: 'notify', body: { kind, text } });
   try { const r = await sb.functions.invoke('notify', { body: { kind, text } }); if (r && r.error && isNetErr(r.error)) enqueue({ kind: 'fn', name: 'notify', body: { kind, text } }); } catch (e) { if (isNetErr(e)) enqueue({ kind: 'fn', name: 'notify', body: { kind, text } }); }
 }
@@ -1900,7 +1940,7 @@ $('#evSave').onclick = async () => {
   const row = { title, starts_at: new Date(w).toISOString(), emoji: $('#evEmoji').value.trim() || '📅', location: $('#evLoc').value.trim() || null, note: $('#evNote').value.trim() || null };
   const { error } = evEditing ? await sb.from('events').update(row).eq('id', evEditing) : await sb.from('events').insert(row);
   if (error) return toast(errMsg(error));
-  if (!evEditing && await uiConfirm(`Notify ${partnerName()} about this plan? 🔔`)) notify('generic', `added a plan: ${row.emoji} ${title} (${fmtTime(row.starts_at)})`);
+  if (!evEditing) notify('event', `added a plan: ${row.emoji} ${title} (${fmtTime(row.starts_at)})`);
   evReset(); toast('Saved 📅'); loadTable('events');
 };
 
@@ -1930,7 +1970,7 @@ function renderMiles() {
   setFB('miles', up[0] ? `${up[0].title.slice(0, 14)} · ${up[0].days}d` : '', !!today.length);
   if (S.data.events) renderCal();
 }
-RENDER.milestones = renderMiles; RENDER.couple_settings = renderMiles;
+RENDER.milestones = renderMiles; RENDER.couple_settings = () => { renderMiles(); applyShared(); };
 $('#msSinceSave').onclick = async () => {
   const v = $('#msSince').value; if (!v) return; const ex = S.data.couple_settings?.[0];
   const { error } = ex ? await sb.from('couple_settings').update({ together_since: v, created_by: S.user.id, updated_at: new Date().toISOString() }).eq('couple_id', S.couple.id) : await sb.from('couple_settings').insert({ together_since: v });
@@ -2022,7 +2062,7 @@ $('#trBox').onclick = async (e) => {
   setTimeout(async () => {
     trState.busy = false; trState.i++;
     if (trState.i >= 10) { const picks = trState.picks; trState = null; const score = picks.filter((p) => p === 0).length;
-      const { error } = await sb.from('trivia_results').insert({ day: dayStr(), score, picks }); if (error) toast(errMsg(error)); else { confetti(50); snd('win'); window.FX && FX.fireworks(score >= 7 ? 5 : 2); notify('generic', `scored ${score}/10 in tonight's trivia 🧠 your turn!`); }
+      const { error } = await sb.from('trivia_results').insert({ day: dayStr(), score, picks }); if (error) toast(errMsg(error)); else { confetti(50); snd('win'); window.FX && FX.fireworks(score >= 7 ? 5 : 2); notify('trivia', `scored ${score}/10 in tonight's trivia 🧠 your turn!`); }
       await loadTable('trivia_results'); } else renderTrivia();
   }, 900);
 };
@@ -2232,13 +2272,13 @@ $('#hugSend').onclick = async () => {
   if (!S.couple) return toast('Connect with your partner first 💞');
   playHug($('#hugStage')); snd('win');
   const { error } = await sb.from('pings').insert({ kind: 'hug' });
-  if (error) return toast(errMsg(error)); notify('ping', 'sent you a big warm hug 🤗'); toast(`Hug sent to ${partnerName()} 🤗`);
+  if (error) return toast(errMsg(error)); notify('hug', 'sent you a big warm hug 🤗'); toast(`Hug sent to ${partnerName()} 🤗`);
 };
 
 // ---- v14: big date pool, shuffle, surprise, categories ----
 const WCATS = [['all', 'All ✨'], ['ours', 'Ours 💗'], ['cozy', 'Cozy 🕯️'], ['adventure', 'Adventure 🧗'], ['cheap', 'Cheap 💸'], ['ldr', 'Long-distance 📱'], ['home', 'At home 🏠']];
 const CAT_LBL = Object.fromEntries(WCATS);
-let wheelCat = localStorage.getItem('cc_wheel_cat') || 'all';
+let wheelCat = S.data.couple_settings?.[0]?.wheel_cat || localStorage.getItem('cc_wheel_cat') || 'all';
 function catPool() {
   const ours = (S.data.date_ideas || []).map((i) => ({ t: i.idea, c: 'ours' }));
   const all = ours.concat(D.datePool || D.dates.map((t) => ({ t, c: 'cozy' })));
@@ -2256,7 +2296,7 @@ function drawWheel(anim) {
 }
 function renderWheelCats() {
   $('#wheelCats').innerHTML = WCATS.map(([k, l]) => `<span data-c="${k}" class="${k === wheelCat ? 'on' : ''}">${l}</span>`).join('');
-  $$('#wheelCats span').forEach((s) => s.onclick = () => { wheelCat = s.dataset.c; localStorage.setItem('cc_wheel_cat', wheelCat); renderWheelCats(); drawWheel(true); });
+  $$('#wheelCats span').forEach((s) => s.onclick = () => { wheelCat = s.dataset.c; localStorage.setItem('cc_wheel_cat', wheelCat); renderWheelCats(); drawWheel(true); saveShared({ wheel_cat: wheelCat }, true); });
 }
 renderWheelCats();
 $('#wheelShuffle').onclick = () => drawWheel(true);
@@ -2353,6 +2393,99 @@ function shrinkVideo(file, onProg) {
 }
 $$('.nav button, #gearBtn').forEach((b) => b.addEventListener('click', () => { if (!$('#tab-me').classList.contains('hidden')) refreshStorage(true); }));
 
+
+// ================= SHARED COUPLE SETTINGS (v18) =================
+// One couple_settings row per couple, read/updated by either partner (couple-member RLS). created_by = who changed it last.
+const SH_FIELDS = ['notify_level', 'cute_fx', 'wheel_cat', 'chat_receipts', 'chat_typing', 'chat_enter_send'];
+const shRow = () => S.data.couple_settings?.[0] || null;
+function shared(k, def) { const r = shRow(); return r && r[k] != null ? r[k] : def; }
+const onOff = (v) => (v ? 'on ✅' : 'off 💤');
+const SH_TOAST = {
+  notify_level: (v) => `changed notifications to ${v === 'everything' ? 'Everything 🔔' : 'Just the important stuff 💌'}`,
+  cute_fx: (v) => `turned cute effects ${v ? 'on ✨' : 'off 💤'}`,
+  wheel_cat: (v) => `set the date wheel to ${(WCATS.find(([k]) => k === v) || [, v])[1]}`,
+  chat_receipts: (v) => `turned read receipts ${onOff(v)}`,
+  chat_typing: (v) => `turned “typing…” ${onOff(v)}`,
+  chat_enter_send: (v) => `turned Enter-to-send ${onOff(v)}`,
+};
+let shPrev = (() => { try { return JSON.parse(localStorage.getItem('cc_sh_seen')); } catch { return null; } })(), shMigrated = false; // last seen → "while you were away" toasts
+function applyShared() {
+  const r = shRow();
+  if (r && shPrev && shPrev.couple_id === r.couple_id && r.created_by && r.created_by !== S.user?.id) {
+    const ch = SH_FIELDS.filter((k) => shPrev[k] != null && r[k] != null && shPrev[k] !== r[k]);
+    if (ch.length) { toast(`${partnerName()} ${ch.map((k) => SH_TOAST[k](r[k])).join(' · ')}`, 4500); if (ch.includes('notify_level') || ch.includes('cute_fx')) hearts(6); }
+  }
+  shPrev = r ? { ...r } : null; if (r) localStorage.setItem('cc_sh_seen', JSON.stringify(r));
+  if (r && r.cute_fx != null && window.CC_setCute) CC_setCute(r.cute_fx);
+  if (r && r.wheel_cat && r.wheel_cat !== wheelCat) { wheelCat = r.wheel_cat; localStorage.setItem('cc_wheel_cat', wheelCat); renderWheelCats(); try { drawWheel(false); } catch { /* */ } }
+  if (r && r.chat_receipts === false && typeof chRender === 'function') { try { chRender(); } catch { /* */ } }
+  renderSettingsUI();
+  migrateShared();
+}
+// first load: carry this phone's old local choices into the shared row (only fills blanks — never overwrites the partner)
+async function migrateShared() {
+  if (shMigrated || !S.couple || !S.user || !navigator.onLine) return; shMigrated = true;
+  const { data, error } = await sb.from('couple_settings').select('*').eq('couple_id', S.couple.id).maybeSingle();
+  if (error) { shMigrated = false; return; }
+  const lc = localStorage.getItem('cc_cute_fx'), lw = localStorage.getItem('cc_wheel_cat');
+  const local = { cute_fx: lc == null ? null : lc !== '0', wheel_cat: lw && WCATS.some(([k]) => k === lw) ? lw : null };
+  const patch = {}; Object.entries(local).forEach(([k, v]) => { if (v != null && (!data || data[k] == null)) patch[k] = v; });
+  if (data && !Object.keys(patch).length) return;
+  const meta = { created_by: S.user.id, updated_at: new Date().toISOString() };
+  let res = data ? await sb.from('couple_settings').update({ ...patch, ...meta }).eq('couple_id', S.couple.id).is(Object.keys(patch)[0], null)
+    : await sb.from('couple_settings').insert({ ...patch, ...meta });
+  if (res.error && /duplicate|23505/i.test(res.error.message + res.error.code)) { shMigrated = false; return migrateShared(); } // partner created it at the same moment
+  if (!res.error && !res.queued) loadTable('couple_settings');
+}
+async function saveShared(patch, quiet) {
+  if (!S.couple || !S.user) return;
+  const meta = { created_by: S.user.id, updated_at: new Date().toISOString() };
+  const cur = shRow();
+  if (cur) Object.assign(cur, patch, meta); else (S.data.couple_settings = [{ couple_id: S.couple.id, ...patch, ...meta }]);
+  shPrev = { ...shRow() }; localStorage.setItem('cc_sh_seen', JSON.stringify(shPrev)); renderSettingsUI();
+  const res = cur ? await sb.from('couple_settings').update({ ...patch, ...meta }).eq('couple_id', S.couple.id)
+    : await sb.from('couple_settings').insert({ ...patch, ...meta });
+  if (res.error && /duplicate|23505/i.test(res.error.message + res.error.code)) { await sb.from('couple_settings').update({ ...patch, ...meta }).eq('couple_id', S.couple.id); }
+  else if (res.error) { toast(errMsg(res.error)); loadTable('couple_settings'); return; }
+  if (!quiet) toast(res.queued ? 'Saved 💕' : `Saved for both of you 💕`);
+}
+function renderSettingsUI() { try { renderSettingsUI0(); } catch { /* early boot: consts not ready yet */ } }
+function renderSettingsUI0() {
+  if (!$('#setNotify')) return;
+  $('#shHead').textContent = S.partner ? `Shared with ${partnerName()} 💕` : 'Shared with your love 💕';
+  const lvl = notifyLevel();
+  $$('#setNotify button').forEach((b) => b.classList.toggle('on', b.dataset.v === lvl));
+  const r = shRow();
+  $('#setNotifyBy').textContent = r && r.updated_at ? `Last changed by ${r.created_by === S.user?.id ? 'you' : partnerName()} · ${new Date(r.updated_at).toLocaleDateString()}` : 'Default: just the important stuff 💌';
+  $('#setReceipts').checked = shared('chat_receipts', true); $('#setTyping').checked = shared('chat_typing', true); $('#setEnter').checked = shared('chat_enter_send', true);
+  const ws = $('#setWheel'); if (!ws.options.length) ws.innerHTML = WCATS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('');
+  ws.value = wheelCat;
+  $('#setReduce').checked = localStorage.getItem('cc_reduce_motion') === '1';
+  const rate = String(Number(localStorage.getItem('cc_chat_rate')) || 1); $$('#setRate button').forEach((b) => b.classList.toggle('on', b.dataset.v === rate));
+}
+$$('#setNotify button').forEach((b) => b.onclick = () => { if (notifyLevel() === b.dataset.v) return; saveShared({ notify_level: b.dataset.v }, true); toast(b.dataset.v === 'everything' ? `Everything 🔔 — you'll both hear about all the little things` : 'Just the important stuff 💌 — chat, hugs & pokes', 3500); });
+$('#setReceipts').onchange = (e) => saveShared({ chat_receipts: e.target.checked });
+$('#setTyping').onchange = (e) => saveShared({ chat_typing: e.target.checked });
+$('#setEnter').onchange = (e) => saveShared({ chat_enter_send: e.target.checked });
+$('#setWheel').onchange = (e) => { wheelCat = e.target.value; localStorage.setItem('cc_wheel_cat', wheelCat); renderWheelCats(); try { drawWheel(false); } catch { /* */ } saveShared({ wheel_cat: wheelCat }); };
+document.addEventListener('cc:cute', (e) => saveShared({ cute_fx: !!e.detail }, true));
+// ---- this device only ----
+if (localStorage.getItem('cc_reduce_motion') === '1') document.body.classList.add('rm');
+$('#setReduce').onchange = (e) => { localStorage.setItem('cc_reduce_motion', e.target.checked ? '1' : '0'); document.body.classList.toggle('rm', e.target.checked); toast(e.target.checked ? 'Calmer animations on this device 🐢 (fully applies next time you open the app)' : 'Animations back on this device ✨', 3500); };
+$$('#setRate button').forEach((b) => b.onclick = () => { localStorage.setItem('cc_chat_rate', b.dataset.v); if (typeof CH !== 'undefined') { CH.rate = Number(b.dataset.v); if (CH.audio) CH.audio.playbackRate = CH.rate; } renderSettingsUI(); });
+async function offInfo() {
+  let q = []; try { q = JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { /* */ }
+  let est = ''; try { const e = await navigator.storage?.estimate?.(); if (e && e.usage != null) est = ` · ~${fmtSize(e.usage)} stored`; } catch { /* */ }
+  $('#offInfo').textContent = `Works offline: your recent stuff is kept on this device${est}.${q.length ? ` ${q.length} change${q.length > 1 ? 's' : ''} waiting to sync 🕓` : ' Everything is synced ✅'}`;
+}
+$$('#gearBtn').forEach((b) => b.addEventListener('click', () => setTimeout(offInfo, 50)));
+offInfo();
+$('#offClear').onclick = async () => {
+  if (!await uiConfirm('Clear the offline copy on this device? Nothing shared is deleted — it just re-downloads. Unsynced changes are kept 🕓')) return;
+  await kv.clear(); try { for (const k of await caches.keys()) if (/runtime|media/.test(k)) await caches.delete(k); } catch { /* */ }
+  localStorage.removeItem('cc_signed'); S.signedUrls = {}; toast('Offline copy cleared 🧹'); offInfo();
+};
+
 // ================= CHAT (v17) =================
 const CH = { list: [], byId: {}, more: true, loading: false, ch: null, replyTo: null, urls: {}, lastTyping: 0, typingT: null, fresh: new Set(), audio: null, playing: null, rate: +(localStorage.getItem('cc_chat_rate') || 1), ready: false, newBelow: 0, unreadServer: 0, saveT: null, markT: null };
 const CH_REACTS = ['❤️', '😂', '😮', '😢', '👍', '🔥'];
@@ -2403,7 +2536,7 @@ function chTicks(m) {
   if (!chMine(m)) return '';
   if (m._failed) return '<span class="tk fail">⚠️ tap to retry</span>';
   if (m._queued || m._pending) return '<span class="tk">🕓</span>';
-  if (m.read_at) return '<span class="tk read">✓✓</span>'; if (m.delivered_at) return '<span class="tk">✓✓</span>'; return '<span class="tk">✓</span>';
+  if (m.read_at && shared('chat_receipts', true)) return '<span class="tk read">✓✓</span>'; if (m.delivered_at) return '<span class="tk">✓✓</span>'; return '<span class="tk">✓</span>';
 }
 function chMsgHtml(m, prev, next) {
   const mine = chMine(m); let h = '';
@@ -2474,7 +2607,7 @@ async function chUnreadCount() {
 }
 function chMarkSoon() {
   clearTimeout(CH.markT); CH.markT = setTimeout(async () => {
-    if (!S.couple || !navigator.onLine) return; const read = chOpen();
+    if (!S.couple || !navigator.onLine) return; const read = chOpen() && shared('chat_receipts', true);
     const need = CH.list.some((m) => !chMine(m) && (!m.delivered_at || (read && !m.read_at)));
     if (!need && !(read && CH.unreadServer)) return;
     const { error } = await sb.rpc('chat_mark', { read });
@@ -2499,7 +2632,7 @@ function chSubscribe() {
       }
       chBadge();
     })
-    .on('broadcast', { event: 'typing' }, (p) => { if (p.payload && p.payload.uid !== S.user.id) showTyping(); })
+    .on('broadcast', { event: 'typing' }, (p) => { if (p.payload && p.payload.uid !== S.user.id && shared('chat_typing', true)) showTyping(); })
     .subscribe();
 }
 function showTyping() {
@@ -2572,9 +2705,9 @@ function chAutosize() { const t = $('#chTxt'); t.style.height = 'auto'; t.style.
 function chComposeState() { const has = !!$('#chTxt').value.trim(); $('#chSend').classList.toggle('hidden', !has); $('#chMic').classList.toggle('hidden', has); $('#chVid').classList.toggle('hidden', has); }
 $('#chTxt').addEventListener('input', () => {
   chAutosize(); chComposeState();
-  if (CH.ch && Date.now() - CH.lastTyping > 2000) { CH.lastTyping = Date.now(); CH.ch.send({ type: 'broadcast', event: 'typing', payload: { uid: S.user.id } }); }
+  if (CH.ch && shared('chat_typing', true) && Date.now() - CH.lastTyping > 2000) { CH.lastTyping = Date.now(); CH.ch.send({ type: 'broadcast', event: 'typing', payload: { uid: S.user.id } }); }
 });
-$('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); chSendText(); } });
+$('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window) && shared('chat_enter_send', true)) { e.preventDefault(); chSendText(); } });
 $('#chSend').onclick = () => { chSendText(); $('#chTxt').focus(); };
 $('#chPlus').onclick = () => { $('#chAttach').classList.toggle('hidden'); $('#chPlus').classList.toggle('on'); };
 ['chGal', 'chCam', 'chCamV'].forEach((id) => { $('#' + id).onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f); e.target.value = ''; }; });

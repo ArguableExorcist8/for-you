@@ -446,3 +446,11 @@ body.inChat{overflow:hidden}
 @media (prefers-reduced-motion: reduce){.stFill::after{animation:none}}
 .fullCard{text-align:center;background:linear-gradient(135deg,#fff0f5,#ffe4ec);border:2px dashed #ffb3c6}.fullEm{font-size:48px;animation:cbF 2.6s ease-in-out infinite}
 @media (prefers-reduced-motion: reduce){.fullEm{animation:none}}
+
+/* v18 settings */
+.setHead{margin:22px 4px 0;color:#8b2252;font-size:18px}.setSub{margin:2px 4px 0}
+.segCol{flex-direction:column;border-radius:18px;gap:4px}.segCol button{border-radius:14px;text-align:left;padding:10px 14px}.segCol button small{display:block;font-size:12px;opacity:.8;font-weight:400}
+.tgl{display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;color:#8b2252}.tgl input{width:22px;height:22px;margin:0;accent-color:#e75480;flex:none}.tgl small{display:block;color:#b45a82;font-size:12px}
+#setWheel{width:100%}
+body.rm *,body.rm *::before,body.rm *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+.tgl span{flex:1;text-align:left}

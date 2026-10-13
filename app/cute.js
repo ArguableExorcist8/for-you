@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'cc_cute_fx';
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || localStorage.getItem('cc_reduce_motion') === '1';
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
   const pname = () => { try { return (window.CC_partnerName && window.CC_partnerName()) || 'your love'; } catch { return 'your love'; } };
   let on = localStorage.getItem(KEY) !== '0';
@@ -103,6 +103,9 @@
 
   // settings toggle
   function syncBtn() { const b = document.getElementById('cuteToggle'); if (b) { b.textContent = on ? '✨ Cute effects: ON' : '💤 Cute effects: OFF'; b.classList.toggle('soft', !on); } }
-  document.addEventListener('click', (e) => { if (e.target.id !== 'cuteToggle') return; on = !on; localStorage.setItem(KEY, on ? '1' : '0'); on ? start() : stop(); syncBtn(); });
+  document.addEventListener('click', (e) => { if (e.target.id !== 'cuteToggle') return; on = !on; localStorage.setItem(KEY, on ? '1' : '0'); on ? start() : stop(); syncBtn();
+    document.dispatchEvent(new CustomEvent('cc:cute', { detail: on })); }); // app.js saves it to the shared couple settings
+  // shared setting applied from the server (partner changed it, or first load)
+  window.CC_setCute = (v) => { v = !!v; localStorage.setItem(KEY, v ? '1' : '0'); if (v === on) return syncBtn(); on = v; on ? start() : stop(); syncBtn(); };
   syncBtn(); start();
 })();

@@ -1,7 +1,7 @@
 // For Us — shared animation helpers + app-wide micro-interactions (transform/opacity only)
 (() => {
   'use strict';
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || localStorage.getItem('cc_reduce_motion') === '1';
   const cute = () => localStorage.getItem('cc_cute_fx') !== '0';
   const heavy = () => cute() && !reduce;      // particles, shakes, confetti
   const light = () => !reduce;                // tiny UI motion

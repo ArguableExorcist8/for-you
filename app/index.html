@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 <div id="app">
@@ -428,24 +428,39 @@
     </div>
 
     <div class="tab hidden" id="tab-me">
-      <div class="card stCard" id="stCard"><h2>💾 Our storage</h2>
-        <div class="stBar"><div class="stFill" id="stFill"></div></div>
-        <p class="stTxt" id="stTxt">Checking… 💭</p>
-        <p class="muted" id="stSub">Photos, videos &amp; voice notes from Photos and Chat. Images and videos are shrunk on your phone before upload 🪄</p></div>
       <div class="card"><h2>Your profile</h2><p id="myNick"></p>
         <input id="pfName" maxlength="40" placeholder="Display name">
         <input id="pfUser" maxlength="24" placeholder="username" autocapitalize="none">
         <input id="pfEmoji" maxlength="4" class="short">
         <button id="pfSave">Save</button>
         <p class="muted">Invite code: <b id="pfCode"></b></p></div>
-      <div class="card"><h2>✨ Cute effects</h2><p class="muted">Floating hearts, sparkles, peeking stickers and little surprise bubbles.</p><button id="cuteToggle">✨ Cute effects: ON</button></div>
-      <div class="card"><h2>🔔 Notifications</h2><p class="muted" id="pushInfo">Get notified when your partner pings, writes, answers or sends something.</p>
+      <h3 class="setHead" id="shHead">Shared with your love 💕</h3>
+      <p class="muted setSub">You both see &amp; change these. When one of you changes something, the other's app updates instantly.</p>
+      <div class="card"><h2>🔔 Notifications</h2><p class="muted">What should send a push to each other?</p>
+        <div class="seg segCol" id="setNotify"><button data-v="important">Just the important stuff 💌<small>chat, hugs &amp; pokes</small></button><button data-v="everything">Everything 🔔<small>answers, moods, notes, photos, plans, games…</small></button></div>
+        <p class="muted small" id="setNotifyBy"></p></div>
+      <div class="card"><h2>✨ Cute effects</h2><p class="muted">Floating hearts, sparkles, peeking stickers and little surprise bubbles — on both phones.</p><button id="cuteToggle">✨ Cute effects: ON</button></div>
+      <div class="card"><h2>💬 Chat</h2>
+        <label class="tgl"><input type="checkbox" id="setReceipts"> <span>Read receipts <small>blue ✓✓ when seen</small></span></label>
+        <label class="tgl"><input type="checkbox" id="setTyping"> <span>Show “typing…”</span></label>
+        <label class="tgl"><input type="checkbox" id="setEnter"> <span>Enter sends <small>on computers · Shift+Enter = new line</small></span></label></div>
+      <div class="card"><h2>🎡 Date wheel</h2><p class="muted">Default category for “What we do next”.</p><select id="setWheel"></select></div>
+      <div class="card"><h2>💞 Pet names &amp; partner</h2><div id="partnerBox"></div><div id="nickBox"></div>
+        <button class="danger" id="disconnectBtn">Break up 💔</button></div>
+      <div class="card stCard" id="stCard"><h2>💾 Our storage</h2>
+        <div class="stBar"><div class="stFill" id="stFill"></div></div>
+        <p class="stTxt" id="stTxt">Checking… 💭</p>
+        <p class="muted" id="stSub">Photos, videos &amp; voice notes from Photos and Chat. Images and videos are shrunk on your phone before upload 🪄</p></div>
+      <h3 class="setHead">This device 📱</h3>
+      <p class="muted setSub">Only this phone/computer — not shared.</p>
+      <div class="card"><h2>🔔 Push on this phone</h2><p class="muted" id="pushInfo">Allow notifications on this device. <i>What</i> gets sent is the shared setting above.</p>
         <button id="pushBtn">Enable notifications</button><button class="soft hidden" id="pushOff">Turn off on this device</button>
         <p class="muted">📱 iPhone: notifications only work after you tap Share → <b>Add to Home Screen</b> and open the app from that icon (iOS 16.4+).</p></div>
+      <div class="card"><h2>🐢 Motion</h2><label class="tgl"><input type="checkbox" id="setReduce"> <span>Reduce motion <small>calmer animations on this device</small></span></label></div>
+      <div class="card"><h2>🎧 Voice notes</h2><p class="muted">Playback speed for chat voice notes.</p><div class="seg" id="setRate"><button data-v="1">1×</button><button data-v="1.5">1.5×</button><button data-v="2">2×</button></div></div>
+      <div class="card"><h2>📦 Offline</h2><p class="muted" id="offInfo">Checking…</p><button class="soft" id="offClear">Clear offline copy</button></div>
       <div class="card"><h2>📍 Distance & time</h2><p class="muted">Share your approximate location (rounded to ~10 km city level) so you can see how far apart you are and each other's local time.</p>
         <button id="locShare">Share my location</button><button class="soft hidden" id="locStop">Stop sharing</button><p class="muted" id="locInfo"></p></div>
-      <div class="card"><h2>Your partner</h2><div id="partnerBox"></div><div id="nickBox"></div>
-        <button class="danger" id="disconnectBtn">Break up 💔</button></div>
       <div class="card"><h2>iPhone shortcut</h2><p class="muted">Open this link from a Shortcut to send a ping instantly:</p>
         <div class="code small" id="shortcutUrl"></div></div>
       <button class="soft" data-action="signout">Sign out</button>
@@ -476,11 +491,11 @@
 <div id="chMenu" class="chMenu hidden"><div class="chMenuBox"><div class="chReacts" id="chReacts"></div><div class="chActs" id="chActs"></div></div></div>
 <div id="chVN" class="chVN hidden"><div class="chVNring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="bg"/><circle cx="60" cy="60" r="56" class="pr" id="chVNpr"/></svg><video id="chVNprev" playsinline muted autoplay></video></div><p id="chVNt">Tap ⏺ to record (max 60s)</p><div class="row"><button class="soft" id="chVNx">Cancel</button><button id="chVNgo">⏺ Record</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="config.js?v=17"></script>
-<script src="data.js?v=17"></script>
-<script src="trivia.js?v=17"></script>
-<script src="anim.js?v=17"></script>
-<script src="app.js?v=17"></script>
-<script src="cute.js?v=17"></script>
+<script src="config.js?v=18"></script>
+<script src="data.js?v=18"></script>
+<script src="trivia.js?v=18"></script>
+<script src="anim.js?v=18"></script>
+<script src="app.js?v=18"></script>
+<script src="cute.js?v=18"></script>
 </body>
 </html>
