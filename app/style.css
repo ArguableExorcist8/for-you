@@ -228,3 +228,104 @@ select{display:block;width:100%;padding:10px;border-radius:18px;border:2px solid
   .gtile.fxIn,.game.on,.feat.on,.fall,.bal,.mc.open,.mc.done,.mc:not(.open):not(.done),.scratch::after,#bar.beat,#meterBtn,.streak .flame:first-child,.jar span,.gtile small.new,#gameHome,#usHome{animation:none!important}
   .gtile:hover{transform:none}
 }
+
+/* ===== living games (v13) ===== */
+.hemo{display:inline-block;position:relative;animation:hBob 2.6s ease-in-out infinite;transform-origin:50% 90%}
+.hemo::after{content:'✦';position:absolute;top:-6px;right:-8px;font-size:10px;color:#ffb3c6;animation:hTw 1.8s ease-in-out infinite alternate}
+@keyframes hBob{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-4px) rotate(-8deg)}60%{transform:translateY(0) rotate(6deg)}}
+@keyframes hTw{from{opacity:0;transform:scale(.4) rotate(0)}to{opacity:1;transform:scale(1.1) rotate(90deg)}}
+/* bear */
+.bearStage{position:relative;height:190px;display:flex;align-items:center;justify-content:center}
+.bearWrap{position:relative;display:inline-block;animation:bBreath 3.2s ease-in-out infinite;transform-origin:50% 100%}
+#bearEl{font-size:110px;display:inline-block;line-height:1;animation:bBlink 4.5s infinite;transform-origin:50% 100%;transition:filter .3s}
+@keyframes bBreath{0%,100%{transform:scale(1,1) rotate(-2deg)}50%{transform:scale(1.04,.97) rotate(2deg)}}
+@keyframes bBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.86)}}
+.blush{position:absolute;left:50%;top:44%;transform:translateX(-50%);font-size:28px;opacity:0;transition:opacity .3s;pointer-events:none}
+.bearStage.blushing .blush{opacity:1}.bearStage.blushing #bearEl{filter:saturate(1.6) hue-rotate(-12deg)}
+.bearWrap.big{animation:bSquish .5s cubic-bezier(.2,1.7,.4,1)}@keyframes bSquish{30%{transform:scale(1.35,.65)}60%{transform:scale(.85,1.2)}100%{transform:scale(1)}}
+.bearWrap.spin{animation:bSpin .8s cubic-bezier(.2,1.2,.4,1)}@keyframes bSpin{to{transform:rotate(720deg) scale(1.1)}}
+.bearWrap.wave{animation:bWave 1s ease-in-out}@keyframes bWave{20%,60%{transform:rotate(-14deg)}40%,80%{transform:rotate(12deg)}}
+.thought,.speech{position:absolute;top:4px;background:#fff;border:2px solid #ffd1dc;border-radius:18px;padding:4px 10px;font-size:15px;font-weight:bold;opacity:0;transform:scale(.4) translateY(10px);transition:opacity .3s,transform .4s cubic-bezier(.2,1.6,.4,1);pointer-events:none;box-shadow:0 4px 12px rgba(200,50,100,.2);z-index:2}
+.thought{right:18%}.speech{left:12%}.thought.show,.speech.show{opacity:1;transform:none}
+.pokeCombo{position:absolute;bottom:4px;right:8px;font-weight:bold;color:#e75480;font-size:18px;opacity:0;transition:opacity .2s}.pokeCombo.show{opacity:1}
+.giantHeart{position:fixed;left:50%;top:45%;font-size:200px;z-index:96;pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:gH 1.3s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes gH{40%{transform:translate(-50%,-50%) scale(1.2)}70%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0}}
+/* fortune cookie */
+.cookieStage{position:relative;height:130px;display:flex;align-items:center;justify-content:center}
+.cookieWhole{font-size:96px;line-height:1;animation:cIdle 2.4s ease-in-out infinite;cursor:pointer;position:relative}
+.cookieWhole::after{content:'✨';position:absolute;top:0;right:-10px;font-size:22px;animation:hTw 1.4s ease-in-out infinite alternate}
+@keyframes cIdle{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) translateY(-4px)}}
+.cookieStage .half{position:absolute;font-size:96px;line-height:1;opacity:0;pointer-events:none}
+.cookieStage .half.l{clip-path:inset(0 50% 0 0)}.cookieStage .half.r{clip-path:inset(0 0 0 50%)}
+.cookieStage.cracked .cookieWhole{opacity:0;animation:none}
+.cookieStage.cracked .half{opacity:1}.cookieStage.cracked .half.l{animation:hL .7s cubic-bezier(.2,.9,.4,1) forwards}.cookieStage.cracked .half.r{animation:hR .7s cubic-bezier(.2,.9,.4,1) forwards}
+@keyframes hL{to{transform:translate(-70px,20px) rotate(-35deg)}}@keyframes hR{to{transform:translate(70px,20px) rotate(35deg)}}
+.cookieStage.shake .cookieWhole{animation:fxShake .4s}
+.cookieStage.roll .cookieWhole{animation:cRoll .8s cubic-bezier(.2,1,.4,1)}@keyframes cRoll{from{transform:translateX(-180px) rotate(-540deg);opacity:0}}
+.paperSlip{background:#fffaf0;border:1px solid #f3d6e0;border-radius:6px;padding:10px 14px;margin:8px auto;max-width:320px;box-shadow:0 4px 10px rgba(0,0,0,.08);transform-origin:50% 50%;font-family:'Bradley Hand','Segoe Print','Comic Sans MS',cursive;font-size:17px;min-height:48px}
+.paperSlip p{margin:4px 0}.paperSlip.unroll{animation:pUn .6s cubic-bezier(.2,1.2,.4,1)}@keyframes pUn{from{transform:scaleX(.05) translateY(-30px);opacity:0}}
+.crumb{position:fixed;width:6px;height:6px;border-radius:2px;background:#d9a35b;z-index:96;pointer-events:none;animation:fxP .8s ease-out forwards}
+/* wheel */
+.wheelStage{position:relative;width:min(80vw,300px);margin:6px auto 0}
+#wheelSvg{width:100%;display:block;filter:drop-shadow(0 8px 18px rgba(200,50,100,.25))}
+#wheelG{transform-origin:0 0}
+.wheelPointer{position:absolute;left:50%;top:-12px;transform:translateX(-50%);font-size:30px;color:#8b2252;z-index:2;transform-origin:50% 10%;text-shadow:0 2px 4px rgba(0,0,0,.2)}
+.wheelPointer.tick{animation:wTick .12s ease-out}@keyframes wTick{50%{transform:translateX(-50%) rotate(-18deg)}}
+.wslice.win path{animation:wWin .5s ease-in-out 4 alternate}@keyframes wWin{to{opacity:.55}}
+#wheelOut.result{animation:fxPop .5s cubic-bezier(.2,1.6,.4,1);box-shadow:0 0 0 3px #e75480,0 0 24px #ff8fab;font-weight:bold}
+/* compatibility */
+.compatStage{position:relative;height:120px;display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.cBub{background:#ffe4ec;border-radius:20px;padding:8px 12px;font-weight:bold;max-width:32%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:transform 1s cubic-bezier(.3,1.3,.5,1);animation:cbF 3s ease-in-out infinite}
+.cBub.b{animation-delay:-1.5s}@keyframes cbF{50%{transform:translateY(-6px)}}
+.compatStage.fly .cBub.a{transform:translateX(38%) scale(.9);animation:none}.compatStage.fly .cBub.b{transform:translateX(-38%) scale(.9);animation:none}
+.ball{position:relative;width:90px;height:90px;display:flex;align-items:center;justify-content:center}
+.crystal{font-size:56px;animation:cbF 3s ease-in-out infinite}
+.orbit{position:absolute;inset:0;animation:orb 6s linear infinite}.orbit i{position:absolute;font-style:normal;font-size:16px}
+.orbit i:nth-child(1){left:50%;top:-6px}.orbit i:nth-child(2){left:-6px;top:60%}.orbit i:nth-child(3){right:-6px;top:60%}
+@keyframes orb{to{transform:rotate(360deg)}}
+.compatStage.fly .orbit{animation-duration:.8s}.compatStage.fly .crystal{animation:fxShake .5s infinite}
+.slot{display:flex;justify-content:center;gap:4px;margin:6px 0;font-size:34px;font-weight:bold;color:#e75480}
+.slot span{display:inline-block;min-width:30px;background:#fff0f5;border-radius:10px;box-shadow:inset 0 2px 6px rgba(200,50,100,.2)}
+.slot span.roll{animation:slR .09s linear infinite}@keyframes slR{50%{transform:translateY(-4px);opacity:.6}}
+.slot span.land{animation:fxPop .4s cubic-bezier(.2,1.6,.4,1)}
+.rain{position:fixed;top:-40px;font-size:26px;z-index:96;pointer-events:none;animation:rainF linear forwards}@keyframes rainF{to{transform:translateY(115vh) rotate(200deg)}}
+/* reasons */
+.rStack{position:relative;height:150px;margin:6px 0 10px}
+.rCard,.rBack{position:absolute;inset:0;border-radius:18px}
+.rBack{background:#ffd6e5;box-shadow:0 4px 12px rgba(200,50,100,.15)}.rBack.b1{transform:rotate(-4deg) translateY(4px)}.rBack.b2{transform:rotate(5deg) translateY(8px);background:#ffe4ec}
+.rCard{background:#fff;border:2px solid #ffd1dc;display:flex;align-items:center;justify-content:center;padding:14px;font-size:19px;cursor:pointer;box-shadow:0 8px 20px rgba(200,50,100,.2);font-family:'Bradley Hand','Segoe Print','Comic Sans MS',cursive;animation:rIdle 4s ease-in-out infinite}
+@keyframes rIdle{50%{transform:translateY(-3px) rotate(.6deg)}}
+.rCard.out{animation:rOut .35s ease-in forwards}@keyframes rOut{to{transform:translateX(120%) rotate(18deg);opacity:0}}
+.rCard.in{animation:rIn .45s cubic-bezier(.2,1.3,.4,1)}@keyframes rIn{from{transform:translateY(-40px) scale(.8) rotate(-8deg);opacity:0}}
+.rFloat{position:absolute;right:-6px;top:-14px;font-size:26px;animation:cbF 2.4s ease-in-out infinite;pointer-events:none}
+/* hug */
+.hugStage,.hugBig{display:flex;align-items:center;justify-content:center;gap:10px;height:130px;position:relative}
+.hugStage .hb,.hugBig .hb{font-size:64px;display:inline-block;transition:transform .9s cubic-bezier(.3,1.4,.5,1)}
+.hugStage .hb.l{animation:hIdl 2.2s ease-in-out infinite}.hugStage .hb.r{animation:hIdr 2.2s ease-in-out infinite}
+@keyframes hIdl{50%{transform:translateX(-6px) rotate(-8deg)}}@keyframes hIdr{50%{transform:translateX(6px) rotate(8deg)}}
+.hheart{font-size:28px;opacity:.35;transition:opacity .4s,transform .6s}
+.hugStage.go .hb.l,.hugBig.go .hb.l{animation:none;transform:translateX(34px) rotate(10deg)}.hugStage.go .hb.r,.hugBig.go .hb.r{animation:none;transform:translateX(-34px) rotate(-10deg) scaleX(-1)}
+.hugStage.go .hheart,.hugBig.go .hheart{opacity:1;transform:translateY(-46px) scale(1.8)}
+.hugStage.go,.hugBig.go{animation:hSq .6s ease-in-out .9s 3 alternate}@keyframes hSq{to{transform:scale(1.12,.92)}}
+.hugBig .hb{font-size:110px}.hugBig{height:200px}
+#hugOverlay{animation:hGlow 1.6s ease-in-out infinite alternate}@keyframes hGlow{to{filter:brightness(1.12) saturate(1.2)}}
+.hugGlow{position:fixed;inset:0;z-index:95;pointer-events:none;background:radial-gradient(circle,rgba(255,143,171,.55),transparent 70%);animation:hgP 2.4s ease-out forwards}@keyframes hgP{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.4)}}
+.swirl{position:fixed;left:50%;top:50%;z-index:96;pointer-events:none;font-size:22px;animation:sw 2s ease-out forwards}
+@keyframes sw{from{transform:rotate(var(--a)) translateX(10px) rotate(calc(-1 * var(--a)))}to{transform:rotate(calc(var(--a) + 360deg)) translateX(160px) rotate(calc(-1 * var(--a)));opacity:0}}
+@media (prefers-reduced-motion: reduce){
+  .hemo,.hemo::after,.bearWrap,#bearEl,.cookieWhole,.cookieWhole::after,.cBub,.crystal,.orbit,.rCard,.rFloat,.hugStage .hb,#hugOverlay{animation:none!important}
+}
+
+/* ===== v14 wheel shuffle + surprise ===== */
+.wheelBtns{display:flex;gap:8px}.wheelBtns button{flex:1}
+#wheelCats span{font-size:12px;padding:5px 10px;transition:transform .2s}#wheelCats span:active{transform:scale(.9)}
+.wheelStage.shuf #wheelSvg{animation:wShuf .75s cubic-bezier(.3,1.3,.5,1)}
+@keyframes wShuf{40%{transform:scale(.35) rotate(-200deg);opacity:.2}100%{transform:none;opacity:1}}
+#surpriseOverlay{z-index:90}
+.sGift{font-size:110px;line-height:1;transition:transform .5s cubic-bezier(.2,1.6,.4,1),opacity .4s}
+.sGift.wig{animation:gWig .3s ease-in-out 3}@keyframes gWig{25%{transform:rotate(-14deg) scale(1.05)}75%{transform:rotate(14deg) scale(1.05)}}
+.sGift.open{transform:translateY(-30px) scale(.6);opacity:.6}
+.sCard{background:#fff;color:#8b2252;border-radius:22px;padding:18px 16px;width:min(88vw,340px);text-align:center;box-shadow:0 12px 34px rgba(139,34,82,.35);border:3px solid #ffd1dc;opacity:0;transform:scale(.3) translateY(40px);transition:opacity .35s,transform .5s cubic-bezier(.2,1.5,.4,1)}
+.sCard.show{opacity:1;transform:none}.sCard small{background:#ffe4ec;border-radius:12px;padding:3px 10px;font-weight:bold}
+.sCard h2{margin:12px 0;font-size:22px}.sCard .row{display:flex;gap:8px}.sCard .row button{flex:1}
+@media (prefers-reduced-motion: reduce){.wheelStage.shuf #wheelSvg,.sGift.wig{animation:none}.sCard,.sGift{transition:none}}

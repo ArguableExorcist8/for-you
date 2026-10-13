@@ -314,6 +314,7 @@ async function sendPing() {
 }
 $('#pingBtn').onclick = () => sendPing();
 function showPingFrom(p) {
+  if (p.kind === 'hug') { showHugOverlay(`${partnerName()} is hugging you 🤗`); return; }
   const line = D.pingLines[Math.floor(Math.random() * D.pingLines.length)];
   $('#heartTxt').textContent = `${partnerName()} ${line}`;
   const o = $('#heartOverlay'); o.classList.remove('hidden'); floatHearts(o, 24);
@@ -1114,7 +1115,7 @@ $('#finaleBtn').onclick = () => {
 $('#finale').onclick = () => { if (!fwDone) return; fwRun = false; fwTimers.forEach(clearTimeout); fwTimers = []; $('#finale').classList.add('hidden'); };
 
 // compat default names once couple loads
-function initGames() {
+let initGames = function () {
   $('#cpN1').value = S.me.display_name; $('#cpN2').value = partnerName(); $('#calcTxt').textContent = '';
   renderPokes(); renderBQ(); renderQuiz();
 }
@@ -1850,6 +1851,215 @@ Object.assign(FEAT_RENDER, { voice: () => RENDER.voice_notes(), wish: renderWish
 async function initConnect() {
   refreshProgress(); loadLocked(); loadLMProgress(); pushState().catch(() => {}); RENDER.locations();
 }
+
+// ================= LIVING GAMES (v13) =================
+const H = () => window.FX && FX.heavy();
+const Lm = () => window.FX && FX.light();
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+function bubble(el, text, ms = 1400) { if (!el) return; el.textContent = text; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms); }
+function emojiRain(set, n = 30) { if (!H()) return; for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'rain'; d.textContent = rnd(set); d.style.left = Math.random() * 100 + 'vw'; d.style.animationDuration = (2 + Math.random() * 2) + 's'; d.style.animationDelay = Math.random() * .8 + 's'; document.body.appendChild(d); setTimeout(() => d.remove(), 5000); } }
+// header emoji bounce
+$$('.game h2, .feat h2').forEach((h) => { const n = h.firstChild; if (!n || n.nodeType !== 3) return; const m = n.textContent.match(/^(\p{Extended_Pictographic}\uFE0F?)\s*/u); if (!m) return; n.textContent = n.textContent.slice(m[0].length); const s = document.createElement('span'); s.className = 'hemo'; s.textContent = m[1]; h.insertBefore(document.createTextNode(' '), n); h.insertBefore(s, h.firstChild); });
+
+// ---- poke bear ----
+const BEAR_SAY = ['hehe 🙈', 'more pokes!', 'I love you 💗', 'that tickles!', 'again again!', 'boop!', 'hug me?', `${'I'} miss you 🥺`];
+let pokeTimes = [], pokeComboN = 0, pokeComboT = null;
+$('#bearEl').onclick = (e) => {
+  const now = Date.now(); pokeTimes = pokeTimes.filter((t) => now - t < 1500); pokeTimes.push(now);
+  pokeComboN++; clearTimeout(pokeComboT); pokeComboT = setTimeout(() => { pokeComboN = 0; $('#pokeCombo').classList.remove('show'); $('#bearStage').classList.remove('blushing'); }, 1600);
+  const rapid = pokeTimes.length; const wrap = $('.bearWrap');
+  $('#bearTxt').textContent = D.bearLines[bearI++ % D.bearLines.length]; snd('boing'); if (navigator.vibrate) navigator.vibrate(15);
+  if (window.FX) {
+    FX.cls(wrap, rapid >= 8 ? 'spin' : 'big', rapid >= 8 ? 800 : 500);
+    FX.burst(e.clientX, e.clientY, ['💗', '💕', '💖', '✨'], 8 + Math.min(rapid, 8), 70);
+    FX.floatText(e.clientX, e.clientY - 20, '+1');
+  }
+  hearts(rapid >= 5 ? 6 : 3, e.clientX, e.clientY);
+  if (Math.random() < .55 || rapid >= 4) bubble($('#bearSpeech'), rnd(BEAR_SAY));
+  if (pokeComboN >= 3) { $('#pokeCombo').textContent = `combo ×${pokeComboN} 🔥`; $('#pokeCombo').classList.add('show'); window.FX && FX.pop($('#pokeCombo')); }
+  if (rapid >= 5) $('#bearStage').classList.add('blushing');
+  if (rapid === 12 && H()) { const g = document.createElement('div'); g.className = 'giantHeart'; g.textContent = '💖'; document.body.appendChild(g); setTimeout(() => g.remove(), 1400); FX.confetti(60); bubble($('#bearSpeech'), 'I LOVE YOU SO MUCH 💖', 2000); }
+  pokePending++; renderPokes(); if (!pokeTimer) pokeTimer = setTimeout(flushPokes, 700);
+};
+setInterval(() => {
+  if (document.hidden || curGame !== 'bear' || !Lm()) return;
+  if (Math.random() < .5) bubble($('#bearThought'), rnd(['💭💗', '💭🍯', `💭 ${partnerName()}…`, '💭🤗', '💭✨']), 2200);
+  else window.FX && FX.cls($('.bearWrap'), 'wave', 1000);
+}, 5000);
+
+// ---- fortune cookie ----
+let cookieOpen = false, typeT = null;
+function typeText(el, txt) { clearInterval(typeT); if (!Lm()) { el.textContent = txt; return; } el.textContent = ''; let i = 0; const chars = [...txt]; typeT = setInterval(() => { el.textContent += chars[i++] || ''; if (i >= chars.length) clearInterval(typeT); }, 28); }
+function crumbs(x, y) { if (!H()) return; for (let i = 0; i < 14; i++) { const c = document.createElement('div'); c.className = 'crumb'; c.style.left = x + 'px'; c.style.top = y + 'px'; c.style.setProperty('--x', (Math.random() * 160 - 80) + 'px'); c.style.setProperty('--y', (Math.random() * 90 + 10) + 'px'); document.body.appendChild(c); setTimeout(() => c.remove(), 900); } }
+$('#cookie').onclick = async (e) => {
+  if (cookieOpen) return; cookieOpen = true; const st = $('#cookieStage');
+  const fromP = (S.data.fortunes || []).filter((f) => !mine(f));
+  const txt = fromP.length && Math.random() < .75 ? (() => { const f = rnd(fromP); return `${f.message}  — ${partnerName()} 💌`; })() : rnd(D.fortunes);
+  if (Lm()) { st.classList.add('shake'); snd('tick'); await wait(400); st.classList.remove('shake'); }
+  st.classList.add('cracked'); snd('pop'); const r = st.getBoundingClientRect(); crumbs(r.left + r.width / 2, r.top + r.height / 2);
+  window.FX && FX.burst(r.left + r.width / 2, r.top + r.height / 2, ['✨', '⭐', '🌟'], 10, 70);
+  const pp = $('#fortunePaper'); pp.classList.remove('unroll'); void pp.offsetWidth; pp.classList.add('unroll'); typeText($('#fortune'), txt);
+};
+$('#cookieNew').onclick = () => { const st = $('#cookieStage'); st.classList.remove('cracked'); cookieOpen = false; st.classList.remove('roll'); void st.offsetWidth; st.classList.add('roll'); setTimeout(() => st.classList.remove('roll'), 850); $('#fortune').textContent = 'Tap the cookie to crack it open'; snd('boing'); };
+
+// ---- real date wheel ----
+const WCOL = ['#ff8fab', '#ffc2d1', '#e75480', '#ffd6e5', '#c77dff', '#ffb3c6', '#ff6f91', '#f9c6ff', '#ffa8b6', '#e0c3fc', '#ff85a1', '#fbb1bd'];
+let wheelItems = [], wheelAngle = 0, wheelSpinning = false, wheelIdleRAF = null, lastIdle = 0;
+const wTrunc = (s, n) => { const a = [...s]; return a.length > n ? a.slice(0, n - 1).join('') + '…' : s; };
+function buildWheel(items) {
+  wheelItems = items; const n = items.length, a = 360 / n, R = 100;
+  const pt = (deg, r) => [r * Math.sin(deg * Math.PI / 180), -r * Math.cos(deg * Math.PI / 180)];
+  const fs = n <= 6 ? 9 : n <= 9 ? 7.5 : 6.2, maxc = n <= 6 ? 16 : n <= 9 ? 14 : 12;
+  $('#wheelG').innerHTML = items.map((it, i) => {
+    const c = i * a, [x1, y1] = pt(c - a / 2, R), [x2, y2] = pt(c + a / 2, R);
+    return `<g class="wslice" data-i="${i}"><path d="M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${a > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${WCOL[i % WCOL.length]}" stroke="#fff" stroke-width="1.5"/>
+      <text transform="rotate(${c - 90}) translate(${R - 8} 0)" text-anchor="end" dominant-baseline="middle" font-size="${fs}" font-weight="bold" fill="#5a1236">${esc(wTrunc(it, maxc))}</text></g>`;
+  }).join('') + `<circle r="${R}" fill="none" stroke="#fff" stroke-width="4"/>`;
+  setWheel(wheelAngle);
+}
+function setWheel(deg) { wheelAngle = deg; $('#wheelG').setAttribute('transform', `rotate(${deg})`); }
+function wheelPool() { if (!wheelItems.length) drawWheel(false); return wheelItems; }
+function sampleWheel(winner) {
+  const pool = wheelPool(); if (pool.length <= 12) return pool;
+  const others = pool.filter((x) => x !== winner).sort(() => Math.random() - .5).slice(0, 11); others.splice(Math.floor(Math.random() * 12), 0, winner); return others;
+}
+function refreshWheel(force) { if (wheelSpinning) return; if (force || !wheelItems.length) drawWheel(false); }
+const origRenderIdeas = RENDER.date_ideas; RENDER.date_ideas = () => { origRenderIdeas(); refreshWheel(wheelCat === 'ours'); };
+function wheelIdle(t) {
+  wheelIdleRAF = requestAnimationFrame(wheelIdle);
+  if (wheelSpinning || curGame !== 'wheel' || document.hidden || !H()) { lastIdle = t; return; }
+  const dt = Math.min(50, t - (lastIdle || t)); lastIdle = t; setWheel((wheelAngle + dt * 0.006) % 360);
+}
+wheelIdleRAF = requestAnimationFrame(wheelIdle);
+$('#spinBtn').onclick = () => {
+  if (wheelSpinning) return; const pool = wheelPool(); const winner = rnd(pool);
+  if (pool.length > 12 || !wheelItems.includes(winner)) buildWheel(sampleWheel(winner));
+  const n = wheelItems.length, a = 360 / n, wi = wheelItems.indexOf(winner);
+  $$('#wheelG .wslice').forEach((s) => s.classList.remove('win')); $('#wheelOut').classList.remove('result');
+  const start = wheelAngle, cur = ((start % 360) + 360) % 360;
+  const want = ((-(wi * a) % 360) + 360) % 360; const jitter = (Math.random() - .5) * a * .6;
+  const target = start + (360 * (4 + Math.floor(Math.random() * 2))) + ((want - cur + 360) % 360) + jitter;
+  const dur = Lm() ? 4200 + Math.random() * 1500 : 10; const t0 = performance.now(); wheelSpinning = true;
+  let lastIdx = -1, lastSnd = 0; $('#wheelOut').textContent = 'Spinning… 🎡';
+  const ease = (k) => 1 - Math.pow(1 - k, 4);
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur); const ang = start + (target - start) * ease(k); setWheel(ang);
+    const idx = Math.floor((((-ang % 360) + 360 + a / 2) % 360) / a) % n;
+    if (idx !== lastIdx) { lastIdx = idx; if (window.FX) FX.cls($('#wheelPointer'), 'tick', 120); if (t - lastSnd > 45) { snd('tick'); lastSnd = t; } }
+    if (k < 1) return requestAnimationFrame(step);
+    wheelSpinning = false; setWheel(target % 360); finishSpin(winner, wi);
+  };
+  requestAnimationFrame(step);
+};
+async function finishSpin(winner, wi) {
+  const sl = $(`#wheelG .wslice[data-i="${wi}"]`); sl && sl.classList.add('win');
+  const out = $('#wheelOut'); out.textContent = '🎉 ' + winner; out.classList.remove('result'); void out.offsetWidth; out.classList.add('result');
+  snd('win'); hearts(10); if (window.FX) { FX.confetti(70); FX.burstAt(out, ['🎉', '💖', '✨'], 14, 90); }
+  const { error } = await sb.from('date_spins').insert({ idea: winner.slice(0, 150) });
+  if (error) toast(errMsg(error)); else toast(`Saved! ${partnerName()} will see it too 🎡`);
+}
+
+// ---- compatibility machine ----
+const CALC_MSGS = ['Consulting the stars… ✨', 'Measuring cuddles… 🤗', 'Counting shared snacks… 🍟', 'Analyzing heartbeats… 💓', 'Checking the moon… 🌙', 'Weighing butterflies… 🦋', 'Asking Cupid… 💘'];
+const syncBubbles = () => { $('#cbA').textContent = $('#cpN1').value || 'You'; $('#cbB').textContent = $('#cpN2').value || 'Me'; };
+$('#cpN1').oninput = syncBubbles; $('#cpN2').oninput = syncBubbles;
+let calcBusy = false;
+$('#calcBtn').onclick = async () => {
+  if (calcBusy) return; calcBusy = true; syncBubbles();
+  const a = $('#cpN1').value.trim().toLowerCase(), b = $('#cpN2').value.trim().toLowerCase(); const t = $('#calcTxt'); t.textContent = '';
+  const us = S.me && S.partner && [S.me.display_name.toLowerCase(), partnerName().toLowerCase()].sort().join('|') === [a, b].sort().join('|')
+    || (S.me && S.partner && [S.me.display_name.toLowerCase(), S.partner.display_name.toLowerCase()].sort().join('|') === [a, b].sort().join('|'));
+  const target = us ? 100 + hashStr(S.couple.id) % 900 : 50 + hashStr([a, b].sort().join('|')) % 51;
+  const st = $('#compatStage'), digits = $$('#slot span'); st.classList.add('fly');
+  let mi = 0; const msgT = setInterval(() => { $('#calcMsg').textContent = CALC_MSGS[mi++ % CALC_MSGS.length]; }, 550); $('#calcMsg').textContent = CALC_MSGS[0];
+  digits.forEach((d) => d.classList.add('roll'));
+  const rollT = setInterval(() => { digits.forEach((d) => { if (d.classList.contains('roll')) d.textContent = Math.floor(Math.random() * 10); }); snd('tick'); }, 70);
+  await wait(Lm() ? 2400 : 50);
+  const str = String(target).padStart(3, '0');
+  for (let i = 0; i < 3; i++) { digits[i].classList.remove('roll'); digits[i].textContent = str[i]; window.FX && FX.cls(digits[i], 'land', 400); snd('ding'); await wait(Lm() ? 380 : 0); }
+  clearInterval(rollT); clearInterval(msgT); st.classList.remove('fly');
+  const tier = target >= 500 ? ['Cosmic soulmates 🌌', ['💞', '🌌', '✨', '💖', '🪐']] : target >= 100 ? ['Off the charts! The machine is crying 🥹', ['💖', '💕', '🥹', '✨']] : target >= 85 ? ['Great match 💕', ['💕', '💗']] : ['Cute together 🙂', ['🙂', '💗']];
+  $('#calcMsg').textContent = ''; t.textContent = `${target}% — ${tier[0]}${us ? '' : ' (but not you two 😏)'}`;
+  hearts(15); snd('win'); emojiRain(tier[1], target >= 100 ? 40 : 15); window.FX && FX.burstAt($('.crystal'), tier[1], 14, 90); calcBusy = false;
+};
+const origInitGames = initGames;
+initGames = function () { origInitGames(); syncBubbles(); refreshWheel(); };
+
+// ---- reasons card deck ----
+let reasonN = 0, reasonBusy = false;
+async function nextReason(e) {
+  if (reasonBusy) return; reasonBusy = true; const c = $('#reason');
+  let i; do { i = Math.floor(Math.random() * D.reasons.length); } while (i === lastReason && D.reasons.length > 1); lastReason = i;
+  if (Lm()) { c.classList.remove('in'); c.classList.add('out'); await wait(330); }
+  c.classList.remove('out'); c.textContent = D.reasons[i] + ' 💖'; void c.offsetWidth; c.classList.add('in'); reasonN++;
+  $('#reasonNum').textContent = `Reason #${reasonN} of ∞`; snd('pop');
+  window.FX && FX.burstAt(c, ['💖', '💕', '✨'], 10, 80); if (e && e.clientX) hearts(3, e.clientX, e.clientY);
+  setTimeout(() => { reasonBusy = false; }, 200);
+}
+$('#reasonBtn').onclick = nextReason; $('#reason').onclick = nextReason;
+
+// ---- hugs ----
+function playHug(stage, ms = 3600) {
+  stage.classList.remove('go'); void stage.offsetWidth; stage.classList.add('go'); setTimeout(() => stage.classList.remove('go'), ms);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 300]);
+  if (!H()) return;
+  const g = document.createElement('div'); g.className = 'hugGlow'; document.body.appendChild(g); setTimeout(() => g.remove(), 2500);
+  for (let i = 0; i < 16; i++) { const s = document.createElement('div'); s.className = 'swirl'; s.textContent = rnd(['💗', '💕', '💖', '✨']); s.style.setProperty('--a', (i * 22.5) + 'deg'); s.style.animationDelay = (i * 40) + 'ms'; document.body.appendChild(s); setTimeout(() => s.remove(), 2700); }
+}
+function showHugOverlay(title) {
+  $('#hugTitle').textContent = title; const o = $('#hugOverlay'); o.classList.remove('hidden'); playHug(o.querySelector('.hugBig'), 5000); snd('win');
+  clearTimeout(showHugOverlay.t); showHugOverlay.t = setTimeout(() => o.classList.add('hidden'), 6000);
+}
+$('#hugBtn').onclick = () => showHugOverlay(rnd(['Squeeeeeze', 'Biggest hug ever 🫂', 'Not letting go', 'Hug level: bear 🐻']));
+$('#hugSend').onclick = async () => {
+  if (!S.couple) return toast('Connect with your partner first 💞');
+  playHug($('#hugStage')); snd('win');
+  const { error } = await sb.from('pings').insert({ kind: 'hug' });
+  if (error) return toast(errMsg(error)); notify('ping', 'sent you a big warm hug 🤗'); toast(`Hug sent to ${partnerName()} 🤗`);
+};
+
+// ---- v14: big date pool, shuffle, surprise, categories ----
+const WCATS = [['all', 'All ✨'], ['ours', 'Ours 💗'], ['cozy', 'Cozy 🕯️'], ['adventure', 'Adventure 🧗'], ['cheap', 'Cheap 💸'], ['ldr', 'Long-distance 📱'], ['home', 'At home 🏠']];
+const CAT_LBL = Object.fromEntries(WCATS);
+let wheelCat = localStorage.getItem('cc_wheel_cat') || 'all';
+function catPool() {
+  const ours = (S.data.date_ideas || []).map((i) => ({ t: i.idea, c: 'ours' }));
+  const all = ours.concat(D.datePool || D.dates.map((t) => ({ t, c: 'cozy' })));
+  const seen = new Set(); const f = all.filter((x) => (wheelCat === 'all' || x.c === wheelCat) && !seen.has(x.t) && seen.add(x.t));
+  return f.length ? f : all;
+}
+function drawWheel(anim) {
+  if (wheelSpinning) return;
+  const items = catPool().map((x) => x.t).sort(() => Math.random() - .5).slice(0, 8);
+  $$('#wheelG .wslice').forEach((s) => s.classList.remove('win'));
+  if (!anim || !Lm()) return buildWheel(items);
+  const st = $('.wheelStage'); st.classList.remove('shuf'); void st.offsetWidth; st.classList.add('shuf'); snd('boing');
+  setTimeout(() => buildWheel(items), 300); setTimeout(() => st.classList.remove('shuf'), 750);
+  window.FX && FX.burstAt(st, ['🔀', '✨', '💗'], 10, 90);
+}
+function renderWheelCats() {
+  $('#wheelCats').innerHTML = WCATS.map(([k, l]) => `<span data-c="${k}" class="${k === wheelCat ? 'on' : ''}">${l}</span>`).join('');
+  $$('#wheelCats span').forEach((s) => s.onclick = () => { wheelCat = s.dataset.c; localStorage.setItem('cc_wheel_cat', wheelCat); renderWheelCats(); drawWheel(true); });
+}
+renderWheelCats();
+$('#wheelShuffle').onclick = () => drawWheel(true);
+let surpriseIdea = null;
+async function surprise() {
+  const cand = catPool().filter((x) => !wheelItems.includes(x.t)); const pick = rnd(cand.length ? cand : catPool());
+  surpriseIdea = pick.t; const o = $('#surpriseOverlay'), g = $('#sGift'), c = $('#sCard');
+  o.classList.remove('hidden'); c.classList.remove('show'); g.classList.remove('open', 'wig');
+  $('#sCat').textContent = CAT_LBL[pick.c] || ''; $('#sIdea').textContent = pick.t;
+  if (Lm()) { void g.offsetWidth; g.classList.add('wig'); snd('tick'); await wait(900); }
+  g.classList.add('open'); c.classList.add('show'); snd('win');
+  if (window.FX) { FX.confetti(50); FX.burstAt(c, ['🎁', '💖', '✨', '🎉'], 16, 110); }
+}
+$('#wheelSurprise').onclick = surprise; $('#sAgain').onclick = (e) => { e.stopPropagation(); surprise(); };
+$('#surpriseOverlay').onclick = (e) => { if (e.target.id === 'surpriseOverlay') $('#surpriseOverlay').classList.add('hidden'); };
+$('#sAdd').onclick = async (e) => {
+  e.stopPropagation(); if (!S.couple) return toast('Connect with your partner first 💞');
+  const { error } = await sb.from('date_ideas').insert({ idea: surpriseIdea.slice(0, 150) });
+  if (error) return toast(errMsg(error)); toast('Added to our ideas 💗'); $('#surpriseOverlay').classList.add('hidden');
+};
 
 // initial session (onAuthStateChange also fires INITIAL_SESSION)
 sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booting) { show('#authView'); if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗'; } });

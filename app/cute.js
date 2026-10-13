@@ -34,8 +34,8 @@
   .cfBub small{display:block;color:#b45a82;font-size:11px;margin-top:2px}
   .cfBurst{position:fixed;pointer-events:none;z-index:96;font-size:18px;animation:cfB .8s ease-out forwards}
   @keyframes cfB{to{transform:translate(var(--bx),var(--by)) scale(.4);opacity:0}}
-  body.cute .card h2::after{content:' ✨';display:inline-block;font-size:.7em;animation:cfTw 2.4s ease-in-out infinite alternate}
-  @media (prefers-reduced-motion: reduce){.cfp,.cfs,body.cute .card h2::after{animation:none}.cfk,.cfBub{transition:none}}`;
+
+  @media (prefers-reduced-motion: reduce){.cfp,.cfs{animation:none}.cfk,.cfBub{transition:none}}`;
   document.head.appendChild(css);
 
   const every = (fn, ms) => { const t = setInterval(() => { if (!document.hidden) fn(); }, ms); timers.push(t); };
