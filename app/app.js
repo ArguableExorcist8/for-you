@@ -2,7 +2,9 @@
 'use strict';
 const { url, key } = window.CC_CONFIG;
 const D = window.CC_DATA;
-const sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+// offline: fail fast (as an abort, so supabase-js doesn't spend ~15s on retry backoff) and let the cache/queue take over
+const offFetch = (u, o) => (navigator.onLine ? fetch(u, o) : Promise.reject(Object.assign(new Error('Failed to fetch (offline)'), { name: 'AbortError' })));
+const sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }, global: { fetch: offFetch } });
 
 // pretty dialogs
 function uiDialog(msg, withInput) {
@@ -30,7 +32,7 @@ window.googleSignIn = async () => {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const toast = (m, ms = 2600) => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms); };
+const toast = (m, ms = 2600) => { const t = $('#toast'); if (window.__ccQueuedAt && Date.now() - window.__ccQueuedAt < 1500 && !/offline|online/i.test(m)) m += ' · saved offline, will sync 📴'; t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms); };
 const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const fmtTime = (d) => new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(id).classList.remove('hidden'); };
@@ -91,12 +93,161 @@ document.addEventListener('click', async (e) => {
   if (e.target.closest('[data-action="signout"]')) { await sb.auth.signOut(); }
 });
 
+function storedUser() {
+  try { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)); const v = k && JSON.parse(localStorage.getItem(k)); return (v && (v.user || v.currentSession?.user)) || null; } catch { return null; }
+}
 sb.auth.onAuthStateChange((event, session) => {
+  if (!session && event !== 'SIGNED_OUT' && (!navigator.onLine || OFF.on)) { const u = storedUser(); if (u) session = { user: u }; } // offline: keep the stored session
   const uid = session?.user?.id || null;
   if (uid === (S.user?.id || null) && event !== 'USER_UPDATED') return;
   S.user = session?.user || null;
   setTimeout(boot, 0); // avoid calling supabase inside the callback
 });
+
+// ================= OFFLINE (v15): data cache, write queue, status =================
+const OFF = { on: !navigator.onLine, flushing: false };
+const isNetErr = (e) => !navigator.onLine || /fetch|network|load failed|internet|timed? ?out|ERR_/i.test(String((e && (e.message || e.details)) || e || ''));
+// tiny IndexedDB key-value store (falls back to localStorage)
+const kv = (() => {
+  let dbp = null;
+  const db = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('forus-cache', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
+  const tx = async (mode, fn) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction('kv', mode); const r = fn(t.objectStore('kv')); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
+  return {
+    get: async (k) => { try { return await tx('readonly', (s) => s.get(k)); } catch { try { return JSON.parse(localStorage.getItem('cc_kv_' + k)); } catch { return undefined; } } },
+    set: async (k, v) => { try { await tx('readwrite', (s) => s.put(v, k)); } catch { try { localStorage.setItem('cc_kv_' + k, JSON.stringify(v)); } catch { /* full */ } } },
+  };
+})();
+const ck = (k) => `${S.user?.id || 'anon'}:${k}`;
+const cacheSet = (k, v) => kv.set(ck(k), v);
+const cacheGet = (k) => kv.get(ck(k));
+const saveTableCache = (t) => S.couple && cacheSet(`t:${S.couple.id}:${t}`, S.data[t] || []);
+try { S.signedUrls = JSON.parse(localStorage.getItem('cc_signed') || '{}'); } catch { S.signedUrls = {}; }
+const saveSigned = () => { try { localStorage.setItem('cc_signed', JSON.stringify(S.signedUrls)); } catch { /* */ } };
+addEventListener('pagehide', saveSigned); document.addEventListener('visibilitychange', () => document.hidden && saveSigned());
+
+// offline status pill + toast
+function setOffline(off, silent) {
+  const was = OFF.on; OFF.on = off;
+  let p = document.getElementById('offPill');
+  if (!p) { p = document.createElement('div'); p.id = 'offPill'; p.innerHTML = 'Offline 📴 <small>showing saved stuff</small>'; document.body.appendChild(p); }
+  p.classList.toggle('show', off);
+  document.body.classList.toggle('isOffline', off);
+  if (typeof refreshCoopNotice === 'function') refreshCoopNotice();
+  if (was && !off && !silent) flushQueue(true);
+}
+addEventListener('offline', () => setOffline(true));
+if (!navigator.onLine) setTimeout(() => setOffline(true, true), 0);
+addEventListener('online', () => setOffline(false));
+
+// write queue
+const QKEY = 'cc_queue';
+const qLoad = () => { try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { return []; } };
+const qSave = (q) => localStorage.setItem(QKEY, JSON.stringify(q));
+function enqueue(item) {
+  const q = qLoad(); item.qid = item.qid || crypto.randomUUID(); item.uid = S.user?.id; item.ts = Date.now();
+  // de-dupe: identical non-insert ops replace the older copy; same-id inserts are never queued twice
+  const sig = JSON.stringify([item.kind, item.t, item.op, item.args, item.chain, item.name, item.body]);
+  const i = q.findIndex((x) => JSON.stringify([x.kind, x.t, x.op, x.args, x.chain, x.name, x.body]) === sig);
+  if (i >= 0) q.splice(i, 1);
+  q.push(item); qSave(q); updateQueueBadge();
+}
+function updateQueueBadge() { const p = document.getElementById('offPill'); const n = qLoad().length; if (p) p.dataset.q = n ? `${n} waiting to sync` : ''; }
+const QUEUE_RPC = ['poke_bear'];
+const realFrom = sb.from.bind(sb), realRpc = sb.rpc.bind(sb);
+const filtersOf = (chain) => chain.filter((c) => c.m === 'eq' || c.m === 'match');
+function rowMatches(row, chain) { return filtersOf(chain).every((c) => c.m === 'eq' ? String(row[c.a[0]]) === String(c.a[1]) : Object.entries(c.a[0]).every(([k, v]) => String(row[k]) === String(v))); }
+function applyOptimistic(t, op, args, chain) {
+  if (!S.couple || !TABLES[t]) return null;
+  const list = (S.data[t] = S.data[t] || []); const now = new Date().toISOString(); let out = null;
+  if (op === 'insert' || op === 'upsert') {
+    const rows = (Array.isArray(args[0]) ? args[0] : [args[0]]).map((r) => ({ created_at: now, updated_at: now, couple_id: S.couple.id, created_by: S.user.id, ...r, _pending: true }));
+    const conflict = (args[1] && args[1].onConflict ? args[1].onConflict.split(',').map((s) => s.trim()) : ['id']);
+    rows.forEach((r) => {
+      const j = list.findIndex((x) => conflict.every((k) => r[k] !== undefined && String(x[k]) === String(r[k])));
+      if (j >= 0) list[j] = { ...list[j], ...r }; else if (TABLES[t].asc) list.push(r); else list.unshift(r);
+    });
+    out = Array.isArray(args[0]) ? rows : rows[0];
+  } else if (op === 'update') { list.forEach((r, i) => { if (rowMatches(r, chain)) list[i] = { ...r, ...args[0], _pending: true }; }); }
+  else if (op === 'delete') { S.data[t] = list.filter((r) => !rowMatches(r, chain)); }
+  try { RENDER[t] && RENDER[t](); } catch (e) { console.warn('optimistic render', t, e); }
+  saveTableCache(t);
+  return out;
+}
+async function runOp(t, op, args, chain) {
+  let q = realFrom(t)[op](...args);
+  for (const c of chain) q = q[c.m](...c.a);
+  return q;
+}
+function queuedBuilder(t, op, args) {
+  if (op === 'insert' && TABLES[t]) { // client ids make retries idempotent
+    const add = (r) => (r && typeof r === 'object' && !r.id ? { id: crypto.randomUUID(), ...r } : r);
+    args = [Array.isArray(args[0]) ? args[0].map(add) : add(args[0]), ...args.slice(1)];
+  }
+  const chain = []; let p = null;
+  const exec = async () => {
+    const wantSingle = chain.some((c) => c.m === 'single' || c.m === 'maybeSingle');
+    const queueIt = () => {
+      enqueue({ kind: 'db', t, op, args, chain }); setOffline(true, true); window.__ccQueuedAt = Date.now();
+      const data = applyOptimistic(t, op, args, chain);
+      return { data: wantSingle && Array.isArray(data) ? data[0] : data, error: null, status: 202, queued: true };
+    };
+    if (OFF.on && !navigator.onLine) return queueIt();
+    try { const r = await runOp(t, op, args, chain); if (r.error && isNetErr(r.error)) return queueIt(); return r; }
+    catch (e) { if (isNetErr(e)) return queueIt(); throw e; }
+  };
+  const proxy = new Proxy({}, { get(_, m) {
+    if (m === 'then') return (a, b) => (p = p || exec()).then(a, b);
+    if (m === 'catch') return (b) => (p = p || exec()).catch(b);
+    if (m === 'finally') return (f) => (p = p || exec()).finally(f);
+    return (...a) => { chain.push({ m, a }); return proxy; };
+  } });
+  return proxy;
+}
+sb.from = (t) => { const b = realFrom(t); ['insert', 'upsert', 'update', 'delete'].forEach((op) => { b[op] = (...a) => queuedBuilder(t, op, a); }); return b; };
+sb.rpc = (name, params, opts) => {
+  if (!QUEUE_RPC.includes(name)) return realRpc(name, params, opts);
+  return (async () => {
+    const q = () => { enqueue({ kind: 'rpc', name, args: params || {} }); setOffline(true, true); return { data: null, error: null, queued: true }; };
+    if (!navigator.onLine) return q();
+    try { const r = await realRpc(name, params, opts); return r.error && isNetErr(r.error) ? q() : r; } catch (e) { if (isNetErr(e)) return q(); throw e; }
+  })();
+};
+async function flushQueue(announce) {
+  if (OFF.flushing || !navigator.onLine || !S.user) return; const start = qLoad().filter((x) => x.uid === S.user.id); if (!start.length) return;
+  OFF.flushing = true; let done = 0, dropped = 0;
+  try {
+    try { await sb.auth.getSession(); } catch { /* refresh happens on next call */ }
+    for (const it of start) {
+      let r;
+      try {
+        if (it.kind === 'db') r = await runOp(it.t, it.op, it.args, it.chain || []);
+        else if (it.kind === 'rpc') r = await realRpc(it.name, it.args);
+        else if (it.kind === 'fn') r = await sb.functions.invoke(it.name, { body: it.body });
+      } catch (e) { r = { error: e }; }
+      const err = r && r.error;
+      if (err && (isNetErr(err) || /jwt|401|token/i.test(String(err.message || err.code || '')))) break; // try again later
+      if (err && err.code !== '23505') { dropped++; console.warn('queued write dropped', it, err); }
+      else done++;
+      qSave(qLoad().filter((x) => x.qid !== it.qid));
+    }
+  } finally { OFF.flushing = false; updateQueueBadge(); }
+  if (done || dropped) {
+    if (S.couple) await Promise.all([...new Set(start.filter((x) => x.t).map((x) => x.t))].filter((t) => TABLES[t]).map(loadTable));
+    if (announce !== false) toast(dropped ? `Back online ✨ synced ${done}, ${dropped} couldn't be saved` : `Back online ✨ synced${done ? ` (${done})` : ''}`);
+  } else if (announce === true) toast('Back online ✨');
+}
+setInterval(() => { if (navigator.onLine && qLoad().length) flushQueue(); }, 30000);
+// co-op games need the partner live
+const COOP_GAMES = { quiz: 'the partner quiz', scratch: 'scratch cards', openwhen: 'Open-when letters', question: 'the big question', draw: 'sending drawings' };
+function refreshCoopNotice() {
+  document.querySelectorAll('.coopOff').forEach((n) => n.remove());
+  if (!OFF.on || typeof curGame === 'undefined' || !COOP_GAMES[curGame]) return;
+  const panel = document.querySelector(`.game[data-panel="${curGame}"]`); if (!panel) return;
+  const n = document.createElement('div'); n.className = 'coopOff';
+  n.innerHTML = `<div class="coopEm">📡💞</div><b>${COOP_GAMES[curGame]} needs internet to play together</b><p>You're offline, so here's what we saved. Try a solo game meanwhile!</p><div class="chips"><span data-g="catch">🧺 Catch</span><span data-g="memory">🃏 Memory</span><span data-g="bear">🧸 Bear</span><span data-g="wheel">🎡 Wheel</span><span data-g="fortune">🥠 Fortune</span></div>`;
+  n.querySelectorAll('[data-g]').forEach((s) => s.onclick = () => openGame(s.dataset.g));
+  panel.insertBefore(n, panel.children[1] || null);
+}
 
 // ================= BOOT / ROUTING =================
 let booting = false;
@@ -124,21 +275,26 @@ function teardown() {
 async function loadMe() {
   for (let i = 0; i < 3; i++) {
     const { data, error } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
-    if (error) throw error;
-    if (data) { S.me = data; return; }
+    if (error) { const c = await cacheGet('me'); if (c && isNetErr(error)) { S.me = c; setOffline(true, true); return; } throw error; }
+    if (data) { S.me = data; cacheSet('me', data); return; }
     await new Promise((r) => setTimeout(r, 600));
   }
   throw new Error('Profile not found');
 }
 async function loadCouple() {
   const { data, error } = await sb.from('couples').select('*').eq('active', true).maybeSingle();
-  if (error) throw error;
+  if (error) {
+    const c = await cacheGet('couple'); if (!(c && isNetErr(error))) throw error;
+    S.couple = c.couple; S.partner = c.partner; setOffline(true, true); return;
+  }
   S.couple = data;
   if (data) {
     const pid = data.user_a === S.user.id ? data.user_b : data.user_a;
     const { data: p } = await sb.from('profiles').select('id,username,display_name,emoji').eq('id', pid).maybeSingle();
-    S.partner = p || { id: pid, display_name: 'Your love', emoji: '💗', username: '' };
+    const old = await cacheGet('couple');
+    S.partner = p || (old && old.partner && old.partner.id === pid ? old.partner : { id: pid, display_name: 'Your love', emoji: '💗', username: '' });
   }
+  cacheSet('couple', { couple: data, partner: S.partner });
 }
 
 // ================= PAIRING =================
@@ -242,10 +398,19 @@ async function loadTable(t) {
   const c = TABLES[t];
   let q = sb.from(t).select('*').eq('couple_id', S.couple.id).order(c.order, { ascending: c.asc });
   if (c.limit) q = q.limit(c.limit);
-  const { data, error } = await q;
-  if (error) { console.error(t, error); return; }
+  let { data, error } = await q;
+  if (error) {
+    const c = await cacheGet(`t:${S.couple.id}:${t}`);
+    if (!c) { if (!isNetErr(error)) console.error(t, error); return; }
+    if (isNetErr(error)) setOffline(true, true); data = c;
+  } else {
+    // keep still-queued rows visible until they sync
+    const pend = (S.data[t] || []).filter((r) => r._pending && !data.some((d) => d.id === r.id));
+    data = TABLES[t].asc ? data.concat(pend) : pend.concat(data);
+    S.data[t] = data; saveTableCache(t);
+  }
   S.data[t] = data;
-  RENDER[t] && RENDER[t]();
+  try { RENDER[t] && RENDER[t](); } catch (e) { console.warn('render', t, e); }
 }
 const nickFor = (uid) => (S.data.couple_nicknames || []).find((n) => n.target_user === uid);
 const partnerName = () => nickFor(S.partner?.id)?.nickname || S.partner?.display_name || 'Your love';
@@ -269,6 +434,7 @@ async function enterCouple() {
   subscribeCouple();
   welcomeBack();
   runPendingAction();
+  if (navigator.onLine) flushQueue(); updateQueueBadge();
 }
 function subscribeCouple() {
   const ch = sb.channel('couple-' + S.couple.id);
@@ -390,7 +556,7 @@ RENDER.countdowns = () => {
 function tickCountdowns() {
   $$('[data-cd]').forEach((el) => {
     let s = Math.max(0, Math.floor((new Date(el.dataset.cd) - Date.now()) / 1000));
-    const box = el.querySelector('.cd');
+    const box = el.querySelector('.cd'); if (!box) return;
     if (s === 0) { box.innerHTML = '<div style="padding:8px 14px">🎉 It\'s here! 🎉</div>'; return; }
     const d = Math.floor(s / 86400); s %= 86400; const h = Math.floor(s / 3600); s %= 3600; const m = Math.floor(s / 60); s %= 60;
     box.innerHTML = [[d, 'days'], [h, 'hrs'], [m, 'min'], [s, 'sec']].map(([v, l]) => `<div><b>${v}</b>${l}</div>`).join('');
@@ -655,8 +821,9 @@ function openGame(g) {
   if (g === 'scratch') requestAnimationFrame(scrReset);
   if (g === 'draw') requestAnimationFrame(drawSize);
   if (g === 'quiz') renderQuiz();
+  refreshCoopNotice();
 }
-function closeGame() { curGame = null; stopCatch(); stopBalloons(); $('#gamePanel').classList.add('hidden'); $('#gameHome').classList.remove('hidden'); window.scrollTo(0, 0); }
+function closeGame() { curGame = null; refreshCoopNotice(); stopCatch(); stopBalloons(); $('#gamePanel').classList.add('hidden'); $('#gameHome').classList.remove('hidden'); window.scrollTo(0, 0); }
 $$('.gtile').forEach((b) => b.onclick = () => openGame(b.dataset.game));
 $('#gameBack').onclick = closeGame;
 
@@ -1435,7 +1602,9 @@ const cleanUrl = (u) => { u = (u || '').trim(); if (!u) return null; if (!/^http
 
 // ---- push notifications ----
 async function notify(kind, text) {
-  try { if (!S.couple) return; await sb.functions.invoke('notify', { body: { kind, text } }); } catch (e) { /* best effort */ }
+  if (!S.couple) return;
+  if (!navigator.onLine) return enqueue({ kind: 'fn', name: 'notify', body: { kind, text } });
+  try { const r = await sb.functions.invoke('notify', { body: { kind, text } }); if (r && r.error && isNetErr(r.error)) enqueue({ kind: 'fn', name: 'notify', body: { kind, text } }); } catch (e) { if (isNetErr(e)) enqueue({ kind: 'fn', name: 'notify', body: { kind, text } }); }
 }
 const urlB64 = (s) => { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, (c) => c.charCodeAt(0)); };
 async function swReg() { if (!('serviceWorker' in navigator)) return null; return navigator.serviceWorker.register('sw.js', { scope: './' }); }

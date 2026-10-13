@@ -329,3 +329,11 @@ select{display:block;width:100%;padding:10px;border-radius:18px;border:2px solid
 .sCard.show{opacity:1;transform:none}.sCard small{background:#ffe4ec;border-radius:12px;padding:3px 10px;font-weight:bold}
 .sCard h2{margin:12px 0;font-size:22px}.sCard .row{display:flex;gap:8px}.sCard .row button{flex:1}
 @media (prefers-reduced-motion: reduce){.wheelStage.shuf #wheelSvg,.sGift.wig{animation:none}.sCard,.sGift{transition:none}}
+
+/* ===== v15 offline ===== */
+#offPill{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:99;transform:translate(-50%,-150%);background:#fff;color:#8b2252;border:2px solid #ffb3c6;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:bold;box-shadow:0 6px 18px rgba(200,50,100,.25);transition:transform .45s cubic-bezier(.2,1.5,.4,1);pointer-events:none;white-space:nowrap}
+#offPill small{font-weight:normal;opacity:.8}#offPill.show{transform:translate(-50%,0)}
+#offPill[data-q]:not([data-q=""])::after{content:' · ' attr(data-q);font-weight:normal;font-size:11px}
+.coopOff{background:linear-gradient(135deg,#fff0f5,#ffe4ec);border:2px dashed #ffb3c6;border-radius:18px;padding:14px;margin:8px 0 12px;text-align:center;color:#8b2252}
+.coopOff p{margin:6px 0;font-size:14px}.coopEm{font-size:34px;animation:cbF 2.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){#offPill{transition:none}.coopEm{animation:none}}
