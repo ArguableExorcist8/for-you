@@ -1,7 +1,7 @@
 // For Us service worker — offline app shell + photo cache + push notifications
-const VERSION = 'v16';
+const VERSION = 'v17';
 const SHELL = 'forus-shell-' + VERSION, RUNTIME = 'forus-runtime-' + VERSION, MEDIA = 'forus-media-v1';
-const V = '?v=16';
+const V = '?v=17';
 const PRECACHE = ['./', 'index.html', 'style.css' + V, 'config.js' + V, 'data.js' + V, 'trivia.js' + V, 'anim.js' + V, 'app.js' + V, 'cute.js' + V,
   'manifest.json', 'icon.png', 'apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js'];
@@ -21,6 +21,8 @@ self.addEventListener('fetch', (e) => {
   if (API.test(url.pathname) || url.pathname.includes('/storage/v1/bucket')) return;
   // photos / voice notes: signed URLs change every time, so key them without the token
   if (MEDIA_RE.test(url.pathname)) {
+    // audio/video use Range requests (iOS needs 206 responses) — let the network handle them
+    if (req.headers.has('range') || req.destination === 'video' || req.destination === 'audio') return;
     if (url.pathname.includes('/object/sign/') || url.pathname.includes('/object/public/') || url.pathname.includes('/object/authenticated/')) {
       e.respondWith((async () => {
         const c = await caches.open(MEDIA); const key = url.origin + url.pathname;

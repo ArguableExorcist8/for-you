@@ -32,7 +32,7 @@ window.googleSignIn = async () => {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const toast = (m, ms = 2600) => { const t = $('#toast'); if (window.__ccQueuedAt && Date.now() - window.__ccQueuedAt < 1500 && !/offline|online/i.test(m)) m += ' · saved offline, will sync 📴'; t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms); };
+const toast = (m, ms = 2600) => { const t = $('#toast'); if (window.__ccQueuedAt && Date.now() - window.__ccQueuedAt < 1500 && !/offline|online|internet/i.test(m)) m += ' · saved offline, will sync 📴'; t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms); };
 const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const fmtTime = (d) => new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(id).classList.remove('hidden'); };
@@ -270,6 +270,7 @@ async function boot() {
 function teardown() {
   if (S.channel) { sb.removeChannel(S.channel); S.channel = null; }
   if (S.pairChannel) { sb.removeChannel(S.pairChannel); S.pairChannel = null; }
+  if (typeof CH !== 'undefined' && CH.ch) { sb.removeChannel(CH.ch); CH.ch = null; }
   S.couple = null; S.partner = null; S.data = {};
 }
 async function loadMe() {
@@ -298,11 +299,27 @@ async function loadCouple() {
 }
 
 // ================= PAIRING =================
+async function checkSpots() {
+  if (!navigator.onLine) return;
+  const [{ data: sp }, { data: wl }] = await Promise.all([sb.rpc('app_spots'), sb.from('waitlist').select('user_id,created_at').eq('user_id', S.user.id).maybeSingle()]);
+  const full = sp && sp.open === false;
+  $('#fullCard').classList.toggle('hidden', !full); $('#findCard').classList.toggle('hidden', !!full); $('#codeCard').classList.toggle('hidden', !!full);
+  $('#waitBtn').classList.toggle('hidden', !!wl); $('#waitTxt').textContent = wl ? `You're on the list since ${fmtDate(wl.created_at)} 🔔 we'll tell you the moment a spot opens.` : '';
+  if (!full && wl) { // a spot opened up for a waitlisted user
+    openModal(`<div class="big">🎉💞</div><h2>A spot just opened up!</h2><p>For Us has room again — find your person now 💕</p><button data-close>Let's go 💌</button>`); hearts(14);
+    await sb.from('waitlist').delete().eq('user_id', S.user.id);
+  }
+}
+$('#waitBtn').onclick = async () => {
+  const { error } = await sb.from('waitlist').insert({});
+  if (error && error.code !== '23505') return toast(errMsg(error));
+  toast("You're on the list 🔔 we'll let you know!"); hearts(6); checkSpots();
+};
 function renderPair() {
   $('#pairEmoji').textContent = S.me.emoji; $('#pairName').textContent = S.me.display_name;
   $('#myCode').textContent = S.me.invite_code; $('#myUser').textContent = '@' + S.me.username;
   $('#findResult').innerHTML = '';
-  loadRequests();
+  loadRequests(); checkSpots();
 }
 $('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(S.me.invite_code); toast('Copied! 💌'); } catch { toast(S.me.invite_code); } };
 $('#findBtn').onclick = async () => {
@@ -332,6 +349,7 @@ $('#reqList').onclick = async (e) => {
   const acc = e.target.dataset.acc, dec = e.target.dataset.dec;
   if (!acc && !dec) return;
   const { error } = await sb.rpc('respond_request', { req: acc || dec, accept: !!acc });
+  if (error && /APP_FULL|full right now/i.test(errMsg(error))) return openModal('<div class="big">🏡💕</div><h2>For Us is full right now 💕</h2><p>We can only fit a few couples at the moment. Please try again later — your request is still waiting 💌</p><button data-close>Okay 🥹</button>');
   if (error) return toast(errMsg(error));
   if (acc) { toast('Connected! 💕'); boot(); } else loadRequests();
 };
@@ -435,6 +453,8 @@ async function enterCouple() {
   welcomeBack();
   runPendingAction();
   if (navigator.onLine) flushQueue(); updateQueueBadge();
+  chatInit(); refreshStorage();
+  if (params.get('k') === 'chat') { goTab('chat'); history.replaceState(null, '', location.pathname); }
 }
 function subscribeCouple() {
   const ch = sb.channel('couple-' + S.couple.id);
@@ -603,36 +623,64 @@ function compress(file, max = 1200, quality = 0.82) {
 }
 $('#photoIn').onchange = async (e) => {
   const files = [...e.target.files]; e.target.value = '';
+  if (!navigator.onLine) return toast('Uploading photos & videos needs internet 📶');
+  if (!(await mediaGuard(0))) return;
   for (const [i, f] of files.entries()) {
     $('#photoStatus').textContent = `Uploading ${i + 1}/${files.length}… 📤`;
     try {
-      const blob = await compress(f);
-      const path = `${S.couple.id}/${crypto.randomUUID()}.jpg`;
-      const { error } = await sb.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg' });
+      const isVid = (f.type || '').startsWith('video/');
+      let blob = f, duration = null;
+      if (isVid) { const v = await prepVideo(f, (p) => { $('#photoStatus').textContent = `Shrinking video ${i + 1}/${files.length}… ${Math.round(p * 100)}% 🪄`; }); if (!v) continue; blob = v.blob; duration = v.duration; }
+      else blob = await smartImage(f);
+      if (!(await mediaGuard(blob.size))) break;
+      const type = isVid ? (blob.type || f.type || 'video/mp4').split(';')[0] : (blob.type || 'image/jpeg');
+      const ext = isVid ? (blob === f ? ((f.name.match(/\.([a-z0-9]{2,5})$/i) || [, 'mp4'])[1].toLowerCase()) : extOf(type)) : (type === 'image/gif' ? 'gif' : 'jpg');
+      const path = `${S.couple.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from('photos').upload(path, blob, { contentType: type });
       if (error) throw error;
       const caption = files.length === 1 ? ((await uiPrompt('Add a caption? 💕')) || '').slice(0, 300) : '';
-      const { error: e2 } = await sb.from('photos').insert({ path, caption });
-      if (e2) throw e2;
+      const row = { path, caption, media_type: type }; if (duration) row.duration = duration;
+      const { error: e2 } = await sb.from('photos').insert(row);
+      if (e2) { sb.storage.from('photos').remove([path]); throw e2; }
+      hearts(6); loadTable('photos'); STORE.at = 0;
     } catch (err) { toast('Upload failed: ' + errMsg(err)); }
   }
   $('#photoStatus').textContent = '';
 };
+const phIsVid = (p) => (p.media_type || '').startsWith('video/');
+const phUrl = (p) => (p.bucket === 'chat' ? chUrl(p.path) : S.signedUrls[p.path]?.url) || '';
 RENDER.photos = async () => {
   const l = S.data.photos || [];
-  const need = l.map((p) => p.path).filter((p) => !S.signedUrls[p] || S.signedUrls[p].exp < Date.now());
-  if (need.length) {
+  const need = l.filter((p) => p.bucket !== 'chat').map((p) => p.path).filter((p) => !S.signedUrls[p] || S.signedUrls[p].exp < Date.now());
+  if (need.length && navigator.onLine) {
     const { data } = await sb.storage.from('photos').createSignedUrls(need, 3600 * 6);
     (data || []).forEach((d) => { if (d.signedUrl) S.signedUrls[d.path] = { url: d.signedUrl, exp: Date.now() + 3600 * 5 * 1000 }; });
   }
-  $('#gallery').innerHTML = l.length ? l.map((p) => `<div class="polaroid" data-photo="${p.id}"><img loading="lazy" src="${esc(S.signedUrls[p.path]?.url || '')}" alt=""><p>${esc(p.caption || '')}</p></div>`).join('') : '<p class="muted" style="grid-column:1/-1">No photos yet 📷</p>';
+  await chSign(l.filter((p) => p.bucket === 'chat').map((p) => p.path));
+  $('#gallery').innerHTML = l.length ? l.map((p) => `<div class="polaroid${phIsVid(p) ? ' isVid' : ''}" data-photo="${p.id}"><button class="phDel" data-pdel="${p.id}" aria-label="Delete">✕</button>${p.message_id ? '<span class="phSrc" title="From our chat">💬</span>' : ''}${phIsVid(p) ? `<div class="phVid"><video src="${esc(phUrl(p))}#t=0.1" preload="metadata" muted playsinline></video><span class="chPlay">▶</span>${p.duration ? `<span class="chDur">${fmtDur(p.duration)}</span>` : ''}</div>` : `<img loading="lazy" src="${esc(phUrl(p))}" alt="">`}<p>${esc(p.caption || '')}</p></div>`).join('') : '<p class="muted" style="grid-column:1/-1">No photos yet 📷 — photos & videos you send in Chat land here too 💬</p>';
 };
+async function photoDelete(p) {
+  const fromChat = !!p.message_id || p.bucket === 'chat';
+  const ok = await uiConfirm(fromChat ? 'Remove this from Photos? 💬 It will stay in your chat.' : `Delete this ${phIsVid(p) ? 'video' : 'photo'} forever? 🥺 It disappears for both of you.`);
+  if (!ok) return false;
+  if (!navigator.onLine) { toast('Deleting needs internet 📶'); return false; }
+  const { error } = await sb.from('photos').delete().eq('id', p.id);
+  if (error) { toast(errMsg(error)); return false; }
+  if (!fromChat) await sb.storage.from('photos').remove([p.path]);
+  S.data.photos = (S.data.photos || []).filter((x) => x.id !== p.id); RENDER.photos(); saveTableCache('photos');
+  toast(fromChat ? 'Removed from Photos (still in chat 💬)' : 'Deleted 🗑️'); refreshStorage(true); return true;
+}
 $('#gallery').onclick = (e) => {
+  const del = e.target.closest('[data-pdel]');
+  if (del) { e.stopPropagation(); const p = (S.data.photos || []).find((x) => x.id === del.dataset.pdel); if (p) photoDelete(p); return; }
   const el = e.target.closest('[data-photo]'); if (!el) return;
   const p = S.data.photos.find((x) => x.id === el.dataset.photo); if (!p) return;
-  openModal(`<img src="${esc(S.signedUrls[p.path]?.url || '')}"><input id="capEdit" value="${esc(p.caption || '')}" maxlength="300" placeholder="Caption">
-    <small class="muted">Added by ${esc(nameOf(p.created_by))} · ${fmtDate(p.created_at)}</small><br>
-    <button id="capSave">Save caption</button><button class="danger" data-del="photos:${p.id}">Delete</button><button class="soft" data-close>Close</button>`);
-  $('#capSave').onclick = async () => {
+  const media = phIsVid(p) ? `<video src="${esc(phUrl(p))}" controls autoplay playsinline style="width:100%;border-radius:12px;max-height:60vh;background:#000"></video>` : `<img src="${esc(phUrl(p))}">`;
+  openModal(`${media}<input id="capEdit" value="${esc(p.caption || '')}" maxlength="300" placeholder="Caption" ${p.message_id ? 'disabled' : ''}>
+    <small class="muted">${p.message_id ? '💬 From our chat · ' : ''}Added by ${esc(nameOf(p.created_by))} · ${fmtDate(p.created_at)}</small><br>
+    ${p.message_id ? '' : '<button id="capSave">Save caption</button>'}<button class="danger" id="phDelBtn">${p.message_id ? 'Remove from Photos' : 'Delete'}</button><button class="soft" data-close>Close</button>`);
+  $('#phDelBtn').onclick = async () => { if (await photoDelete(p)) closeModal(); };
+  if ($('#capSave')) $('#capSave').onclick = async () => {
     const { error } = await sb.from('photos').update({ caption: $('#capEdit').value.trim() }).eq('id', p.id);
     if (error) toast(errMsg(error)); else closeModal();
   };
@@ -2229,6 +2277,508 @@ $('#sAdd').onclick = async (e) => {
   const { error } = await sb.from('date_ideas').insert({ idea: surpriseIdea.slice(0, 150) });
   if (error) return toast(errMsg(error)); toast('Added to our ideas 💗'); $('#surpriseOverlay').classList.add('hidden');
 };
+
+// ================= STORAGE LIMITER (v17) =================
+const STORE = { info: null, at: 0, warned: sessionStorage.getItem('cc_store_warned') === '1' };
+const MB = 1048576;
+function storeLevel(i = STORE.info) {
+  if (!i) return { warn: false, block: false, pct: 0, reason: '' };
+  const cp = i.quota ? i.used / i.quota : 0; const pp = i.project_limit ? i.project_used / i.project_limit : 0; const pblock = (i.project_block_pct || 95) / 100;
+  const block = i.ok === false || cp >= 1 || pp >= pblock;
+  const warn = cp >= 0.8 || pp >= 0.8;
+  const reason = (cp >= 1 || (cp >= 0.8 && cp / 1 >= pp / pblock)) ? 'couple' : (pp >= 0.8 ? 'project' : 'couple');
+  return { warn, block, pct: cp, ppct: pp, reason };
+}
+async function refreshStorage(force) {
+  if (!S.couple || !navigator.onLine) return STORE.info;
+  if (!force && STORE.info && Date.now() - STORE.at < 60000) return STORE.info;
+  const { data, error } = await sb.rpc('couple_storage'); if (error || !data) return STORE.info;
+  STORE.info = data; STORE.at = Date.now(); renderStorage(); storeWarnOnce(); return data;
+}
+function renderStorage() {
+  const i = STORE.info; if (!i || !$('#stFill')) return; const L = storeLevel(i);
+  const pct = Math.min(100, Math.round(L.pct * 1000) / 10);
+  $('#stFill').style.width = Math.max(2, pct) + '%'; $('#stCard').classList.toggle('warn', L.warn && !L.block); $('#stCard').classList.toggle('full', L.block);
+  $('#stTxt').innerHTML = `<b>${(i.used / MB).toFixed(1)} MB</b> of <b>${Math.round(i.quota / MB)} MB</b> used · ${pct}% ${L.block ? '🙈 full' : L.warn ? '⚠️' : '💕'}`;
+  $('#stSub').innerHTML = `📸 Photos ${(i.photos / MB).toFixed(1)} MB · 💬 Chat ${(i.chat / MB).toFixed(1)} MB<br>${L.block ? (L.reason === 'project' ? 'The app’s shared space is almost full, so new media is paused for now 🥺 texts still work.' : 'Storage full — delete some old photos/videos to make room 🧹 texts still work.') : 'Images & videos are shrunk on your phone before upload 🪄'}`;
+}
+function storeWarnOnce() {
+  const L = storeLevel(); if (!L.warn || STORE.warned) return; STORE.warned = true; sessionStorage.setItem('cc_store_warned', '1');
+  toast(L.block ? '💾 Storage is full — delete some old photos/videos to send new ones 🧹 (texts still work)' : `💾 Heads-up: ${L.reason === 'project' ? 'the app’s shared space' : 'your storage'} is ${Math.round((L.reason === 'project' ? L.ppct : L.pct) * 100)}% full — maybe tidy up some old videos? 🧹`, 6000);
+}
+async function mediaGuard(bytes) {
+  const i = await refreshStorage(true); if (!i) return true; // offline/unknown: the server still enforces
+  const L = storeLevel(i);
+  if (L.block || (i.quota && i.used + (bytes || 0) > i.quota)) { toast(L.reason === 'project' && L.block ? '🙈 The app’s shared storage is full right now — new media is paused, texts still work 💌' : '🙈 Storage full! Delete some old photos or videos to make room 🧹 (texts still work 💌)', 6000); renderStorage(); return false; }
+  return true;
+}
+// images: ≤1600px long edge, JPEG ~0.8, aim for ~300 KB
+async function smartImage(file) {
+  if (file.type === 'image/gif' && file.size < 3 * MB) return file;
+  let b = await compress(file, 1600, 0.8);
+  if (b.size > 300 * 1024) b = await compress(file, 1600, 0.68);
+  if (b.size > 300 * 1024) b = await compress(file, 1280, 0.65);
+  return b;
+}
+// videos: ≤60 s; shrink to ~720p with canvas+MediaRecorder when possible, else hard cap 25 MB
+const canShrinkVideo = () => !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && (window.AudioContext || window.webkitAudioContext));
+async function prepVideo(file, onProg) {
+  const dur = await mediaDuration(file);
+  if (dur && dur > 60.5) { toast(`That video is ${fmtDur(dur)} long 🎬 — max is 1 minute. Trim it a little and try again 💕`, 5000); return null; }
+  let out = file;
+  if (canShrinkVideo() && file.size > 6 * MB) { try { const s = await shrinkVideo(file, onProg); if (s && s.size < file.size) out = s; } catch (e) { console.warn('shrink failed', e); } }
+  if (out.size > 25 * MB) { toast(`That video is still ${(out.size / MB).toFixed(0)} MB 🥺 — max 25 MB. Try a shorter clip 🎬`, 5000); return null; }
+  return { blob: out, duration: dur };
+}
+function shrinkVideo(file, onProg) {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement('video'); const url = URL.createObjectURL(file); v.src = url; v.playsInline = true; v.preload = 'auto';
+    const fail = (e) => { try { URL.revokeObjectURL(url); } catch { /* */ } reject(e); };
+    v.onerror = () => fail(new Error('cannot decode'));
+    v.onloadedmetadata = async () => {
+      const W = v.videoWidth, H = v.videoHeight; if (!W || !H) return fail(new Error('no video track'));
+      const sc = Math.min(1, 720 / Math.min(W, H)); const w = Math.round(W * sc / 2) * 2, h = Math.round(H * sc / 2) * 2;
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const cx = c.getContext('2d');
+      const stream = c.captureStream(30);
+      let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); const src = ac.createMediaElementSource(v); const dst = ac.createMediaStreamDestination(); src.connect(dst); dst.stream.getAudioTracks().forEach((t) => stream.addTrack(t)); } catch { v.muted = true; }
+      const mime = pickVMime(); const rec = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: 1500000, audioBitsPerSecond: 96000 }); const chunks = [];
+      rec.ondataavailable = (e) => e.data && e.data.size && chunks.push(e.data);
+      rec.onstop = () => { try { ac && ac.close(); } catch { /* */ } URL.revokeObjectURL(url); resolve(new Blob(chunks, { type: (rec.mimeType || 'video/webm').split(';')[0] })); };
+      let raf; const draw = () => { cx.drawImage(v, 0, 0, w, h); if (onProg && v.duration) onProg(v.currentTime / v.duration); raf = requestAnimationFrame(draw); };
+      v.onended = () => { cancelAnimationFrame(raf); setTimeout(() => rec.state !== 'inactive' && rec.stop(), 150); };
+      try { if (ac && ac.state === 'suspended') await ac.resume(); rec.start(1000); await v.play(); draw(); } catch (e) { fail(e); }
+      setTimeout(() => { if (rec.state !== 'inactive') { v.pause(); rec.stop(); } }, ((v.duration || 60) + 8) * 1000);
+    };
+  });
+}
+$$('.nav button, #gearBtn').forEach((b) => b.addEventListener('click', () => { if (!$('#tab-me').classList.contains('hidden')) refreshStorage(true); }));
+
+// ================= CHAT (v17) =================
+const CH = { list: [], byId: {}, more: true, loading: false, ch: null, replyTo: null, urls: {}, lastTyping: 0, typingT: null, fresh: new Set(), audio: null, playing: null, rate: +(localStorage.getItem('cc_chat_rate') || 1), ready: false, newBelow: 0, unreadServer: 0, saveT: null, markT: null };
+const CH_REACTS = ['❤️', '😂', '😮', '😢', '👍', '🔥'];
+const CH_PAGE = 40, CH_MAX = 50 * 1024 * 1024;
+try { CH.urls = JSON.parse(localStorage.getItem('cc_chat_signed') || '{}'); } catch { CH.urls = {}; }
+const chOpen = () => !$('#tab-chat').classList.contains('hidden') && !document.hidden;
+const chMine = (m) => m.sender === S.user.id;
+const chUrl = (p) => (p && CH.urls[p] ? CH.urls[p].url : '');
+const fmtDur = (s) => { s = Math.max(0, Math.round(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const fmtSize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+const hhmm = (d) => new Date(d).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+function dayLabel(d) { const x = new Date(d), t = new Date(); const y = new Date(); y.setDate(t.getDate() - 1); if (x.toDateString() === t.toDateString()) return 'Today'; if (x.toDateString() === y.toDateString()) return 'Yesterday'; return x.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: x.getFullYear() === t.getFullYear() ? undefined : 'numeric' }); }
+function chPreview(m) {
+  if (!m) return ''; if (m.deleted) return '🚫 Deleted message';
+  return { text: m.body || '', image: '📷 Photo', video: '🎬 Video', voice: `🎤 Voice message (${fmtDur(m.duration)})`, videonote: '⭕ Video message', file: `📎 ${m.media_name || 'File'}` }[m.kind] + (m.kind !== 'text' && m.body ? ' · ' + m.body : '');
+}
+async function chSign(paths) {
+  const need = [...new Set(paths.filter(Boolean))].filter((p) => !CH.urls[p] || CH.urls[p].exp < Date.now());
+  if (!need.length || !navigator.onLine) return;
+  const { data } = await sb.storage.from('chat').createSignedUrls(need, 3600 * 12);
+  (data || []).forEach((d) => { if (d.signedUrl) CH.urls[d.path] = { url: d.signedUrl, exp: Date.now() + 3600 * 11 * 1000 }; });
+  const keep = Object.entries(CH.urls).sort((a, b) => b[1].exp - a[1].exp).slice(0, 400);
+  CH.urls = Object.fromEntries(keep); try { localStorage.setItem('cc_chat_signed', JSON.stringify(CH.urls)); } catch { /* full */ }
+}
+function chIdx() { CH.byId = {}; CH.list.forEach((m) => { CH.byId[m.id] = m; }); }
+function chSort() { CH.list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); chIdx(); }
+function chSaveCache() { clearTimeout(CH.saveT); CH.saveT = setTimeout(() => { if (!S.couple) return; cacheSet('chat:' + S.couple.id, CH.list.slice(-120).map((m) => { const { _local, ...r } = m; return r; })); }, 400); }
+function chMerge(rows) { rows.forEach((r) => { const old = CH.byId[r.id]; if (old) Object.assign(old, r, { _pending: false, _queued: false, _failed: false }); else CH.list.push(r); }); chSort(); }
+
+// ---- rendering ----
+const linkify = (h) => h.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+const emojiOnly = (s) => s && s.length <= 24 && /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\uFE0F|\u200D|\s)+$/u.test(s);
+function waveBars(m) { const w = (m.meta && Array.isArray(m.meta.wave) && m.meta.wave.length) ? m.meta.wave : Array.from({ length: 36 }, (_, i) => .3 + .25 * Math.abs(Math.sin(i * 1.7 + (m.id || '').length))); return w.map((v) => `<i style="height:${Math.round(12 + Math.min(1, v) * 88)}%"></i>`).join(''); }
+function chBody(m) {
+  if (m.deleted) return `<div class="chDel">🚫 This message was deleted</div>`;
+  const url = m._local || chUrl(m.media_path); const cap = m.body ? `<div class="chCap">${linkify(esc(m.body))}</div>` : '';
+  const up = m._uploading ? '<div class="chUp"><span></span>sending…</div>' : '';
+  switch (m.kind) {
+    case 'image': return `<div class="chMedia" data-view="${m.id}">${url ? `<img src="${esc(url)}" alt="photo" loading="lazy">` : '<div class="chPh">📷</div>'}${up}</div>${cap}`;
+    case 'video': return `<div class="chMedia" data-view="${m.id}">${url ? `<video src="${esc(url)}#t=0.1" preload="metadata" playsinline muted></video>` : '<div class="chPh">🎬</div>'}<span class="chPlay">▶</span><span class="chDur">${fmtDur(m.duration)}</span>${up}</div>${cap}`;
+    case 'voice': return `<div class="chVoice" data-voice="${m.id}"><button class="vp" aria-label="Play">▶</button><div class="vw">${waveBars(m)}</div><span class="vt">${fmtDur(m.duration)}</span><button class="vs">${CH.rate}×</button>${up}</div>`;
+    case 'videonote': return `<div class="chRound" data-round="${m.id}">${url ? `<video src="${esc(url)}#t=0.1" preload="metadata" playsinline></video>` : '<div class="chPh">⭕</div>'}<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"/></svg><span class="chDur">${fmtDur(m.duration)}</span><span class="chPlay">▶</span>${up}</div>`;
+    case 'file': return `<a class="chFileC" data-file="${m.id}"><span class="fi">📄</span><div><b>${esc(m.media_name || 'File')}</b><small>${m.media_size ? fmtSize(m.media_size) : ''}</small></div><span>⬇️</span>${up}</a>${cap}`;
+    default: return `<div class="chTxt${emojiOnly(m.body) ? ' big' : ''}">${linkify(esc(m.body || ''))}</div>`;
+  }
+}
+function chTicks(m) {
+  if (!chMine(m)) return '';
+  if (m._failed) return '<span class="tk fail">⚠️ tap to retry</span>';
+  if (m._queued || m._pending) return '<span class="tk">🕓</span>';
+  if (m.read_at) return '<span class="tk read">✓✓</span>'; if (m.delivered_at) return '<span class="tk">✓✓</span>'; return '<span class="tk">✓</span>';
+}
+function chMsgHtml(m, prev, next) {
+  const mine = chMine(m); let h = '';
+  if (!prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()) h += `<div class="chDay"><span>${dayLabel(m.created_at)}</span></div>`;
+  const grpPrev = prev && prev.sender === m.sender && new Date(m.created_at) - new Date(prev.created_at) < 300000 && !h;
+  const grpNext = next && next.sender === m.sender && new Date(next.created_at) - new Date(m.created_at) < 300000 && new Date(next.created_at).toDateString() === new Date(m.created_at).toDateString();
+  const q = m.reply_to ? CH.byId[m.reply_to] : null;
+  const quote = m.reply_to ? `<div class="chQuote" data-jump="${m.reply_to}"><b>${q ? (chMine(q) ? 'You' : esc(partnerName())) : '↩︎'}</b><span>${esc(q ? chPreview(q) : 'Earlier message')}</span></div>` : '';
+  const rx = Object.values(m.reactions || {}); const rc = {}; rx.forEach((e) => { rc[e] = (rc[e] || 0) + 1; });
+  const rxH = rx.length ? `<div class="chRx">${Object.entries(rc).map(([e, n]) => `<span class="${(m.reactions || {})[S.user.id] === e ? 'me' : ''}">${e}${n > 1 ? n : ''}</span>`).join('')}</div>` : '';
+  const bare = !m.deleted && (m.kind === 'videonote' || (m.kind === 'text' && emojiOnly(m.body)));
+  h += `<div class="chRow ${mine ? 'me' : 'them'}${grpPrev ? ' gp' : ''}${grpNext ? ' gn' : ''}${CH.fresh.has(m.id) ? ' fresh' : ''}" data-id="${m.id}">
+    <div class="chB${bare ? ' bare' : ''} k-${m.kind}${m.deleted ? ' del' : ''}">${quote}${chBody(m)}<div class="chMeta">${hhmm(m.created_at)} ${chTicks(m)}</div></div>${rxH}</div>`;
+  return h;
+}
+function chRender(keep) {
+  const box = $('#chMsgs'), list = $('#chatList'); if (!box) return;
+  const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 140;
+  const prevH = list.scrollHeight, prevTop = list.scrollTop;
+  if (!CH.ready && !CH.list.length) box.innerHTML = `<div class="chSkel">${[60, 40, 70, 35, 55].map((w, i) => `<div class="${i % 2 ? 'me' : ''}" style="width:${w}%"></div>`).join('')}</div>`;
+  else if (!CH.list.length) box.innerHTML = `<div class="chEmpty"><div class="chEmHearts"><span>💗</span><span>💌</span><span>💕</span></div><h3>No messages yet</h3><p>Say hi to <b class="pname">${esc(partnerName())}</b> — your own little corner 💞</p><div class="chips">${['Hi love 💗', 'Miss you 🥺', 'Good morning ☀️', 'Thinking of you 💭'].map((t) => `<span data-quick="${esc(t)}">${t}</span>`).join('')}</div></div>`;
+  else box.innerHTML = CH.list.map((m, i) => chMsgHtml(m, CH.list[i - 1], CH.list[i + 1])).join('');
+  $('#chTop').innerHTML = CH.list.length && CH.ready ? (CH.loading ? '<div class="chLoadMore">💗 loading older…</div>' : CH.more ? '' : '<div class="chBegin">✨ the beginning of our chat ✨</div>') : '';
+  CH.fresh.clear();
+  if (keep === 'top') list.scrollTop = prevTop + (list.scrollHeight - prevH);
+  else if (keep === 'bottom' || nearBottom) list.scrollTop = list.scrollHeight;
+  if (CH.playing) chVoiceUI(CH.playing);
+}
+function chBadge() {
+  const n = CH.list.filter((m) => !chMine(m) && !m.read_at && !m.deleted).length || 0;
+  const tot = Math.max(n, CH.unreadServer);
+  const b = $('#chatBadge'); if (!b) return; const show = tot > 0 && !chOpen();
+  b.textContent = tot > 99 ? '99+' : tot; b.classList.toggle('hidden', !show);
+  if (show && window.FX) FX.pop(b);
+}
+
+// ---- loading ----
+async function chatInit() {
+  if (!S.couple) return; CH.list = []; CH.byId = {}; CH.more = true; CH.ready = false; chRender();
+  const cached = await cacheGet('chat:' + S.couple.id);
+  if (cached && cached.length) { CH.list = cached; chSort(); CH.ready = true; chRender('bottom'); }
+  chSubscribe();
+  await chSync(true); chUnreadCount();
+}
+async function chSync(initial) {
+  if (!S.couple || !navigator.onLine) { CH.ready = true; chRender(); chBadge(); return; }
+  let q = sb.from('messages').select('*').eq('couple_id', S.couple.id).order('created_at', { ascending: false }).limit(CH_PAGE);
+  const newest = !initial && [...CH.list].reverse().find((m) => !m._pending && !m._queued);
+  if (newest) q = q.gte('created_at', newest.created_at);
+  const { data, error } = await q;
+  if (error) { CH.ready = true; chRender(); return; }
+  if (initial) { const pend = CH.list.filter((m) => m._pending || m._queued || m._failed); const ids = new Set(data.map((d) => d.id)); CH.list = pend.filter((p) => !ids.has(p.id)); CH.more = data.length === CH_PAGE; }
+  chMerge(data); await chSign(CH.list.map((m) => m.media_path)); CH.ready = true;
+  chRender(initial ? 'bottom' : undefined); chSaveCache(); chBadge(); chMarkSoon();
+}
+async function chLoadOlder() {
+  if (!CH.more || CH.loading || !navigator.onLine || !CH.ready) return;
+  const oldest = CH.list.find((m) => !m._pending && !m._queued); if (!oldest) return;
+  CH.loading = true; chRender('top');
+  const { data, error } = await sb.from('messages').select('*').eq('couple_id', S.couple.id).lt('created_at', oldest.created_at).order('created_at', { ascending: false }).limit(CH_PAGE);
+  CH.loading = false; if (error) return chRender('top');
+  CH.more = data.length === CH_PAGE; chMerge(data); await chSign(data.map((m) => m.media_path)); chRender('top');
+}
+async function chUnreadCount() {
+  if (!navigator.onLine || !S.couple) return;
+  const { count } = await sb.from('messages').select('id', { count: 'exact', head: true }).eq('couple_id', S.couple.id).neq('sender', S.user.id).is('read_at', null).eq('deleted', false);
+  CH.unreadServer = count || 0; chBadge();
+}
+function chMarkSoon() {
+  clearTimeout(CH.markT); CH.markT = setTimeout(async () => {
+    if (!S.couple || !navigator.onLine) return; const read = chOpen();
+    const need = CH.list.some((m) => !chMine(m) && (!m.delivered_at || (read && !m.read_at)));
+    if (!need && !(read && CH.unreadServer)) return;
+    const { error } = await sb.rpc('chat_mark', { read });
+    if (!error) { const now = new Date().toISOString(); CH.list.forEach((m) => { if (!chMine(m)) { m.delivered_at = m.delivered_at || now; if (read) m.read_at = m.read_at || now; } }); if (read) CH.unreadServer = 0; chBadge(); chSaveCache(); }
+  }, 350);
+}
+function chSubscribe() {
+  if (CH.ch) { sb.removeChannel(CH.ch); CH.ch = null; }
+  CH.ch = sb.channel('chat-' + S.couple.id, { config: { broadcast: { self: false } } })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `couple_id=eq.${S.couple.id}` }, async (p) => {
+      if (p.eventType === 'DELETE') { CH.list = CH.list.filter((m) => m.id !== p.old.id); chIdx(); chRender(); return; }
+      const r = p.new; const isNew = !CH.byId[r.id];
+      if (isNew) CH.fresh.add(r.id);
+      chMerge([r]); if (r.media_path) await chSign([r.media_path]);
+      const list = $('#chatList'); const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 140;
+      chRender(isNew && chMine(r) ? 'bottom' : undefined); chSaveCache();
+      if (isNew && !chMine(r)) {
+        hideTyping(); snd('pop'); if (navigator.vibrate && chOpen()) navigator.vibrate(20);
+        if (!chOpen()) { CH.unreadServer++; toast(`${partnerEmoji()} ${partnerName()}: ${chPreview(r).slice(0, 60)}`, 3500); }
+        else if (!nearBottom) { CH.newBelow++; chDownBtn(); }
+        chMarkSoon();
+      }
+      chBadge();
+    })
+    .on('broadcast', { event: 'typing' }, (p) => { if (p.payload && p.payload.uid !== S.user.id) showTyping(); })
+    .subscribe();
+}
+function showTyping() {
+  $('#chTyping').classList.remove('hidden'); $('#chtStatus').textContent = 'typing…'; $('#chtStatus').classList.add('typing');
+  const l = $('#chatList'); if (l.scrollHeight - l.scrollTop - l.clientHeight < 160) l.scrollTop = l.scrollHeight;
+  clearTimeout(CH.typingT); CH.typingT = setTimeout(hideTyping, 3500);
+}
+function hideTyping() { $('#chTyping').classList.add('hidden'); $('#chtStatus').textContent = 'our little corner 💞'; $('#chtStatus').classList.remove('typing'); }
+function chDownBtn() { const n = CH.newBelow; $('#chDownN').textContent = n ? n : ''; }
+
+// ---- sending ----
+async function chInsert(m) {
+  const row = {}; ['id', 'kind', 'body', 'media_path', 'media_type', 'media_name', 'media_size', 'duration', 'meta', 'reply_to'].forEach((k) => { if (m[k] !== undefined && m[k] !== null) row[k] = m[k]; });
+  const r = await sb.from('messages').insert(row);
+  if (r.queued) { m._queued = true; m._pending = false; }
+  else if (r.error) { m._failed = true; m._pending = false; toast('Message failed: ' + errMsg(r.error)); }
+  else { m._pending = false; }
+  chRender(); chSaveCache();
+  if (!r.error) notify('chat', chPreview(m).slice(0, 100));
+  if (!r.error && !r.queued && (m.kind === 'image' || m.kind === 'video')) setTimeout(() => loadTable('photos'), 400); // DB trigger mirrors it into Photos
+}
+function chAddLocal(fields) {
+  const m = { id: crypto.randomUUID(), couple_id: S.couple.id, sender: S.user.id, created_at: new Date().toISOString(), reactions: {}, meta: {}, deleted: false, reply_to: CH.replyTo || null, _pending: true, ...fields };
+  CH.list.push(m); CH.byId[m.id] = m; CH.fresh.add(m.id); chSetReply(null); chRender('bottom'); return m;
+}
+async function chSendText(text) {
+  const body = (text ?? $('#chTxt').value).trim(); if (!body || !S.couple) return;
+  if (text === undefined) { $('#chTxt').value = ''; chAutosize(); chComposeState(); }
+  snd('pop'); const m = chAddLocal({ kind: 'text', body: body.slice(0, 4000) }); await chInsert(m);
+}
+const extOf = (type, name) => { const n = (name || '').match(/\.([a-z0-9]{1,8})$/i); if (n) return n[1].toLowerCase(); return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/webm': 'webm', 'audio/ogg': 'ogg' })[(type || '').split(';')[0]] || 'bin'; };
+async function chSendMedia(blob, kind, extra = {}) {
+  if (!S.couple) return;
+  if (!navigator.onLine) return toast('Photos, videos & voice need internet 📶 — texts still work offline');
+  if (blob.size > CH_MAX) return toast(`That's too big (${fmtSize(blob.size)}) — max 50 MB 🥺`);
+  if (kind === 'file' && blob.size > 25 * MB) return toast(`Files can be up to 25 MB 🥺 (this one is ${fmtSize(blob.size)})`);
+  if (!(await mediaGuard(blob.size))) return;
+  const type = (blob.type || 'application/octet-stream').split(';')[0];
+  const local = URL.createObjectURL(blob);
+  const m = chAddLocal({ kind, media_type: type, media_size: blob.size, _local: local, _uploading: true, ...extra });
+  const path = `${S.couple.id}/${S.user.id}/${m.id}.${extOf(type, extra.media_name)}`;
+  const { error } = await sb.storage.from('chat').upload(path, blob, { contentType: type, upsert: false, cacheControl: '31536000' });
+  m._uploading = false;
+  if (error) { m._failed = true; m._blob = blob; chRender(); return toast('Upload failed: ' + errMsg(error)); }
+  m.media_path = path; CH.urls[path] = { url: local, exp: Date.now() + 3600 * 1000 }; // show local copy until re-signed
+  await chInsert(m); delete CH.urls[path]; chSign([path]); STORE.at = 0;
+}
+async function chRetry(m) {
+  m._failed = false; m._pending = true; chRender();
+  if (m.media_path || m.kind === 'text') return chInsert(m);
+  if (m._blob) { CH.list = CH.list.filter((x) => x !== m); chIdx(); return chSendMedia(m._blob, m.kind, { duration: m.duration, meta: m.meta, media_name: m.media_name, body: m.body }); }
+}
+async function chHandleFiles(files, asFile) {
+  for (const f of [...files]) {
+    if (!asFile && f.type.startsWith('image/') && f.type !== 'image/gif') { try { const b = await smartImage(f); await chSendMedia(b, 'image'); } catch { await chSendMedia(f, 'image'); } }
+    else if (!asFile && f.type.startsWith('video/')) {
+      if (!navigator.onLine) { toast('Videos need internet 📶'); continue; }
+      if (!(await mediaGuard(Math.min(f.size, 25 * MB)))) return;
+      const v = await prepVideo(f, (p) => toast(`Shrinking video for you… ${Math.round(p * 100)}% 🪄`, 1500)); if (!v) continue;
+      await chSendMedia(v.blob, 'video', { duration: v.duration });
+    }
+    else if (!asFile && f.type === 'image/gif') await chSendMedia(f, 'image');
+    else await chSendMedia(f, 'file', { media_name: f.name.slice(0, 200) });
+  }
+}
+function mediaDuration(blob) { return new Promise((res) => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => { res(isFinite(v.duration) ? Math.round(v.duration * 10) / 10 : null); URL.revokeObjectURL(v.src); }; v.onerror = () => res(null); v.src = URL.createObjectURL(blob); setTimeout(() => res(null), 4000); }); }
+
+// ---- composer ----
+function chAutosize() { const t = $('#chTxt'); t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; }
+function chComposeState() { const has = !!$('#chTxt').value.trim(); $('#chSend').classList.toggle('hidden', !has); $('#chMic').classList.toggle('hidden', has); $('#chVid').classList.toggle('hidden', has); }
+$('#chTxt').addEventListener('input', () => {
+  chAutosize(); chComposeState();
+  if (CH.ch && Date.now() - CH.lastTyping > 2000) { CH.lastTyping = Date.now(); CH.ch.send({ type: 'broadcast', event: 'typing', payload: { uid: S.user.id } }); }
+});
+$('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); chSendText(); } });
+$('#chSend').onclick = () => { chSendText(); $('#chTxt').focus(); };
+$('#chPlus').onclick = () => { $('#chAttach').classList.toggle('hidden'); $('#chPlus').classList.toggle('on'); };
+['chGal', 'chCam', 'chCamV'].forEach((id) => { $('#' + id).onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f); e.target.value = ''; }; });
+$('#chFile').onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f, true); e.target.value = ''; };
+function chSetReply(id) {
+  CH.replyTo = id; const m = id && CH.byId[id]; $('#chReply').classList.toggle('hidden', !m);
+  if (m) { $('#chReplyWho').textContent = chMine(m) ? 'Replying to yourself' : `Replying to ${partnerName()}`; $('#chReplyTxt').textContent = chPreview(m).slice(0, 90); $('#chTxt').focus(); }
+}
+$('#chReplyX').onclick = () => chSetReply(null);
+$('#chatList').addEventListener('scroll', () => {
+  const l = $('#chatList'); if (l.scrollTop < 120) chLoadOlder();
+  const far = l.scrollHeight - l.scrollTop - l.clientHeight > 300; $('#chDown').classList.toggle('hidden', !far);
+  if (!far && CH.newBelow) { CH.newBelow = 0; chDownBtn(); }
+}, { passive: true });
+$('#chDown').onclick = () => { const l = $('#chatList'); l.scrollTo({ top: l.scrollHeight, behavior: 'smooth' }); CH.newBelow = 0; chDownBtn(); };
+
+// ---- message interactions ----
+let lpT = null, lpStart = null, lastTap = { id: null, t: 0 };
+$('#chMsgs').addEventListener('pointerdown', (e) => {
+  const row = e.target.closest('.chRow'); if (!row) return; lpStart = [e.clientX, e.clientY];
+  clearTimeout(lpT); lpT = setTimeout(() => { lpT = null; chMenu(row.dataset.id); }, 480);
+});
+$('#chMsgs').addEventListener('pointermove', (e) => { if (lpT && lpStart && Math.hypot(e.clientX - lpStart[0], e.clientY - lpStart[1]) > 10) { clearTimeout(lpT); lpT = null; } });
+['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('#chMsgs').addEventListener(ev, () => { clearTimeout(lpT); }));
+$('#chMsgs').addEventListener('contextmenu', (e) => { const row = e.target.closest('.chRow'); if (row) { e.preventDefault(); chMenu(row.dataset.id); } });
+$('#chMsgs').addEventListener('click', (e) => {
+  const q = e.target.closest('[data-quick]'); if (q) return chSendText(q.dataset.quick);
+  if (e.target.closest('a[href]')) return;
+  const row = e.target.closest('.chRow'); if (!row) return; const m = CH.byId[row.dataset.id]; if (!m) return;
+  if (m._failed && chMine(m)) return chRetry(m);
+  const j = e.target.closest('[data-jump]'); if (j) return chJump(j.dataset.jump);
+  if (e.target.closest('.vs')) { CH.rate = CH.rate === 1 ? 1.5 : CH.rate === 1.5 ? 2 : 1; localStorage.setItem('cc_chat_rate', CH.rate); if (CH.audio) CH.audio.playbackRate = CH.rate; $$('.chVoice .vs').forEach((b) => (b.textContent = CH.rate + '×')); return; }
+  if (e.target.closest('.chVoice')) return chPlayVoice(m, e);
+  if (e.target.closest('.chRound')) return chPlayRound(m, e.target.closest('.chRound'));
+  if (e.target.closest('[data-view]')) return chView(m);
+  if (e.target.closest('[data-file]')) { const u = chUrl(m.media_path); if (u) window.open(u, '_blank', 'noopener'); else toast('Needs internet to download 📶'); return; }
+  const now = Date.now(); if (lastTap.id === m.id && now - lastTap.t < 320 && !m.deleted) { chReact(m, '❤️', e); lastTap = { id: null, t: 0 }; } else lastTap = { id: m.id, t: now };
+});
+function chJump(id) { const el = document.querySelector(`.chRow[data-id="${id}"]`); if (!el) return toast('That message is further up 💭'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+function chMenu(id) {
+  const m = CH.byId[id]; if (!m || m.deleted || m._pending) return; if (navigator.vibrate) navigator.vibrate(15);
+  $('#chReacts').innerHTML = CH_REACTS.map((e) => `<button data-r="${e}" class="${(m.reactions || {})[S.user.id] === e ? 'on' : ''}">${e}</button>`).join('');
+  const acts = [['reply', '↩️ Reply']]; if (m.kind === 'text') acts.push(['copy', '📋 Copy']); if (m.media_path) acts.push(['open', m.kind === 'file' ? '⬇️ Download' : '🔍 Open']);
+  if (chMine(m)) acts.push(['del', '🗑️ Delete for both']);
+  $('#chActs').innerHTML = acts.map(([k, l]) => `<button data-a="${k}" class="${k === 'del' ? 'danger' : ''}">${l}</button>`).join('');
+  const box = $('#chMenu'); box.classList.remove('hidden'); box.dataset.id = id;
+  document.querySelector(`.chRow[data-id="${id}"]`)?.classList.add('lp');
+}
+function chMenuClose() { $('#chMenu').classList.add('hidden'); $$('.chRow.lp').forEach((r) => r.classList.remove('lp')); }
+$('#chMenu').onclick = async (e) => {
+  const m = CH.byId[$('#chMenu').dataset.id]; const r = e.target.closest('[data-r]'), a = e.target.closest('[data-a]');
+  if (!r && !a) return chMenuClose(); chMenuClose(); if (!m) return;
+  if (r) return chReact(m, r.dataset.r, e);
+  const k = a.dataset.a;
+  if (k === 'reply') chSetReply(m.id);
+  else if (k === 'copy') { try { await navigator.clipboard.writeText(m.body || ''); toast('Copied 📋'); } catch { toast('Could not copy'); } }
+  else if (k === 'open') { if (m.kind === 'file') { const u = chUrl(m.media_path); if (u) window.open(u, '_blank', 'noopener'); } else chView(m); }
+  else if (k === 'del') {
+    if (!navigator.onLine) return toast('Deleting needs internet 📶');
+    if (!(await uiConfirm('Delete this message for both of you?'))) return;
+    const { data: path, error } = await sb.rpc('chat_delete', { mid: m.id }); if (error) return toast(errMsg(error));
+    Object.assign(m, { deleted: true, body: null, media_path: null, reactions: {} }); chRender(); chSaveCache();
+    if (path) sb.storage.from('chat').remove([path]); toast('Deleted for both 🗑️');
+  }
+};
+async function chReact(m, emoji, e) {
+  if (!navigator.onLine) return toast('Reactions need internet 📶');
+  const cur = (m.reactions || {})[S.user.id]; const next = cur === emoji ? null : emoji;
+  m.reactions = { ...(m.reactions || {}) }; if (next) m.reactions[S.user.id] = next; else delete m.reactions[S.user.id];
+  chRender(); if (next && e && window.FX) FX.burst(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, [next], 6, 50);
+  const { data, error } = await sb.rpc('chat_react', { mid: m.id, emoji: next }); if (error) return toast(errMsg(error));
+  if (data) { m.reactions = data; chRender(); chSaveCache(); }
+}
+
+// ---- viewer ----
+function chView(m) {
+  const u = m._local || chUrl(m.media_path); if (!u) return toast('Needs internet to load 📶');
+  $('#chViewBox').innerHTML = m.kind === 'image' ? `<img src="${esc(u)}" alt="">` : `<video src="${esc(u)}" controls autoplay playsinline></video>`;
+  if (m.body) $('#chViewBox').insertAdjacentHTML('beforeend', `<p>${esc(m.body)}</p>`);
+  $('#chViewer').classList.remove('hidden');
+}
+$('#chViewer').onclick = (e) => { if (e.target.closest('video') && !e.target.closest('.chVX')) return; $('#chViewer').classList.add('hidden'); $('#chViewBox').innerHTML = ''; };
+
+// ---- voice playback ----
+function chVoiceUI(m) {
+  const el = document.querySelector(`.chVoice[data-voice="${m.id}"]`); if (!el || !CH.audio) return;
+  const a = CH.audio, d = a.duration && isFinite(a.duration) ? a.duration : (m.duration || 1); const p = Math.min(1, a.currentTime / d);
+  const bars = el.querySelectorAll('.vw i'); const n = Math.round(p * bars.length); bars.forEach((b, i) => b.classList.toggle('on', i < n));
+  el.querySelector('.vp').textContent = a.paused ? '▶' : '❚❚'; el.querySelector('.vt').textContent = fmtDur(a.paused && !a.currentTime ? m.duration : a.currentTime);
+  el.classList.toggle('playing', !a.paused);
+}
+function chPlayVoice(m, e) {
+  const u = m._local || chUrl(m.media_path); if (!u) return toast('Needs internet to play 📶');
+  if (CH.playing && CH.playing.id === m.id && CH.audio) {
+    const vw = e.target.closest('.vw');
+    if (vw && CH.audio.duration) { const r = vw.getBoundingClientRect(); CH.audio.currentTime = ((e.clientX - r.left) / r.width) * CH.audio.duration; return; }
+    if (CH.audio.paused) CH.audio.play(); else CH.audio.pause(); return;
+  }
+  if (CH.audio) { CH.audio.pause(); const old = CH.playing; CH.audio = null; CH.playing = null; if (old) chRender(); }
+  const a = new Audio(u); a.playbackRate = CH.rate; CH.audio = a; CH.playing = m;
+  a.ontimeupdate = a.onplay = a.onpause = () => chVoiceUI(m);
+  a.onended = () => { a.currentTime = 0; chVoiceUI(m); CH.audio = null; CH.playing = null; const el = document.querySelector(`.chVoice[data-voice="${m.id}"]`); el && el.classList.remove('playing'); };
+  a.play().catch(() => toast('Could not play this voice note on this device 😿'));
+}
+function chPlayRound(m, el) {
+  const v = el.querySelector('video'); if (!v) return toast('Needs internet to play 📶');
+  if (!v.paused) { v.pause(); el.classList.remove('playing'); return; }
+  $$('.chRound video').forEach((x) => { if (x !== v) { x.pause(); x.closest('.chRound').classList.remove('playing'); } });
+  v.muted = false; v.currentTime = v.currentTime > 0.2 ? v.currentTime : 0; el.classList.add('playing');
+  const c = el.querySelector('circle'); v.ontimeupdate = () => { const d = isFinite(v.duration) ? v.duration : (m.duration || 1); c.style.strokeDashoffset = String(302 * (1 - v.currentTime / d)); };
+  v.onended = () => { el.classList.remove('playing'); c.style.strokeDashoffset = '302'; };
+  v.play().catch(() => toast('Could not play this video on this device 😿'));
+}
+
+// ---- hold-to-record voice ----
+const REC = { on: false, rec: null, stream: null, chunks: [], t0: 0, wave: [], an: null, raf: null, cancel: false, startX: 0, pending: false, ac: null };
+async function chRecStart(e) {
+  if (!S.couple) return; if (!navigator.onLine) return toast('Voice notes need internet 📶');
+  if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Recording not supported on this browser 😿');
+  REC.pending = true; REC.cancel = false; REC.startX = e.clientX;
+  try { REC.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch { REC.pending = false; return toast('Microphone permission needed 🎙️'); }
+  if (!REC.pending) { REC.stream.getTracks().forEach((t) => t.stop()); return; } // released while asking
+  const mime = pickMime(); REC.rec = new MediaRecorder(REC.stream, mime ? { mimeType: mime } : undefined); REC.chunks = []; REC.wave = [];
+  REC.rec.ondataavailable = (ev) => ev.data && ev.data.size && REC.chunks.push(ev.data);
+  REC.rec.start(250); REC.t0 = Date.now(); REC.on = true; $('#chRec').classList.remove('hidden'); $('#chApp, #chatApp').classList.add('recording'); $('#chMic').classList.add('rec'); if (navigator.vibrate) navigator.vibrate(30);
+  try {
+    REC.ac = new (window.AudioContext || window.webkitAudioContext)(); const src = REC.ac.createMediaStreamSource(REC.stream); REC.an = REC.ac.createAnalyser(); REC.an.fftSize = 256; src.connect(REC.an);
+  } catch { REC.an = null; }
+  const cv = $('#chRecWave'), cx = cv.getContext('2d'); const buf = new Uint8Array(128); let lastS = 0;
+  const loop = (t) => {
+    if (!REC.on) return; REC.raf = requestAnimationFrame(loop);
+    const s = (Date.now() - REC.t0) / 1000; $('#chRecT').textContent = fmtDur(s); if (s >= 300) chRecStop(true);
+    let lvl = .2; if (REC.an) { REC.an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += ((v - 128) / 128) ** 2; lvl = Math.min(1, Math.sqrt(sum / buf.length) * 3.2); }
+    if (t - lastS > 90) { REC.wave.push(lvl); lastS = t; }
+    cx.clearRect(0, 0, cv.width, cv.height); const bars = REC.wave.slice(-60); cx.fillStyle = '#e75480';
+    bars.forEach((v, i) => { const h = 4 + v * 30; cx.fillRect(cv.width - (bars.length - i) * 5, (cv.height - h) / 2, 3, h); });
+  };
+  REC.raf = requestAnimationFrame(loop);
+}
+function chRecStop(send) {
+  REC.pending = false; if (!REC.on) return; REC.on = false; cancelAnimationFrame(REC.raf);
+  $('#chRec').classList.add('hidden'); $('#chRec').classList.remove('cancel'); $('#chatApp').classList.remove('recording'); $('#chMic').classList.remove('rec');
+  const dur = (Date.now() - REC.t0) / 1000; const rec = REC.rec, stream = REC.stream;
+  rec.onstop = () => {
+    stream.getTracks().forEach((t) => t.stop()); try { REC.ac && REC.ac.close(); } catch { /* */ }
+    if (!send || REC.cancel || dur < 0.7) { if (send && dur < 0.7 && !REC.cancel) toast('Hold to record 🎙️'); return; }
+    const type = (rec.mimeType || 'audio/webm').split(';')[0]; const blob = new Blob(REC.chunks, { type });
+    const w = REC.wave; const n = 40; const wave = Array.from({ length: n }, (_, i) => { const s = w.slice(Math.floor(i * w.length / n), Math.floor((i + 1) * w.length / n) || undefined); return Math.round((s.length ? Math.max(...s) : .1) * 100) / 100; });
+    chSendMedia(blob, 'voice', { duration: Math.round(dur * 10) / 10, meta: { wave } });
+  };
+  try { rec.stop(); } catch { /* */ }
+}
+const mic = $('#chMic');
+mic.addEventListener('pointerdown', (e) => { e.preventDefault(); try { mic.setPointerCapture(e.pointerId); } catch { /* */ } chRecStart(e); });
+mic.addEventListener('pointermove', (e) => { if (!REC.on) return; const c = e.clientX - REC.startX < -80; REC.cancel = c; $('#chRec').classList.toggle('cancel', c); });
+mic.addEventListener('pointerup', () => chRecStop(true));
+mic.addEventListener('pointercancel', () => { REC.cancel = true; chRecStop(false); });
+mic.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// ---- round video notes ----
+const VN = { stream: null, rec: null, chunks: [], t0: 0, raf: null, on: false };
+function pickVMime() { const c = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']; return window.MediaRecorder ? c.find((m) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '' : ''; }
+$('#chVid').onclick = async () => {
+  if (!S.couple) return; if (!navigator.onLine) return toast('Video notes need internet 📶');
+  if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Video recording not supported here 😿');
+  try { VN.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 } }, audio: true }); }
+  catch { return toast('Camera permission needed 📷'); }
+  $('#chVNprev').srcObject = VN.stream; $('#chVN').classList.remove('hidden'); $('#chVNgo').textContent = '⏺ Record'; $('#chVNt').textContent = 'Tap ⏺ to record (max 60s)'; $('#chVNpr').style.strokeDashoffset = '352';
+};
+function vnClose() { VN.on = false; cancelAnimationFrame(VN.raf); if (VN.stream) VN.stream.getTracks().forEach((t) => t.stop()); VN.stream = null; $('#chVNprev').srcObject = null; $('#chVN').classList.add('hidden'); $('#chVN').classList.remove('rec'); }
+$('#chVNx').onclick = () => { if (VN.rec && VN.on) { VN.rec.onstop = null; try { VN.rec.stop(); } catch { /* */ } } vnClose(); };
+$('#chVNgo').onclick = () => {
+  if (!VN.on) {
+    const mime = pickVMime(); VN.rec = new MediaRecorder(VN.stream, mime ? { mimeType: mime, videoBitsPerSecond: 900000 } : undefined); VN.chunks = [];
+    VN.rec.ondataavailable = (e) => e.data && e.data.size && VN.chunks.push(e.data);
+    VN.rec.onstop = () => { const dur = (Date.now() - VN.t0) / 1000; const type = (VN.rec.mimeType || 'video/webm').split(';')[0]; const blob = new Blob(VN.chunks, { type }); vnClose(); if (dur >= 0.8) chSendMedia(blob, 'videonote', { duration: Math.round(dur * 10) / 10 }); };
+    VN.rec.start(500); VN.t0 = Date.now(); VN.on = true; $('#chVN').classList.add('rec'); $('#chVNgo').textContent = '⏹ Send';
+    const loop = () => { if (!VN.on) return; const s = (Date.now() - VN.t0) / 1000; $('#chVNt').textContent = `${fmtDur(s)} / 1:00`; $('#chVNpr').style.strokeDashoffset = String(352 * (1 - Math.min(1, s / 60))); if (s >= 60) { VN.on = false; VN.rec.stop(); return; } VN.raf = requestAnimationFrame(loop); };
+    VN.raf = requestAnimationFrame(loop);
+  } else { VN.on = false; VN.rec.stop(); }
+};
+
+// ---- layout & lifecycle ----
+function chLayout() {
+  const app = $('#chatApp'); if (!app || $('#tab-chat').classList.contains('hidden')) return;
+  const head = document.querySelector('#mainView header.top'); const top = head ? head.getBoundingClientRect().bottom : 0;
+  const vv = window.visualViewport; const vh = vv ? vv.height : innerHeight; const kb = vv && innerHeight - vv.height > 120;
+  const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? nav.getBoundingClientRect().height : 0);
+  app.style.top = Math.max(0, top) + 'px'; app.style.height = Math.max(200, vh - Math.max(0, top) - navH) + 'px';
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', chLayout); visualViewport.addEventListener('scroll', chLayout); }
+addEventListener('resize', chLayout);
+function chOnTab(tab) {
+  document.body.classList.toggle('inChat', tab === 'chat');
+  if (tab !== 'chat') { if (CH.audio) CH.audio.pause(); return; }
+  requestAnimationFrame(() => { chLayout(); const l = $('#chatList'); l.scrollTop = l.scrollHeight; });
+  chMarkSoon(); chBadge(); CH.unreadServer = 0; chBadge(); applyNames();
+  $('#chAv').textContent = partnerEmoji();
+}
+$$('.nav button').forEach((b) => b.addEventListener('click', () => chOnTab(b.dataset.tab)));
+const origGoTab = goTab; goTab = function (tab) { origGoTab(tab); chOnTab(tab); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.couple && CH.ready) { chSync(); if (chOpen()) chMarkSoon(); } });
+addEventListener('online', () => { if (S.couple && CH.ready) setTimeout(() => { chSync(); chUnreadCount(); }, 1500); });
 
 // initial session (onAuthStateChange also fires INITIAL_SESSION)
 sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booting) { show('#authView'); if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗'; } });

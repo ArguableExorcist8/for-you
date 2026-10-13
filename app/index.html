@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 <div id="app">
@@ -40,13 +40,16 @@
   <!-- PAIRING -->
   <section id="pairView" class="view hidden">
     <div class="hero"><div class="big" id="pairEmoji">🐻</div><h1>Hi <span id="pairName"></span>!</h1><p>Let's find your person 💞</p></div>
-    <div class="card">
+    <div class="card fullCard hidden" id="fullCard"><div class="fullEm">🏡💕</div><h2>For Us is full right now 💕</h2>
+      <p>We can only fit a few couples at the moment. If you already have a pending invite from your person, you can still accept it below 💌</p>
+      <button id="waitBtn">Notify me when there's room 🔔</button><p class="muted" id="waitTxt"></p></div>
+    <div class="card" id="codeCard">
       <h2>Your invite code</h2>
       <div class="code" id="myCode">------</div>
       <p class="muted">Share this code (or your username <b id="myUser"></b>) with your partner.</p>
       <button id="copyCode" class="soft">Copy code</button>
     </div>
-    <div class="card">
+    <div class="card" id="findCard">
       <h2>Find your partner</h2>
       <input id="findQ" placeholder="Invite code or exact username" autocapitalize="none" autocorrect="off">
       <button id="findBtn">Search 🔍</button>
@@ -95,22 +98,7 @@
         <div class="colors" id="noteColors"></div>
         <button id="noteAdd">Post note</button></div>
       <div id="noteWall" class="wall"></div>
-    </div>
-
-    <div class="tab hidden" id="tab-memories">
-      <div class="card"><h2>📸 Our photos</h2>
-        <label class="btn">Add photo<input type="file" id="photoIn" accept="image/*" multiple hidden></label>
-        <p class="muted" id="photoStatus"></p>
-        <div id="gallery" class="gallery"></div></div>
-      <div class="card"><h2>📖 Our story</h2>
-        <details><summary>Add a moment</summary>
-          <input id="tlDate" type="date"><input id="tlTitle" placeholder="Title" maxlength="120">
-          <textarea id="tlBody" maxlength="2000" placeholder="What happened?"></textarea>
-          <button id="tlAdd">Add moment</button></details>
-        <div id="timeline" class="timeline"></div></div>
-    </div>
-
-    <div class="tab hidden" id="tab-gifts">
+      <h3 class="secHead">🎁 Gifts &amp; secret letters</h3>
       <div class="card"><h2>🎟️ Coupons for <span class="pname"></span></h2>
         <input id="cpTitle" placeholder="One free back massage" maxlength="120">
         <input id="cpDesc" placeholder="Fine print (optional)" maxlength="500">
@@ -125,6 +113,42 @@
         <input id="letterHint" placeholder="Hint (optional)" maxlength="120">
         <button id="letterSave">Seal letter 💌</button>
         <p class="muted" id="letterStatus">Encrypted on your phone. Only someone with the password can read it.</p></div>
+    </div>
+
+    <div class="tab hidden" id="tab-memories">
+      <div class="card"><h2>📸 Our photos</h2>
+        <label class="btn">Add photo / video 📷🎬<input type="file" id="photoIn" accept="image/*,video/*" multiple hidden></label>
+        <p class="muted" id="photoStatus"></p>
+        <div id="gallery" class="gallery"></div></div>
+      <div class="card"><h2>📖 Our story</h2>
+        <details><summary>Add a moment</summary>
+          <input id="tlDate" type="date"><input id="tlTitle" placeholder="Title" maxlength="120">
+          <textarea id="tlBody" maxlength="2000" placeholder="What happened?"></textarea>
+          <button id="tlAdd">Add moment</button></details>
+        <div id="timeline" class="timeline"></div></div>
+    </div>
+
+    <div class="tab hidden" id="tab-chat">
+      <div class="chatApp" id="chatApp">
+        <div class="chatHead"><span class="chAv" id="chAv">💗</span><div class="chWho"><b class="pname"></b><small id="chtStatus">our little corner 💞</small></div></div>
+        <div class="chatList" id="chatList"><div class="chTop" id="chTop"></div><div id="chMsgs"></div><div class="chTyping hidden" id="chTyping"><span></span><span></span><span></span></div></div>
+        <button class="chDown hidden" id="chDown" aria-label="Scroll to newest">⬇️<i id="chDownN"></i></button>
+        <div class="chReply hidden" id="chReply"><div><b id="chReplyWho"></b><span id="chReplyTxt"></span></div><button id="chReplyX" aria-label="Cancel reply">✕</button></div>
+        <div class="chCompose" id="chCompose">
+          <button class="chIco" id="chPlus" aria-label="Attach">➕</button>
+          <textarea id="chTxt" rows="1" maxlength="4000" placeholder="Message…"></textarea>
+          <button class="chIco" id="chVid" aria-label="Round video note">⭕</button>
+          <button class="chIco chMic" id="chMic" aria-label="Hold to record a voice note">🎙️</button>
+          <button class="chSend hidden" id="chSend" aria-label="Send">➤</button>
+        </div>
+        <div class="chRec hidden" id="chRec"><span class="chRecDot"></span><span id="chRecT">0:00</span><canvas id="chRecWave" width="300" height="36"></canvas><small>◀ slide to cancel</small></div>
+        <div class="chAttach hidden" id="chAttach">
+          <label>🖼️<span>Gallery</span><input type="file" id="chGal" accept="image/*,video/*" multiple hidden></label>
+          <label>📷<span>Camera</span><input type="file" id="chCam" accept="image/*" capture="environment" hidden></label>
+          <label>🎬<span>Video</span><input type="file" id="chCamV" accept="video/*" capture="environment" hidden></label>
+          <label>📎<span>File</span><input type="file" id="chFile" hidden></label>
+        </div>
+      </div>
     </div>
 
     <div class="tab hidden" id="tab-play">
@@ -404,6 +428,10 @@
     </div>
 
     <div class="tab hidden" id="tab-me">
+      <div class="card stCard" id="stCard"><h2>💾 Our storage</h2>
+        <div class="stBar"><div class="stFill" id="stFill"></div></div>
+        <p class="stTxt" id="stTxt">Checking… 💭</p>
+        <p class="muted" id="stSub">Photos, videos &amp; voice notes from Photos and Chat. Images and videos are shrunk on your phone before upload 🪄</p></div>
       <div class="card"><h2>Your profile</h2><p id="myNick"></p>
         <input id="pfName" maxlength="40" placeholder="Display name">
         <input id="pfUser" maxlength="24" placeholder="username" autocapitalize="none">
@@ -428,7 +456,7 @@
       <button data-tab="notes">💌<span>Notes</span></button>
       <button data-tab="us">💞<span>Us</span></button>
       <button data-tab="memories">📸<span>Photos</span></button>
-      <button data-tab="gifts">🎁<span>Gifts</span></button>
+      <button data-tab="chat">💬<span>Chat</span><em class="navBadge hidden" id="chatBadge"></em></button>
       <button data-tab="play">🎮<span>Play</span></button>
     </nav>
   </section>
@@ -444,12 +472,15 @@
 <div id="story" class="hidden"><div class="storybar" id="storyBar"></div><div class="slide" id="storySlide"></div><p class="muted" style="color:#fff">tap → next · swipe down/✕ to close</p><button class="gear" id="storyClose" style="color:#fff;top:10px;right:10px;position:absolute">✕</button></div>
 <div id="toast"></div>
 
+<div id="chViewer" class="chViewer hidden"><button class="chVX" aria-label="Close">✕</button><div id="chViewBox"></div></div>
+<div id="chMenu" class="chMenu hidden"><div class="chMenuBox"><div class="chReacts" id="chReacts"></div><div class="chActs" id="chActs"></div></div></div>
+<div id="chVN" class="chVN hidden"><div class="chVNring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="bg"/><circle cx="60" cy="60" r="56" class="pr" id="chVNpr"/></svg><video id="chVNprev" playsinline muted autoplay></video></div><p id="chVNt">Tap ⏺ to record (max 60s)</p><div class="row"><button class="soft" id="chVNx">Cancel</button><button id="chVNgo">⏺ Record</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="config.js?v=16"></script>
-<script src="data.js?v=16"></script>
-<script src="trivia.js?v=16"></script>
-<script src="anim.js?v=16"></script>
-<script src="app.js?v=16"></script>
-<script src="cute.js?v=16"></script>
+<script src="config.js?v=17"></script>
+<script src="data.js?v=17"></script>
+<script src="trivia.js?v=17"></script>
+<script src="anim.js?v=17"></script>
+<script src="app.js?v=17"></script>
+<script src="cute.js?v=17"></script>
 </body>
 </html>
