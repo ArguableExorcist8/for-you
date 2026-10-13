@@ -1,8 +1,11 @@
 // For Us service worker — offline app shell + photo cache + push notifications
-const VERSION = 'v19';
+const VERSION = 'v20';
 const SHELL = 'forus-shell-' + VERSION, RUNTIME = 'forus-runtime-' + VERSION, MEDIA = 'forus-media-v1';
-const V = '?v=19';
-const PRECACHE = ['./', 'index.html', 'style.css' + V, 'config.js' + V, 'data.js' + V, 'trivia.js' + V, 'anim.js' + V, 'app.js' + V, 'cute.js' + V, 'themes.js' + V, 'themes/vampire-diaries.png', 'themes/the-originals.png', 'themes/bridgerton.svg', 'themes/harry-potter.svg', 'themes/gilmore-girls.svg',
+const V = '?v=20';
+const PRECACHE = ['./', 'index.html', 'style.css' + V, 'config.js' + V, 'data.js' + V, 'trivia.js' + V, 'anim.js' + V, 'app.js' + V, 'cute.js' + V, 'themes.js' + V, 'skins.css' + V,
+  'themes/attack-on-titan.png', 'themes/beauty-and-the-beast.png', 'themes/coco.png', 'themes/demon-slayer.png', 'themes/frozen.png', 'themes/gilmore-girls.svg', 'themes/harry-potter.svg', 'themes/howls-moving-castle.png', 'themes/naruto.png', 'themes/one-piece.png', 'themes/sailor-moon.png', 'themes/spirited-away.png', 'themes/stranger-things.svg', 'themes/tangled.svg', 'themes/the-originals.png', 'themes/titanic.svg', 'themes/twilight.svg', 'themes/up.png', 'themes/vampire-diaries.png',
+  'themes/fonts/amatic.woff2', 'themes/fonts/caveat.woff2', 'themes/fonts/cinzel.woff2', 'themes/fonts/cinzeldec-700.woff2', 'themes/fonts/cormorant-500i.woff2', 'themes/fonts/cormorant-600.woff2', 'themes/fonts/fredoka.woff2', 'themes/fonts/gochi.woff2', 'themes/fonts/greatvibes-400.woff2', 'themes/fonts/imfell-400.woff2', 'themes/fonts/pacifico.woff2', 'themes/fonts/specialelite-400.woff2',
+  'themes/balloons/1.webp', 'themes/beauty/1.webp', 'themes/frozen/1.webp', 'themes/howl/1.webp', 'themes/coco/1.webp', 'themes/yourname/1.webp', // anime stills are cached on first view (runtime)
   'manifest.json', 'icon.png', 'apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js'];
 const API = /\/(rest|auth|functions|realtime|graphql)\/v1\//;

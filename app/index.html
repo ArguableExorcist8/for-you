@@ -12,10 +12,10 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=19">
-<script src="themes.js?v=19"></script>
+<link rel="stylesheet" href="style.css?v=20"><link rel="stylesheet" href="skins.css?v=20">
+<script src="themes.js?v=20"></script>
 </head>
-<body>
+<body data-tab="home">
 <div id="app">
   <!-- AUTH -->
   <section id="authView" class="view hidden">
@@ -440,10 +440,10 @@
       <div class="card"><h2>🔔 Notifications</h2><p class="muted">What should send a push to each other?</p>
         <div class="seg segCol" id="setNotify"><button data-v="important">Just the important stuff 💌<small>chat, hugs &amp; pokes</small></button><button data-v="everything">Everything 🔔<small>answers, moods, notes, photos, plans, games…</small></button></div>
         <p class="muted small" id="setNotifyBy"></p></div>
-      <div class="card thCard" id="thCard"><h2>🎨 Our theme</h2><p class="muted">Tap one to preview it — then apply it for both of you.</p>
+      <div class="card thCard" id="thCard"><h2>🎨 Our theme</h2><p class="muted">Preview any theme — then apply it for both of you.</p>
         <div id="thGrid"></div>
         <label class="tgl"><input type="checkbox" id="setSeason"> <span>Seasonal sprinkles <small id="seasonNow">Valentine's, Ramadan &amp; Eid, winter snow and our anniversary week — added on top of any theme</small></span></label>
-        <p class="muted small" id="thBy"></p></div>
+        <p class="muted small" id="thBy"></p><p class="muted small thIconNote">📲 Want your Home Screen icon to match? Remove For Us from your Home Screen and add it again 💕</p></div>
       <div class="card"><h2>✨ Cute effects</h2><p class="muted">Floating hearts, sparkles, peeking stickers and little surprise bubbles — on both phones.</p><button id="cuteToggle">✨ Cute effects: ON</button></div>
       <div class="card"><h2>💬 Chat</h2>
         <label class="tgl"><input type="checkbox" id="setReceipts"> <span>Read receipts <small>blue ✓✓ when seen</small></span></label>
@@ -499,11 +499,11 @@
 <div id="chMenu" class="chMenu hidden"><div class="chMenuBox"><div class="chReacts" id="chReacts"></div><div class="chActs" id="chActs"></div></div></div>
 <div id="chVN" class="chVN hidden"><div class="chVNring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="bg"/><circle cx="60" cy="60" r="56" class="pr" id="chVNpr"/></svg><video id="chVNprev" playsinline muted autoplay></video></div><p id="chVNt">Tap ⏺ to record (max 60s)</p><div class="row"><button class="soft" id="chVNx">Cancel</button><button id="chVNgo">⏺ Record</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="config.js?v=19"></script>
-<script src="data.js?v=19"></script>
-<script src="trivia.js?v=19"></script>
-<script src="anim.js?v=19"></script>
-<script src="app.js?v=19"></script>
-<script src="cute.js?v=19"></script>
+<script src="config.js?v=20"></script>
+<script src="data.js?v=20"></script>
+<script src="trivia.js?v=20"></script>
+<script src="anim.js?v=20"></script>
+<script src="app.js?v=20"></script>
+<script src="cute.js?v=20"></script>
 </body>
 </html>

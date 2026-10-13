@@ -485,6 +485,7 @@ document.addEventListener('visibilitychange', async () => { if (!document.hidden
 
 // ---- tabs ----
 $$('.nav button').forEach((b) => b.onclick = () => {
+  document.body.dataset.tab = b.dataset.tab; window.CC_picNext && window.CC_picNext();
   $$('.nav button').forEach((x) => x.classList.toggle('on', x === b));
   $$('.tab').forEach((t) => t.classList.add('hidden'));
   $('#tab-' + b.dataset.tab).classList.remove('hidden');
@@ -1376,7 +1377,7 @@ function openFeat(f) {
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
 }
-function goTab(tab) { $$('.nav button').forEach((x) => x.classList.toggle('on', x.dataset.tab === tab)); $$('.tab').forEach((t) => t.classList.add('hidden')); $('#tab-' + tab).classList.remove('hidden'); window.scrollTo(0, 0); }
+function goTab(tab) { document.body.dataset.tab = tab; window.CC_picNext && window.CC_picNext(); $$('.nav button').forEach((x) => x.classList.toggle('on', x.dataset.tab === tab)); $$('.tab').forEach((t) => t.classList.add('hidden')); $('#tab-' + tab).classList.remove('hidden'); window.scrollTo(0, 0); }
 $$('[data-feat]').forEach((b) => b.onclick = () => openFeat(b.dataset.feat));
 $('#featBack').onclick = () => { curFeat = null; $('#featPanel').classList.add('hidden'); $('#usHome').classList.remove('hidden'); };
 $('#gearBtn').onclick = () => goTab('me');
@@ -2483,7 +2484,7 @@ $('#setWheel').onchange = (e) => { wheelCat = e.target.value; localStorage.setIt
 document.addEventListener('cc:cute', (e) => saveShared({ cute_fx: !!e.detail }, true));
 // ---- this device only ----
 if (localStorage.getItem('cc_reduce_motion') === '1') document.body.classList.add('rm');
-$('#setReduce').onchange = (e) => { localStorage.setItem('cc_reduce_motion', e.target.checked ? '1' : '0'); document.body.classList.toggle('rm', e.target.checked); toast(e.target.checked ? 'Calmer animations on this device 🐢 (fully applies next time you open the app)' : 'Animations back on this device ✨', 3500); };
+$('#setReduce').onchange = (e) => { localStorage.setItem('cc_reduce_motion', e.target.checked ? '1' : '0'); document.body.classList.toggle('rm', e.target.checked); window.CC_ambRefresh && CC_ambRefresh(); toast(e.target.checked ? 'Calmer animations on this device 🐢 (fully applies next time you open the app)' : 'Animations back on this device ✨', 3500); };
 $$('#setRate button').forEach((b) => b.onclick = () => { localStorage.setItem('cc_chat_rate', b.dataset.v); if (typeof CH !== 'undefined') { CH.rate = Number(b.dataset.v); if (CH.audio) CH.audio.playbackRate = CH.rate; } renderSettingsUI(); });
 async function offInfo() {
   let q = []; try { q = JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { /* */ }
@@ -2527,32 +2528,66 @@ function themeGo(id, at) {
   CC_applyTheme(id, { preview: !!thPreview });
   renderThemePicker();
 }
+const TH_CATS = [['Colours', '🎨 Colours'], ['Animals', '🐾 Animals'], ['Stories', '📖 Stories'], ['Series', '📺 Series'], ['Movies', '🎬 Movies'], ['Animations', '🎨 Animations'], ['Anime', '🌸 Anime'], ['Seasonal', '🗓️ Seasonal']];
+const thUI = { open: false, sec: {} };
+function thMock(t, big) {
+  const v = t.v, vars = `--bg:${v.bg};--cd:${v.cd};--tx:${v.tx};--mu:${v.mu};--ac:${v.ac};--on:${v.on};--ac2:${v.ac2};--ac3:${v.ac3};--sf:${v.sf};--bubA:${v.bubA || v.ac2}`;
+  const hero = t.logo ? `<img src="${t.logo}" alt="" loading="lazy">` : t.word ? `<b style="font-family:${t.word.f};color:${t.word.c}">${esc(t.word.t)}</b>` : `<b>${t.em}</b>`;
+  const pic = t.pics ? `<span class="mkPic" style="background-image:url('themes/${t.id}/1.webp')"></span>` : '';
+  return `<span class="mk${big ? ' big' : ''}" style="${vars}"><span class="mkBg"></span>${pic}<span class="mkHero">${hero}</span>
+    <span class="mkCard"><i></i><i></i></span><span class="mkThem">${t.parts[0]}</span><span class="mkMe">💕</span><span class="mkBtn"></span></span>`;
+}
 function renderThemePicker() {
   const g = $('#thGrid'); if (!g || !window.CC_THEMES) return;
-  const saved = (shRow() && shRow().theme) || 'blush', cur = CC_theme().id;
-  const cats = [...new Set(CC_THEMES.map((t) => t.cat))];
-  const card = (t) => { const v = t.v; return `<button class="thP${t.id === saved ? ' on' : ''}${thPreview && t.id === cur ? ' prev' : ''}" data-th="${t.id}" aria-label="${esc(t.name)} theme">
-    <span class="pv" style="background:${v.bg}"></span>
-    ${t.logo ? `<img class="pl" src="${t.logo}" alt="" loading="lazy">` : `<span class="pc" style="background:${v.cd};color:${v.tx}">${t.em}<i style="background:${v.ac3}"></i></span>`}
-    <span class="pb" style="background:${v.ac}"></span><span class="pe">${t.parts.slice(0, 3).join('')}</span>
-    <span class="pn">${esc(t.name)}</span>${t.id === saved ? '<span class="ck">✓</span>' : ''}</button>`; };
-  const key = cats.join() + saved + cur + !!thPreview;
-  if (g.dataset.k !== key) { g.innerHTML = cats.map((c) => `<div class="thCat">${{ Colours: '🎨 Colours', Animals: '🐾 Animals', Stories: '📖 Stories', Series: '📺 Series' }[c] || c}</div><div class="thGrid">${CC_THEMES.filter((t) => t.cat === c).map(card).join('')}</div>`).join(''); g.dataset.k = key; }
+  const saved = (shRow() && shRow().theme) || 'blush', cur = CC_theme().id, sp = window.CC_seasonPreviewing ? CC_seasonPreviewing() : null;
+  const T = CC_THEMES.find((x) => x.id === saved) || CC_THEMES[0];
+  const card = (t) => `<button class="thP${t.id === saved ? ' on' : ''}${thPreview && t.id === cur ? ' prev' : ''}" data-th="${t.id}" aria-label="${esc(t.name)} theme">${thMock(t)}<span class="pn">${esc(t.name)}</span>${t.id === saved ? '<span class="ck">✓</span>' : ''}</button>`;
+  const sCard = (s) => `<button class="thP thS${sp === s.id ? ' prev' : ''}" data-season="${s.id}" aria-label="${esc(s.name)} overlay"><span class="sv sv-${s.id}"><b>${s.art.join('')}</b></span><span class="pn">${esc(s.name)}</span></button>`;
+  const key = [saved, cur, !!thPreview, sp, CC_THEMES.length].join('|');
+  if (g.dataset.k !== key) {
+    const secs = TH_CATS.map(([c, lab]) => {
+      const list = c === 'Seasonal' ? (window.CC_seasonList ? CC_seasonList() : []) : CC_THEMES.filter((t) => t.cat === c);
+      const n = list.length, has = c !== 'Seasonal' && list.some((t) => t.id === saved);
+      return `<div class="thSec${thUI.sec[c] ? ' open' : ''}" data-sec="${c}"><button class="thSecH" aria-expanded="${!!thUI.sec[c]}"><span>${lab}</span><small>${has ? '✓ ' : ''}${n}</small><i>▾</i></button>
+        <div class="thSecB"><div class="thSecI">${c === 'Seasonal' ? '<div class="thSeasonTgl"></div>' : ''}<div class="thRow">${(c === 'Seasonal' ? list.map(sCard) : list.map(card)).join('')}</div></div></div></div>`;
+    }).join('');
+    const keep = $('#setSeason')?.closest('label'); if (keep && g.contains(keep)) $('#thCard').appendChild(keep);
+    g.innerHTML = `<div class="thNow">${card(T)}<div class="thNowTx"><b>${esc(T.name)} ${T.em}</b><small>${esc(T.cat)}</small>
+      <button class="thTog" id="thToggle" aria-expanded="${thUI.open}">Change theme <i>▾</i></button></div></div>
+      <div class="thAcc${thUI.open ? ' open' : ''}"><div class="thAccI">${secs}</div></div>`;
+    g.dataset.k = key;
+    const tg = $('#setSeason')?.closest('label'); const slot = g.querySelector('.thSeasonTgl'); if (tg && slot) slot.appendChild(tg);
+  }
   const si = window.CC_seasonInfo ? CC_seasonInfo() : { on: true }; $('#setSeason').checked = shared('seasonal', true);
-  $('#seasonNow').textContent = si.current ? `Right now: ${si.current.name}` : "Valentine's, Ramadan & Eid, winter snow and our anniversary week — on top of any theme";
-  const r = shRow(), tn = (CC_THEMES.find((x) => x.id === saved) || {}).name;
+  $('#seasonNow').textContent = si.current && !sp ? `Right now: ${si.current.name}` : "Valentine's, Ramadan & Eid, winter snow and our anniversary week — on top of any theme";
+  const r = shRow(), tn = T.name;
   $('#thBy').textContent = r && r.theme ? `${tn} · picked by ${r.created_by === S.user?.id ? 'you' : partnerName()}` : 'Blush pink is our default 🌸';
 }
+let thSeasonPrev = null;
 $('#thGrid').addEventListener('click', (e) => {
+  const g = $('#thGrid');
+  if (e.target.closest('#thToggle')) { thUI.open = !thUI.open; g.querySelector('.thAcc').classList.toggle('open', thUI.open); e.target.closest('#thToggle').setAttribute('aria-expanded', thUI.open); return; }
+  const h = e.target.closest('.thSecH');
+  if (h) { const sec = h.parentElement, c = sec.dataset.sec; thUI.sec[c] = !thUI.sec[c]; sec.classList.toggle('open', thUI.sec[c]); h.setAttribute('aria-expanded', thUI.sec[c]); return; }
+  const sb = e.target.closest('.thS[data-season]');
+  if (sb) {
+    const id = sb.dataset.season; if (thPreview) themeEndPreview();
+    thSeasonPrev = id; CC_previewSeason(id); g.dataset.k = ''; renderThemePicker();
+    const s = CC_seasonList().find((x) => x.id === id); $('#thBarTxt').textContent = `Previewing ${s.name} — it appears by itself on its dates`; $('#thApply').textContent = 'Keep sprinkles on ✨'; $('#thBar').classList.remove('hidden'); return;
+  }
   const b = e.target.closest('[data-th]'); if (!b) return; const id = b.dataset.th, saved = (shRow() && shRow().theme) || 'blush';
+  if (b.closest('.thNow')) { thUI.open = true; g.querySelector('.thAcc').classList.add('open'); return; }
+  if (thSeasonPrev) seasonEndPreview();
   const rc = b.getBoundingClientRect(), at = { x: rc.left + rc.width / 2, y: rc.top + rc.height / 2 };
   if (id === saved) { thPreview = null; $('#thBar').classList.add('hidden'); return themeGo(id, null); }
-  thPreview = id; themeGo(id, at);
+  thPreview = id; themeGo(id, at); $('#thApply').textContent = 'Apply for both 💕';
   const t = CC_THEMES.find((x) => x.id === id); $('#thBarTxt').textContent = `Previewing ${t.name} ${t.em}`; $('#thBar').classList.remove('hidden');
 });
-function themeEndPreview() { if (!thPreview) return; thPreview = null; $('#thBar').classList.add('hidden'); themeGo((shRow() && shRow().theme) || 'blush', null); }
+function seasonEndPreview() { if (!thSeasonPrev) return; thSeasonPrev = null; CC_previewSeason(null); $('#thBar').classList.add('hidden'); $('#thGrid').dataset.k = ''; renderThemePicker(); }
+function themeEndPreview() { if (thSeasonPrev) return seasonEndPreview(); if (!thPreview) return; thPreview = null; $('#thBar').classList.add('hidden'); themeGo((shRow() && shRow().theme) || 'blush', null); }
 $('#thCancel').onclick = themeEndPreview;
 $('#thApply').onclick = () => {
+  if (thSeasonPrev) { seasonEndPreview(); CC_setSeason(true, annivDate()); saveShared({ seasonal: true }); toast('Seasonal sprinkles on ✨', 2500); return renderThemePicker(); }
   const id = thPreview; if (!id) return; thPreview = null; $('#thBar').classList.add('hidden');
   const t = CC_THEMES.find((x) => x.id === id); CC_applyTheme(id); saveShared({ theme: id }, true);
   toast(`${t.name} ${t.em} — on both phones now 💕`, 3000); hearts(8); window.FX && FX.confetti(40); renderThemePicker();

@@ -108,6 +108,6 @@
     document.dispatchEvent(new CustomEvent('cc:cute', { detail: on })); }); // app.js saves it to the shared couple settings
   // shared setting applied from the server (partner changed it, or first load)
   document.addEventListener('cc:theme', () => { if (on) start(); }); // new theme/season → new particles
-  window.CC_setCute = (v) => { v = !!v; localStorage.setItem(KEY, v ? '1' : '0'); if (v === on) return syncBtn(); on = v; on ? start() : stop(); syncBtn(); };
+  window.CC_setCute = (v) => { v = !!v; localStorage.setItem(KEY, v ? '1' : '0'); if (v === on) return syncBtn(); on = v; on ? start() : stop(); syncBtn(); window.CC_ambRefresh && window.CC_ambRefresh(); };
   syncBtn(); start();
 })();
