@@ -1,7 +1,7 @@
 // For Us service worker — offline app shell + photo cache + push notifications
-const VERSION = 'v15';
+const VERSION = 'v16';
 const SHELL = 'forus-shell-' + VERSION, RUNTIME = 'forus-runtime-' + VERSION, MEDIA = 'forus-media-v1';
-const V = '?v=15';
+const V = '?v=16';
 const PRECACHE = ['./', 'index.html', 'style.css' + V, 'config.js' + V, 'data.js' + V, 'trivia.js' + V, 'anim.js' + V, 'app.js' + V, 'cute.js' + V,
   'manifest.json', 'icon.png', 'apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js'];

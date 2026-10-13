@@ -129,7 +129,7 @@ addEventListener('pagehide', saveSigned); document.addEventListener('visibilityc
 function setOffline(off, silent) {
   const was = OFF.on; OFF.on = off;
   let p = document.getElementById('offPill');
-  if (!p) { p = document.createElement('div'); p.id = 'offPill'; p.innerHTML = 'Offline 📴 <small>showing saved stuff</small>'; document.body.appendChild(p); }
+  if (!p) { p = document.createElement('div'); p.id = 'offPill'; p.innerHTML = 'Offline 📴'; document.body.appendChild(p); }
   p.classList.toggle('show', off);
   document.body.classList.toggle('isOffline', off);
   if (typeof refreshCoopNotice === 'function') refreshCoopNotice();
@@ -151,7 +151,7 @@ function enqueue(item) {
   if (i >= 0) q.splice(i, 1);
   q.push(item); qSave(q); updateQueueBadge();
 }
-function updateQueueBadge() { const p = document.getElementById('offPill'); const n = qLoad().length; if (p) p.dataset.q = n ? `${n} waiting to sync` : ''; }
+function updateQueueBadge() { const p = document.getElementById('offPill'); const n = qLoad().length; if (p) p.dataset.q = ''; }
 const QUEUE_RPC = ['poke_bear'];
 const realFrom = sb.from.bind(sb), realRpc = sb.rpc.bind(sb);
 const filtersOf = (chain) => chain.filter((c) => c.m === 'eq' || c.m === 'match');
