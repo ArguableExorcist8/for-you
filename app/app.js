@@ -2742,16 +2742,32 @@ async function chatInit() {
   chSubscribe();
   await chSync(true); chUnreadCount();
 }
+// v21: reconcile with the server — always the latest page, merged by id; the offline cache never hides server rows
 async function chSync(initial) {
-  if (!S.couple || !navigator.onLine) { CH.ready = true; chRender(); chBadge(); return; }
-  let q = sb.from('messages').select('*').eq('couple_id', S.couple.id).order('created_at', { ascending: false }).limit(CH_PAGE);
-  const newest = !initial && [...CH.list].reverse().find((m) => !m._pending && !m._queued);
-  if (newest) q = q.gte('created_at', newest.created_at);
-  const { data, error } = await q;
-  if (error) { CH.ready = true; chRender(); return; }
-  if (initial) { const pend = CH.list.filter((m) => m._pending || m._queued || m._failed); const ids = new Set(data.map((d) => d.id)); CH.list = pend.filter((p) => !ids.has(p.id)); CH.more = data.length === CH_PAGE; }
-  chMerge(data); await chSign(CH.list.map((m) => m.media_path)); CH.ready = true;
-  chRender(initial ? 'bottom' : undefined); chSaveCache(); chBadge(); chMarkSoon();
+  if (!S.couple) return;
+  if (!navigator.onLine) { CH.ready = true; chRender(); chBadge(); return; }
+  if (CH.syncing) { CH.syncAgain = initial ? 'i' : (CH.syncAgain || true); return; } CH.syncing = true;
+  try {
+    const { data, error } = await sb.from('messages').select('*').eq('couple_id', S.couple.id).order('created_at', { ascending: false }).limit(CH_PAGE);
+    if (error || !Array.isArray(data)) throw error || new Error('no data');
+    clearTimeout(CH.retryT); CH.retryN = 0; CH.lastSync = Date.now();
+    const ids = new Set(data.map((d) => d.id)), oldest = data.length ? data[data.length - 1].created_at : null;
+    // drop cached server rows inside the fetched window that the server no longer has (deleted elsewhere); keep pending/queued/failed
+    CH.list = CH.list.filter((m) => m._pending || m._queued || m._failed || ids.has(m.id) || (oldest && data.length === CH_PAGE && m.created_at < oldest));
+    chIdx(); const before = new Set(CH.list.map((m) => m.id));
+    if (initial) CH.more = data.length === CH_PAGE;
+    chMerge(data); await chSign(CH.list.map((m) => m.media_path)); CH.ready = true;
+    const fresh = data.filter((d) => !before.has(d.id) && !chMine(d));
+    const l = $('#chatList'), near = l && l.scrollHeight - l.scrollTop - l.clientHeight < 140;
+    chRender(initial || near ? 'bottom' : undefined); chSaveCache(); chBadge(); chMarkSoon();
+    if (!initial && fresh.length && !chOpen()) chUnreadCount();
+  } catch (e) {
+    CH.ready = true; chRender(); chBadge();
+    CH.retryN = (CH.retryN || 0) + 1; clearTimeout(CH.retryT);
+    CH.retryT = setTimeout(() => chSync(initial), Math.min(30000, 1500 * 2 ** Math.min(CH.retryN, 5)));
+  } finally {
+    CH.syncing = false; if (CH.syncAgain) { const i = CH.syncAgain === 'i'; CH.syncAgain = false; setTimeout(() => chSync(i), 50); }
+  }
 }
 async function chLoadOlder() {
   if (!CH.more || CH.loading || !navigator.onLine || !CH.ready) return;
@@ -2793,9 +2809,23 @@ function chSubscribe() {
       }
       chBadge();
     })
-    .on('broadcast', { event: 'typing' }, (p) => { if (p.payload && p.payload.uid !== S.user.id && shared('chat_typing', true)) showTyping(); })
-    .subscribe();
+    .on('broadcast', { event: 'typing' }, (p) => { if (p.payload && p.payload.uid !== S.user.id && shared('chat_typing', true)) showTyping(); });
+  const me = CH.ch;
+  me.subscribe((status) => {
+    if (CH.ch !== me) return; CH.rtStatus = status;
+    if (status === 'SUBSCRIBED') { CH.rtFails = 0; chSync(); } // catch anything missed while the socket was down
+    else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+      CH.rtFails = (CH.rtFails || 0) + 1; clearTimeout(CH.rtT);
+      CH.rtT = setTimeout(() => { if (CH.ch === me && S.couple) chSubscribe(); }, Math.min(30000, 1000 * 2 ** Math.min(CH.rtFails, 5)));
+      chSync();
+    }
+  });
 }
+// fallback poll: every 12s while Chat is open & visible, every 60s otherwise (cheap: one indexed query)
+setInterval(() => {
+  if (!S.couple || !CH.ready || document.hidden) return; const age = Date.now() - (CH.lastSync || 0);
+  if (chOpen() ? age > 11000 : age > 59000) chSync();
+}, 4000);
 function showTyping() {
   $('#chTyping').classList.remove('hidden'); $('#chtStatus').textContent = 'typing…'; $('#chtStatus').classList.add('typing');
   const l = $('#chatList'); if (l.scrollHeight - l.scrollTop - l.clientHeight < 160) l.scrollTop = l.scrollHeight;
@@ -3066,13 +3096,15 @@ function chOnTab(tab) {
   document.body.classList.toggle('inChat', tab === 'chat');
   if (tab !== 'chat') { if (CH.audio) CH.audio.pause(); return; }
   requestAnimationFrame(() => { chLayout(); const l = $('#chatList'); l.scrollTop = l.scrollHeight; });
-  chMarkSoon(); chBadge(); CH.unreadServer = 0; chBadge(); applyNames();
+  if (CH.ready) chSync(); chMarkSoon(); chBadge(); CH.unreadServer = 0; chBadge(); applyNames();
   $('#chAv').textContent = partnerEmoji();
 }
 $$('.nav button').forEach((b) => b.addEventListener('click', () => chOnTab(b.dataset.tab)));
 const origGoTab = goTab; goTab = function (tab) { origGoTab(tab); chOnTab(tab); };
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.couple && CH.ready) { chSync(); if (chOpen()) chMarkSoon(); } });
-addEventListener('online', () => { if (S.couple && CH.ready) setTimeout(() => { chSync(); chUnreadCount(); }, 1500); });
+const chWake = () => { if (!S.couple || !CH.ready) return; chSync(); chUnreadCount(); if (chOpen()) chMarkSoon(); if (CH.ch && CH.rtStatus && CH.rtStatus !== 'SUBSCRIBED') chSubscribe(); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden) chWake(); });
+addEventListener('focus', chWake); addEventListener('pageshow', chWake);
+addEventListener('online', () => setTimeout(chWake, 1200));
 
 // initial session (onAuthStateChange also fires INITIAL_SESSION)
 sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booting) { show('#authView'); if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗'; } });
