@@ -35,7 +35,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const toast = (m, ms = 2600) => { const t = $('#toast'); if (window.__ccQueuedAt && Date.now() - window.__ccQueuedAt < 1500 && !/offline|online|internet/i.test(m)) m += ' · saved offline, will sync 📴'; t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms); };
 const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const fmtTime = (d) => new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(id).classList.remove('hidden'); };
+const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(id).classList.remove('hidden'); if (id === '#mainView' || id === '#pairView') setTimeout(() => window.CC_maybeInstall && CC_maybeInstall(), 2500); };
 const errMsg = (e) => (e && (e.message || e.error_description)) || String(e);
 
 // ---- state ----
@@ -79,6 +79,7 @@ $('#authForm').onsubmit = async (e) => {
         }
       });
       if (error) throw error;
+      localStorage.setItem('cc_new_signup', '1'); // first-timers get the Home Screen guide
       if (!data.session) {
         $('#authMsg').innerHTML = '📬 Almost there! We sent a confirmation link to <b>' + esc(email) + '</b>. Open it, then come back and sign in.';
         setMode('in'); $('#authMsg').innerHTML = '📬 Almost there! We sent a confirmation link to <b>' + esc(email) + '</b>. Open it, then come back and sign in.';
@@ -90,7 +91,7 @@ $('#authForm').onsubmit = async (e) => {
   } finally { btn.disabled = false; }
 };
 document.addEventListener('click', async (e) => {
-  if (e.target.closest('[data-action="signout"]')) { await sb.auth.signOut(); }
+  if (e.target.closest('[data-action="signout"]')) { await sb.auth.signOut(); INST.shownThisOpen = false; }
 });
 
 function storedUser() {
@@ -845,7 +846,7 @@ function snd(type) {
 }
 function hearts(n, x, y) {
   for (let k = 0; k < n; k++) {
-    const h = document.createElement('div'); h.className = 'heart'; h.textContent = ['❤️', '💖', '💕', '💗', '😘'][k % 5];
+    const h = document.createElement('div'); h.className = 'heart'; const hs = window.CC_fx ? CC_fx().hearts.concat('😘') : ['❤️', '💖', '💕', '💗', '😘']; h.textContent = hs[k % hs.length];
     h.style.left = (x ?? Math.random() * innerWidth) + (Math.random() * 60 - 30) + 'px'; h.style.top = (y ?? innerHeight) + 'px';
     h.style.animationDuration = (2 + Math.random() * 2) + 's'; document.body.appendChild(h); setTimeout(() => h.remove(), 4500);
   }
@@ -1970,7 +1971,7 @@ function renderMiles() {
   setFB('miles', up[0] ? `${up[0].title.slice(0, 14)} · ${up[0].days}d` : '', !!today.length);
   if (S.data.events) renderCal();
 }
-RENDER.milestones = renderMiles; RENDER.couple_settings = () => { renderMiles(); applyShared(); };
+RENDER.milestones = () => { renderMiles(); if (window.CC_setSeason) CC_setSeason(shared('seasonal', true), annivDate()); }; RENDER.couple_settings = () => { renderMiles(); applyShared(); };
 $('#msSinceSave').onclick = async () => {
   const v = $('#msSince').value; if (!v) return; const ex = S.data.couple_settings?.[0];
   const { error } = ex ? await sb.from('couple_settings').update({ together_since: v, created_by: S.user.id, updated_at: new Date().toISOString() }).eq('couple_id', S.couple.id) : await sb.from('couple_settings').insert({ together_since: v });
@@ -2161,6 +2162,12 @@ $('#cookieNew').onclick = () => { const st = $('#cookieStage'); st.classList.rem
 
 // ---- real date wheel ----
 const WCOL = ['#ff8fab', '#ffc2d1', '#e75480', '#ffd6e5', '#c77dff', '#ffb3c6', '#ff6f91', '#f9c6ff', '#ffa8b6', '#e0c3fc', '#ff85a1', '#fbb1bd'];
+// theme-aware wheel colours (Blush keeps the original candy palette)
+const thV = () => (window.CC_theme ? CC_theme() : null);
+const wCol = (i) => { const t = thV(); if (!t || t.id === 'blush') return WCOL[i % WCOL.length]; const v = t.v, c = t.dark ? [v.ac3, v.sf2, v.sf, v.sf3] : [v.ac2, v.ac3, v.sf2, v.sf]; return c[i % c.length]; };
+const wTxt = () => { const t = thV(); return !t || t.id === 'blush' ? '#5a1236' : t.v.tx; };
+const wStroke = () => { const t = thV(); return t && t.dark ? t.v.cd : '#fff'; };
+document.addEventListener('cc:theme', () => { try { if (!wheelSpinning && wheelItems.length) buildWheel(wheelItems); } catch { /* */ } });
 let wheelItems = [], wheelAngle = 0, wheelSpinning = false, wheelIdleRAF = null, lastIdle = 0;
 const wTrunc = (s, n) => { const a = [...s]; return a.length > n ? a.slice(0, n - 1).join('') + '…' : s; };
 function buildWheel(items) {
@@ -2169,9 +2176,9 @@ function buildWheel(items) {
   const fs = n <= 6 ? 9 : n <= 9 ? 7.5 : 6.2, maxc = n <= 6 ? 16 : n <= 9 ? 14 : 12;
   $('#wheelG').innerHTML = items.map((it, i) => {
     const c = i * a, [x1, y1] = pt(c - a / 2, R), [x2, y2] = pt(c + a / 2, R);
-    return `<g class="wslice" data-i="${i}"><path d="M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${a > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${WCOL[i % WCOL.length]}" stroke="#fff" stroke-width="1.5"/>
-      <text transform="rotate(${c - 90}) translate(${R - 8} 0)" text-anchor="end" dominant-baseline="middle" font-size="${fs}" font-weight="bold" fill="#5a1236">${esc(wTrunc(it, maxc))}</text></g>`;
-  }).join('') + `<circle r="${R}" fill="none" stroke="#fff" stroke-width="4"/>`;
+    return `<g class="wslice" data-i="${i}"><path d="M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${a > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${wCol(i)}" stroke="${wStroke()}" stroke-width="1.5"/>
+      <text transform="rotate(${c - 90}) translate(${R - 8} 0)" text-anchor="end" dominant-baseline="middle" font-size="${fs}" font-weight="bold" fill="${wTxt()}">${esc(wTrunc(it, maxc))}</text></g>`;
+  }).join('') + `<circle r="${R}" fill="none" stroke="${wStroke()}" stroke-width="4"/>`;
   setWheel(wheelAngle);
 }
 function setWheel(deg) { wheelAngle = deg; $('#wheelG').setAttribute('transform', `rotate(${deg})`); }
@@ -2396,7 +2403,7 @@ $$('.nav button, #gearBtn').forEach((b) => b.addEventListener('click', () => { i
 
 // ================= SHARED COUPLE SETTINGS (v18) =================
 // One couple_settings row per couple, read/updated by either partner (couple-member RLS). created_by = who changed it last.
-const SH_FIELDS = ['notify_level', 'cute_fx', 'wheel_cat', 'chat_receipts', 'chat_typing', 'chat_enter_send'];
+const SH_FIELDS = ['notify_level', 'cute_fx', 'wheel_cat', 'chat_receipts', 'chat_typing', 'chat_enter_send', 'theme', 'seasonal'];
 const shRow = () => S.data.couple_settings?.[0] || null;
 function shared(k, def) { const r = shRow(); return r && r[k] != null ? r[k] : def; }
 const onOff = (v) => (v ? 'on ✅' : 'off 💤');
@@ -2407,6 +2414,8 @@ const SH_TOAST = {
   chat_receipts: (v) => `turned read receipts ${onOff(v)}`,
   chat_typing: (v) => `turned “typing…” ${onOff(v)}`,
   chat_enter_send: (v) => `turned Enter-to-send ${onOff(v)}`,
+  theme: (v) => { const t = (window.CC_THEMES || []).find((x) => x.id === v); return t ? `switched our theme to ${t.name} ${t.em}` : 'changed our theme 🎨'; },
+  seasonal: (v) => `turned seasonal sprinkles ${onOff(v)}`,
 };
 let shPrev = (() => { try { return JSON.parse(localStorage.getItem('cc_sh_seen')); } catch { return null; } })(), shMigrated = false; // last seen → "while you were away" toasts
 function applyShared() {
@@ -2417,6 +2426,7 @@ function applyShared() {
   }
   shPrev = r ? { ...r } : null; if (r) localStorage.setItem('cc_sh_seen', JSON.stringify(r));
   if (r && r.cute_fx != null && window.CC_setCute) CC_setCute(r.cute_fx);
+  syncTheme(r);
   if (r && r.wheel_cat && r.wheel_cat !== wheelCat) { wheelCat = r.wheel_cat; localStorage.setItem('cc_wheel_cat', wheelCat); renderWheelCats(); try { drawWheel(false); } catch { /* */ } }
   if (r && r.chat_receipts === false && typeof chRender === 'function') { try { chRender(); } catch { /* */ } }
   renderSettingsUI();
@@ -2451,6 +2461,8 @@ async function saveShared(patch, quiet) {
 }
 function renderSettingsUI() { try { renderSettingsUI0(); } catch { /* early boot: consts not ready yet */ } }
 function renderSettingsUI0() {
+  renderThemePicker();
+  if (isStandalone()) $('#instState').textContent = "✅ You're using the installed app — notifications and offline are all set.";
   if (!$('#setNotify')) return;
   $('#shHead').textContent = S.partner ? `Shared with ${partnerName()} 💕` : 'Shared with your love 💕';
   const lvl = notifyLevel();
@@ -2485,6 +2497,120 @@ $('#offClear').onclick = async () => {
   await kv.clear(); try { for (const k of await caches.keys()) if (/runtime|media/.test(k)) await caches.delete(k); } catch { /* */ }
   localStorage.removeItem('cc_signed'); S.signedUrls = {}; toast('Offline copy cleared 🧹'); offInfo();
 };
+
+
+// ================= THEMES (v19) =================
+// theme + seasonal are shared couple settings; themes.js paints the cached one before first paint.
+let thPreview = null;
+function annivDate() {
+  const ts = S.data.couple_settings?.[0]?.together_since; if (ts) return ts;
+  const m = (S.data.milestones || []).find((x) => /anniv|together|first date|engag|wedding/i.test(x.title || '') && x.day); return m ? m.day : null;
+}
+function syncTheme(r) {
+  if (!window.CC_applyTheme) return;
+  CC_setSeason(r ? r.seasonal !== false : true, annivDate());
+  const want = (r && r.theme) || 'blush';
+  if (thPreview) return; // don't yank a preview away; it resolves on apply/cancel
+  if (CC_theme().id !== want) themeGo(want, r && r.created_by && r.created_by !== S.user?.id ? { x: innerWidth / 2, y: innerHeight / 3 } : null);
+}
+// cute transition: an accent bubble grows from the tap with the theme's mascot, colours cross-fade
+function themeGo(id, at) {
+  const t = (CC_THEMES.find((x) => x.id === id)) || CC_THEMES[0];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || localStorage.getItem('cc_reduce_motion') === '1';
+  const cute = localStorage.getItem('cc_cute_fx') !== '0';
+  if (!reduce) { document.documentElement.classList.add('thFade'); setTimeout(() => document.documentElement.classList.remove('thFade'), 600); }
+  if (at && !reduce && cute) {
+    const f = document.createElement('div'); f.className = 'thFlash'; f.style.left = at.x + 'px'; f.style.top = at.y + 'px'; f.style.background = t.v.ac; f.innerHTML = `<b>${t.mascot}</b>`;
+    document.body.appendChild(f); setTimeout(() => f.remove(), 800);
+    setTimeout(() => window.FX && FX.burst(at.x, at.y, t.parts.slice(0, 4), 12, 90), 120);
+  }
+  CC_applyTheme(id, { preview: !!thPreview });
+  renderThemePicker();
+}
+function renderThemePicker() {
+  const g = $('#thGrid'); if (!g || !window.CC_THEMES) return;
+  const saved = (shRow() && shRow().theme) || 'blush', cur = CC_theme().id;
+  const cats = [...new Set(CC_THEMES.map((t) => t.cat))];
+  const card = (t) => { const v = t.v; return `<button class="thP${t.id === saved ? ' on' : ''}${thPreview && t.id === cur ? ' prev' : ''}" data-th="${t.id}" aria-label="${esc(t.name)} theme">
+    <span class="pv" style="background:${v.bg}"></span>
+    ${t.logo ? `<img class="pl" src="${t.logo}" alt="" loading="lazy">` : `<span class="pc" style="background:${v.cd};color:${v.tx}">${t.em}<i style="background:${v.ac3}"></i></span>`}
+    <span class="pb" style="background:${v.ac}"></span><span class="pe">${t.parts.slice(0, 3).join('')}</span>
+    <span class="pn">${esc(t.name)}</span>${t.id === saved ? '<span class="ck">✓</span>' : ''}</button>`; };
+  const key = cats.join() + saved + cur + !!thPreview;
+  if (g.dataset.k !== key) { g.innerHTML = cats.map((c) => `<div class="thCat">${{ Colours: '🎨 Colours', Animals: '🐾 Animals', Stories: '📖 Stories', Series: '📺 Series' }[c] || c}</div><div class="thGrid">${CC_THEMES.filter((t) => t.cat === c).map(card).join('')}</div>`).join(''); g.dataset.k = key; }
+  const si = window.CC_seasonInfo ? CC_seasonInfo() : { on: true }; $('#setSeason').checked = shared('seasonal', true);
+  $('#seasonNow').textContent = si.current ? `Right now: ${si.current.name}` : "Valentine's, Ramadan & Eid, winter snow and our anniversary week — on top of any theme";
+  const r = shRow(), tn = (CC_THEMES.find((x) => x.id === saved) || {}).name;
+  $('#thBy').textContent = r && r.theme ? `${tn} · picked by ${r.created_by === S.user?.id ? 'you' : partnerName()}` : 'Blush pink is our default 🌸';
+}
+$('#thGrid').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-th]'); if (!b) return; const id = b.dataset.th, saved = (shRow() && shRow().theme) || 'blush';
+  const rc = b.getBoundingClientRect(), at = { x: rc.left + rc.width / 2, y: rc.top + rc.height / 2 };
+  if (id === saved) { thPreview = null; $('#thBar').classList.add('hidden'); return themeGo(id, null); }
+  thPreview = id; themeGo(id, at);
+  const t = CC_THEMES.find((x) => x.id === id); $('#thBarTxt').textContent = `Previewing ${t.name} ${t.em}`; $('#thBar').classList.remove('hidden');
+});
+function themeEndPreview() { if (!thPreview) return; thPreview = null; $('#thBar').classList.add('hidden'); themeGo((shRow() && shRow().theme) || 'blush', null); }
+$('#thCancel').onclick = themeEndPreview;
+$('#thApply').onclick = () => {
+  const id = thPreview; if (!id) return; thPreview = null; $('#thBar').classList.add('hidden');
+  const t = CC_THEMES.find((x) => x.id === id); CC_applyTheme(id); saveShared({ theme: id }, true);
+  toast(`${t.name} ${t.em} — on both phones now 💕`, 3000); hearts(8); window.FX && FX.confetti(40); renderThemePicker();
+};
+// the preview survives tab switches so you can look around; the bar stays until Apply/Cancel
+$('#setSeason').onchange = (e) => { CC_setSeason(e.target.checked, annivDate()); saveShared({ seasonal: e.target.checked }); renderThemePicker(); };
+
+
+// ================= ADD TO HOME SCREEN GUIDE (v19) =================
+const INST = { prompt: null, snoozeKey: 'cc_inst_snooze', doneKey: 'cc_installed', shownThisOpen: false };
+addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); INST.prompt = e; if (!$('#instGuide').classList.contains('hidden')) instRender(); });
+addEventListener('appinstalled', () => { instClose(); toast('Installed 📲 now open For Us from your Home Screen 💕', 4000); }); // stops for good once opened from the icon (standalone)
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+function instPlatform() {
+  const ua = navigator.userAgent, ios = /iP(hone|od|ad)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (ios) return /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|Instagram|FBAN|FBAV|Line\//.test(ua) ? 'ios-other' : (/iPad/.test(ua) || !/iPhone|iPod/.test(ua) ? 'ipad' : 'ios');
+  if (/Android/.test(ua)) return 'android';
+  return 'desktop';
+}
+const SHARE_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+function instRender() {
+  const p = instPlatform(), pn = S.partner ? partnerName() : 'your love';
+  const steps = {
+    ios: `<div class="igPhone"><div class="igScreen">💕 For Us</div><div class="igBar"><span>‹</span><span>›</span><span class="igShare">${SHARE_SVG}</span><span>📖</span><span>⧉</span></div><div class="igArrow down">⬇</div></div>
+      <ol class="igSteps"><li>Tap the <b>Share</b> button <span class="igIc">${SHARE_SVG}</span> at the bottom of Safari</li><li>Scroll down and tap <b>Add to Home Screen</b> <span class="igIc">➕</span></li><li>Tap <b>Add</b> — then open For Us from the new icon 💕</li></ol>`,
+    ipad: `<div class="igPhone wide"><div class="igBar top"><span>‹ ›</span><span class="igUrl">for-us</span><span class="igShare">${SHARE_SVG}</span></div><div class="igArrow up right">⬆</div><div class="igScreen">💕 For Us</div></div>
+      <ol class="igSteps"><li>Tap <b>Share</b> <span class="igIc">${SHARE_SVG}</span> at the top-right of Safari</li><li>Tap <b>Add to Home Screen</b> <span class="igIc">➕</span></li><li>Tap <b>Add</b> and open For Us from the icon 💕</li></ol>`,
+    'ios-other': `<div class="igBig">🧭</div><ol class="igSteps"><li>On iPhone, only <b>Safari</b> can add apps to the Home Screen</li><li>Tap <b>Copy link</b> below, open <b>Safari</b> and paste it</li><li>Then: Share <span class="igIc">${SHARE_SVG}</span> → <b>Add to Home Screen</b></li></ol>
+      <button class="soft" id="igCopy">🔗 Copy link</button>`,
+    android: (INST.prompt ? `<button id="igInstall" class="igInstall">📲 Install For Us</button><p class="muted">One tap, no app store needed ✨</p>` : '') +
+      `<div class="igPhone"><div class="igBar top"><span class="igUrl">for-us</span><span class="igDots">⋮</span></div><div class="igArrow up right">⬆</div><div class="igScreen">💕 For Us</div></div>
+      ${INST.prompt ? '<p class="muted small">…or do it by hand:</p>' : ''}<ol class="igSteps"><li>Tap the menu <b>⋮</b> at the top-right of Chrome</li><li>Tap <b>Install app</b> (or <b>Add to Home screen</b>)</li><li>Tap <b>Install</b> — For Us appears with your apps 💕</li></ol>`,
+    desktop: (INST.prompt ? `<button id="igInstall" class="igInstall">💻 Install For Us</button>` : '') +
+      `<div class="igPhone wide"><div class="igBar top"><span class="igUrl">for-us</span><span class="igShare">⊕</span><span>⋮</span></div><div class="igArrow up right">⬆</div><div class="igScreen">💕 For Us</div></div>
+      <ol class="igSteps"><li>Click the <b>install icon</b> <span class="igIc">⊕</span> at the right end of the address bar</li><li>No icon? Open the browser menu <b>⋮</b> → <b>Install For Us</b> / <b>Apps → Install</b></li><li>It opens in its own window, like a real app 💕</li></ol>`,
+  }[p];
+  $('#igBody').innerHTML = `<div class="igMascot">${window.CC_theme ? CC_theme().mascot : '🧸'}📲</div><h2>Add For Us to your Home Screen</h2>
+    <p class="muted">Keep ${esc(pn)} one tap away 💕</p>
+    <div class="igPerks"><span>🔔<b>Notifications</b><small>${p.startsWith('ios') || p === 'ipad' ? 'iPhone needs this for push' : 'hugs & messages pop up'}</small></span><span>📶<b>Offline</b><small>opens with no signal</small></span><span>📱<b>Full screen</b><small>no browser bars</small></span></div>
+    <div class="igHow" data-p="${p}">${steps}</div>`;
+  const ib = $('#igInstall'); if (ib) ib.onclick = async () => { const e = INST.prompt; if (!e) return; INST.prompt = null; e.prompt(); try { const r = await e.userChoice; if (r.outcome === 'accepted') instClose(); else instRender(); } catch { instRender(); } };
+  const cp = $('#igCopy'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(location.origin + location.pathname); toast('Link copied 🔗 now paste it in Safari'); } catch { uiPrompt('Copy this link and open it in Safari 🧭', location.origin + location.pathname); } };
+}
+function instOpen() { instRender(); $('#instGuide').classList.remove('hidden'); requestAnimationFrame(() => $('#instGuide').classList.add('in')); }
+function instClose() { $('#instGuide').classList.remove('in'); $('#instGuide').classList.add('hidden'); }
+window.CC_maybeInstall = () => {
+  if (isStandalone() || localStorage.getItem(INST.doneKey) === '1') return;
+  if (Date.now() < Number(localStorage.getItem(INST.snoozeKey) || 0)) return;
+  if (document.querySelector('.uiDlg,#modal:not(.hidden),#story:not(.hidden),#heartOverlay:not(.hidden)')) return void setTimeout(window.CC_maybeInstall, 8000);
+  if (!$('#instGuide').classList.contains('hidden') || INST.shownThisOpen) return;
+  INST.shownThisOpen = true; // once per app open/login (show() can fire several times)
+  localStorage.removeItem('cc_new_signup'); instOpen();
+};
+// shown on every login/app open outside the installed app; "Later" = 1 day. Only opening from the Home Screen stops it for good.
+$('#igLater').onclick = () => { localStorage.setItem(INST.snoozeKey, String(Date.now() + 864e5)); instClose(); toast("Okay! I'll remind you tomorrow 💤"); };
+$('#instGuide').addEventListener('click', (e) => { if (e.target.id === 'instGuide') $('#igLater').click(); });
+$('#howInstall').onclick = instOpen;
+if (isStandalone()) localStorage.setItem(INST.doneKey, '1');
 
 // ================= CHAT (v17) =================
 const CH = { list: [], byId: {}, more: true, loading: false, ch: null, replyTo: null, urls: {}, lastTyping: 0, typingT: null, fresh: new Set(), audio: null, playing: null, rate: +(localStorage.getItem('cc_chat_rate') || 1), ready: false, newBelow: 0, unreadServer: 0, saveT: null, markT: null };

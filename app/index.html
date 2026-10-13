@@ -12,7 +12,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=19">
+<script src="themes.js?v=19"></script>
 </head>
 <body>
 <div id="app">
@@ -159,7 +160,7 @@
           <button class="gtile" data-game="catch"><b>🎯</b>Catch my heart<small id="tb-catch"></small></button>
           <button class="gtile" data-game="balloons"><b>🎈</b>Pop the balloons<small id="tb-balloons"></small></button>
           <button class="gtile" data-game="quiz"><b>📝</b>Love quiz<small id="tb-quiz"></small></button>
-          <button class="gtile" data-game="bear"><b>🧸</b>Poke the bear<small id="tb-bear"></small></button>
+          <button class="gtile" data-game="bear"><b data-mascot="bear" data-def="🧸">🧸</b>Poke the bear<small id="tb-bear"></small></button>
           <button class="gtile" data-game="meter"><b>💯</b>Love-o-meter</button>
           <button class="gtile" data-game="memory"><b>🧠</b>Memory match<small id="tb-memory"></small></button>
         </div>
@@ -203,8 +204,8 @@
             <button id="qzAdd">Add question 💡</button><div id="qzMine" class="list"></div></div>
           <div id="quizScore" class="hidden"></div></div>
 
-        <div class="card game" data-panel="bear"><h2>🧸 Poke the love bear</h2><div class="bearStage" id="bearStage"><div class="thought" id="bearThought">💭💗</div><div class="speech" id="bearSpeech"></div>
-            <div class="bearWrap"><span class="tap" id="bearEl">🧸</span><span class="blush" id="bearBlush">😊</span></div><div class="pokeCombo" id="pokeCombo"></div></div><p id="bearTxt">Tap him. He's shy.</p>
+        <div class="card game" data-panel="bear"><h2><span data-mascot="bear" data-def="🧸">🧸</span> Poke the love bear</h2><div class="bearStage" id="bearStage"><div class="thought" id="bearThought">💭💗</div><div class="speech" id="bearSpeech"></div>
+            <div class="bearWrap"><span class="tap" id="bearEl" data-mascot="bear" data-def="🧸">🧸</span><span class="blush" id="bearBlush">😊</span></div><div class="pokeCombo" id="pokeCombo"></div></div><p id="bearTxt">Tap him. He's shy.</p>
           <div class="vs" id="pokeVs"></div><p class="muted">Pokes sync live — watch the counter move when <span class="pname"></span> pokes too 👀</p></div>
 
         <div class="card game" data-panel="meter"><h2>💯 Love-o-meter</h2><p class="muted">Tap as fast as you can!</p>
@@ -265,7 +266,7 @@
           <button id="reasonBtn">Another reason</button></div>
 
         <div class="card game" data-panel="hug"><h2>🤗 Virtual hug</h2><p class="muted">Emergency hug delivery, 24/7</p>
-          <div class="hugStage" id="hugStage"><span class="hb l">🧸</span><span class="hheart">💗</span><span class="hb r">🧸</span></div>
+          <div class="hugStage" id="hugStage"><span class="hb l" data-mascot="hug" data-def="🧸">🧸</span><span class="hheart">💗</span><span class="hb r" data-mascot="hug" data-def="🧸">🧸</span></div>
           <button id="hugSend">Send a hug to <span class="pname"></span> 🤗</button><button class="soft" id="hugBtn">Hug me now</button></div>
 
         <div class="card game" data-panel="finale"><h2>🎆 One last thing…</h2><p>Only press when you're ready</p><button id="finaleBtn" class="pulse">Press me 💝</button></div>
@@ -439,6 +440,10 @@
       <div class="card"><h2>🔔 Notifications</h2><p class="muted">What should send a push to each other?</p>
         <div class="seg segCol" id="setNotify"><button data-v="important">Just the important stuff 💌<small>chat, hugs &amp; pokes</small></button><button data-v="everything">Everything 🔔<small>answers, moods, notes, photos, plans, games…</small></button></div>
         <p class="muted small" id="setNotifyBy"></p></div>
+      <div class="card thCard" id="thCard"><h2>🎨 Our theme</h2><p class="muted">Tap one to preview it — then apply it for both of you.</p>
+        <div id="thGrid"></div>
+        <label class="tgl"><input type="checkbox" id="setSeason"> <span>Seasonal sprinkles <small id="seasonNow">Valentine's, Ramadan &amp; Eid, winter snow and our anniversary week — added on top of any theme</small></span></label>
+        <p class="muted small" id="thBy"></p></div>
       <div class="card"><h2>✨ Cute effects</h2><p class="muted">Floating hearts, sparkles, peeking stickers and little surprise bubbles — on both phones.</p><button id="cuteToggle">✨ Cute effects: ON</button></div>
       <div class="card"><h2>💬 Chat</h2>
         <label class="tgl"><input type="checkbox" id="setReceipts"> <span>Read receipts <small>blue ✓✓ when seen</small></span></label>
@@ -456,6 +461,7 @@
       <div class="card"><h2>🔔 Push on this phone</h2><p class="muted" id="pushInfo">Allow notifications on this device. <i>What</i> gets sent is the shared setting above.</p>
         <button id="pushBtn">Enable notifications</button><button class="soft hidden" id="pushOff">Turn off on this device</button>
         <p class="muted">📱 iPhone: notifications only work after you tap Share → <b>Add to Home Screen</b> and open the app from that icon (iOS 16.4+).</p></div>
+      <div class="card"><h2>📲 Home Screen</h2><p class="muted" id="instState">Install For Us like a real app: notifications, offline and full screen.</p><button class="soft" id="howInstall">How to install 📲</button></div>
       <div class="card"><h2>🐢 Motion</h2><label class="tgl"><input type="checkbox" id="setReduce"> <span>Reduce motion <small>calmer animations on this device</small></span></label></div>
       <div class="card"><h2>🎧 Voice notes</h2><p class="muted">Playback speed for chat voice notes.</p><div class="seg" id="setRate"><button data-v="1">1×</button><button data-v="1.5">1.5×</button><button data-v="2">2×</button></div></div>
       <div class="card"><h2>📦 Offline</h2><p class="muted" id="offInfo">Checking…</p><button class="soft" id="offClear">Clear offline copy</button></div>
@@ -467,12 +473,12 @@
     </div>
 
     <nav class="nav">
-      <button data-tab="home" class="on">🏠<span>Home</span></button>
-      <button data-tab="notes">💌<span>Notes</span></button>
-      <button data-tab="us">💞<span>Us</span></button>
-      <button data-tab="memories">📸<span>Photos</span></button>
-      <button data-tab="chat">💬<span>Chat</span><em class="navBadge hidden" id="chatBadge"></em></button>
-      <button data-tab="play">🎮<span>Play</span></button>
+      <button data-tab="home" class="on"><i class="ni" data-ni="home">🏠</i><span>Home</span></button>
+      <button data-tab="notes"><i class="ni" data-ni="notes">💌</i><span>Notes</span></button>
+      <button data-tab="us"><i class="ni" data-ni="us">💞</i><span>Us</span></button>
+      <button data-tab="memories"><i class="ni" data-ni="memories">📸</i><span>Photos</span></button>
+      <button data-tab="chat"><i class="ni" data-ni="chat">💬</i><span>Chat</span><em class="navBadge hidden" id="chatBadge"></em></button>
+      <button data-tab="play"><i class="ni" data-ni="play">🎮</i><span>Play</span></button>
     </nav>
   </section>
 
@@ -481,21 +487,23 @@
 
 <div id="heartOverlay" class="overlay hidden"><div class="bigheart">💗</div><h2 id="heartTxt"></h2><p>(tap to close)</p></div>
 <div id="surpriseOverlay" class="overlay hidden"><div class="sGift" id="sGift">🎁</div><div class="sCard" id="sCard"><small id="sCat"></small><h2 id="sIdea"></h2><div class="row"><button id="sAdd">Add to our ideas 💗</button><button id="sAgain" class="soft">Another 🎁</button></div><p class="muted">tap outside to close</p></div></div>
-<div id="hugOverlay" class="overlay hidden"><div class="hugBig"><span class="hb l">🧸</span><span class="hheart">💗</span><span class="hb r">🧸</span></div><h2 id="hugTitle">Squeeeeeze</h2><p>(tap to let go... if you must)</p></div>
+<div id="hugOverlay" class="overlay hidden"><div class="hugBig"><span class="hb l" data-mascot="hug" data-def="🧸">🧸</span><span class="hheart">💗</span><span class="hb r" data-mascot="hug" data-def="🧸">🧸</span></div><h2 id="hugTitle">Squeeeeeze</h2><p>(tap to let go... if you must)</p></div>
 <div id="modal" class="modal hidden"><div class="card" id="modalBox"></div></div>
 <div id="finale" class="hidden"><canvas id="fw"></canvas><div class="msg" id="fMsg"></div></div>
 <div id="story" class="hidden"><div class="storybar" id="storyBar"></div><div class="slide" id="storySlide"></div><p class="muted" style="color:#fff">tap → next · swipe down/✕ to close</p><button class="gear" id="storyClose" style="color:#fff;top:10px;right:10px;position:absolute">✕</button></div>
 <div id="toast"></div>
+<div id="instGuide" class="instGuide hidden" role="dialog" aria-modal="true" aria-label="Add For Us to your Home Screen"><div class="igCard"><div id="igBody"></div><div class="row igBtns"><button class="soft" id="igLater">Later 💤</button></div><p class="muted small igNote">This pops up until you open For Us from your Home Screen icon 💕</p></div></div>
+<div id="thBar" class="thBar hidden"><span id="thBarTxt"></span><div class="row"><button class="soft" id="thCancel">Cancel</button><button id="thApply">Apply for both 💕</button></div></div>
 
 <div id="chViewer" class="chViewer hidden"><button class="chVX" aria-label="Close">✕</button><div id="chViewBox"></div></div>
 <div id="chMenu" class="chMenu hidden"><div class="chMenuBox"><div class="chReacts" id="chReacts"></div><div class="chActs" id="chActs"></div></div></div>
 <div id="chVN" class="chVN hidden"><div class="chVNring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="bg"/><circle cx="60" cy="60" r="56" class="pr" id="chVNpr"/></svg><video id="chVNprev" playsinline muted autoplay></video></div><p id="chVNt">Tap ⏺ to record (max 60s)</p><div class="row"><button class="soft" id="chVNx">Cancel</button><button id="chVNgo">⏺ Record</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="config.js?v=18"></script>
-<script src="data.js?v=18"></script>
-<script src="trivia.js?v=18"></script>
-<script src="anim.js?v=18"></script>
-<script src="app.js?v=18"></script>
-<script src="cute.js?v=18"></script>
+<script src="config.js?v=19"></script>
+<script src="data.js?v=19"></script>
+<script src="trivia.js?v=19"></script>
+<script src="anim.js?v=19"></script>
+<script src="app.js?v=19"></script>
+<script src="cute.js?v=19"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
   let on = localStorage.getItem(KEY) !== '0';
   let layer = null, timers = [], popupT = null;
 
+  const fx = () => (window.CC_fx ? window.CC_fx() : { parts: PARTS, stick: STICKERS, hearts: ['💗', '💕', '💖', '✨'] });
   const PARTS = ['💗', '💕', '✨', '💖', '⭐', '🌸', '♡', '✦'];
   const STICKERS = ['🧸', '🐰', '🐱', '🌷', '🌈', '🌸', '🐻', '🦋', '🍓', '🐥'];
   const LINES = [
@@ -43,7 +44,7 @@
 
   function particle() {
     if (!layer || layer.childElementCount > 40) return;
-    const p = document.createElement('div'); p.className = 'cfp'; p.textContent = pick(PARTS);
+    const p = document.createElement('div'); p.className = 'cfp'; p.textContent = pick(fx().parts);
     // prefer side gutters on wide screens
     const gutter = wide() ? (Math.random() < .5 ? Math.random() * ((innerWidth - 520) / 2) : innerWidth - Math.random() * ((innerWidth - 520) / 2)) : Math.random() * innerWidth;
     p.style.left = gutter + 'px'; p.style.fontSize = (10 + Math.random() * 16) + 'px';
@@ -61,11 +62,11 @@
   function sticker() {
     if (!wide() || !layer) return;
     const k = document.createElement('div'); const side = Math.random() < .5 ? 'l' : 'r';
-    k.className = 'cfk ' + side; k.textContent = pick(STICKERS); k.style.top = (15 + Math.random() * 65) + 'vh'; layer.appendChild(k);
+    k.className = 'cfk ' + side; k.textContent = pick(fx().stick); k.style.top = (15 + Math.random() * 65) + 'vh'; layer.appendChild(k);
     requestAnimationFrame(() => requestAnimationFrame(() => k.classList.add('in')));
     setTimeout(() => k.classList.remove('in'), 4000); setTimeout(() => k.remove(), 5500);
   }
-  function burst(x, y, n = 8, set = ['💗', '💕', '💖', '✨']) {
+  function burst(x, y, n = 8, set = fx().hearts.concat('✨')) {
     for (let i = 0; i < n; i++) { const b = document.createElement('div'); b.className = 'cfBurst'; b.textContent = pick(set);
       const a = Math.PI * 2 * i / n, r = 40 + Math.random() * 30; b.style.left = x - 9 + 'px'; b.style.top = y - 9 + 'px';
       b.style.setProperty('--bx', Math.cos(a) * r + 'px'); b.style.setProperty('--by', Math.sin(a) * r + 'px'); document.body.appendChild(b); setTimeout(() => b.remove(), 850); }
@@ -106,6 +107,7 @@
   document.addEventListener('click', (e) => { if (e.target.id !== 'cuteToggle') return; on = !on; localStorage.setItem(KEY, on ? '1' : '0'); on ? start() : stop(); syncBtn();
     document.dispatchEvent(new CustomEvent('cc:cute', { detail: on })); }); // app.js saves it to the shared couple settings
   // shared setting applied from the server (partner changed it, or first load)
+  document.addEventListener('cc:theme', () => { if (on) start(); }); // new theme/season → new particles
   window.CC_setCute = (v) => { v = !!v; localStorage.setItem(KEY, v ? '1' : '0'); if (v === on) return syncBtn(); on = v; on ? start() : stop(); syncBtn(); };
   syncBtn(); start();
 })();

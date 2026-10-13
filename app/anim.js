@@ -8,7 +8,9 @@
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
   let live = 0;
 
+  const HEARTS = new Set(['💖', '💕', '💗', '❤️', '💞']);
   function burst(x, y, emoji = ['💖', '✨', '💕'], n = 10, spread = 70) {
+    if (window.CC_fx) { const th = window.CC_fx().hearts; emoji = emoji.map((e, i) => (HEARTS.has(e) ? th[i % th.length] : e)); } // theme hearts (🖤 for Mystic, 🐚…)
     if (!heavy() || live > 120) return;
     const set = Array.isArray(emoji) ? emoji : [emoji];
     for (let i = 0; i < n; i++) {
@@ -35,7 +37,7 @@
     const t0 = performance.now(); const step = (t) => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step);
   }
   function confetti(n = 60) {
-    if (!heavy()) return; const c = ['#e75480', '#ff8fab', '#ffd166', '#a0e7e5', '#c77dff', '#fff'];
+    if (!heavy()) return; const c = window.CC_fx ? window.CC_fx().conf : ['#e75480', '#ff8fab', '#ffd166', '#a0e7e5', '#c77dff', '#fff'];
     for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'conf'; d.style.left = Math.random() * 100 + 'vw'; d.style.background = pick(c); d.style.animationDuration = (2 + Math.random() * 2) + 's'; d.style.animationDelay = Math.random() * .5 + 's'; document.body.appendChild(d); setTimeout(() => d.remove(), 5000); }
   }
   function fireworks(times = 5) { if (!heavy()) return; for (let i = 0; i < times; i++) setTimeout(() => burst(innerWidth * (.2 + Math.random() * .6), innerHeight * (.2 + Math.random() * .4), ['💖', '✨', '💥', '🌟', '💕'], 16, 110), i * 280); }

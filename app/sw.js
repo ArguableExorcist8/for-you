@@ -1,8 +1,8 @@
 // For Us service worker — offline app shell + photo cache + push notifications
-const VERSION = 'v18';
+const VERSION = 'v19';
 const SHELL = 'forus-shell-' + VERSION, RUNTIME = 'forus-runtime-' + VERSION, MEDIA = 'forus-media-v1';
-const V = '?v=18';
-const PRECACHE = ['./', 'index.html', 'style.css' + V, 'config.js' + V, 'data.js' + V, 'trivia.js' + V, 'anim.js' + V, 'app.js' + V, 'cute.js' + V,
+const V = '?v=19';
+const PRECACHE = ['./', 'index.html', 'style.css' + V, 'config.js' + V, 'data.js' + V, 'trivia.js' + V, 'anim.js' + V, 'app.js' + V, 'cute.js' + V, 'themes.js' + V, 'themes/vampire-diaries.png', 'themes/the-originals.png', 'themes/bridgerton.svg', 'themes/harry-potter.svg', 'themes/gilmore-girls.svg',
   'manifest.json', 'icon.png', 'apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js'];
 const API = /\/(rest|auth|functions|realtime|graphql)\/v1\//;
