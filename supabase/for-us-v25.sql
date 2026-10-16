@@ -35,7 +35,7 @@ end $$;
 -- Standard couple-only security for a table:
 --   read: your couple · write: only your own rows
 create or replace function public.fu_secure(t text, member_update boolean default false) returns void
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   execute format('alter table public.%I enable row level security', t);
   execute format('drop trigger if exists fu_fill on public.%I', t);
@@ -295,7 +295,7 @@ grant execute on function public.fu_nudge_key() to service_role;
 -- Every 5 minutes, poke the "nudges" Edge Function (deploy it first —
 -- see supabase/functions/nudges/index.ts). It decides what to send.
 create extension if not exists pg_cron;
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 do $$
 begin
   perform cron.unschedule('forus-nudges') where exists (select 1 from cron.job where jobname = 'forus-nudges');
@@ -306,6 +306,17 @@ begin
       body := '{}'::jsonb)
   $job$);
 end $$;
+
+
+-- ---------- 10b. lock down helper functions ----------------------------
+-- None of these should be callable without signing in. The policy helpers
+-- stay callable by signed-in users (row-level security needs them).
+revoke all on function public.fu_secure(text, boolean) from public, anon, authenticated;
+revoke all on function public.fu_fill() from public, anon, authenticated;
+revoke all on function public.fu_my_couple(), public.fu_answered_day(date), public.fu_answered_topic(text),
+  public.fu_wrote_repair(uuid), public.fu_bump(text), public.fu_set_tz(text) from public, anon;
+grant execute on function public.fu_my_couple(), public.fu_answered_day(date), public.fu_answered_topic(text),
+  public.fu_wrote_repair(uuid), public.fu_bump(text), public.fu_set_tz(text) to authenticated;
 
 -- ---------- 11. security report ----------------------------------------
 -- Run:  select * from public.fu_security_report();
