@@ -44,7 +44,16 @@ const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(
   document.addEventListener('load', (e) => { const t = e.target; if (t && t.tagName === 'IMG') t.classList.add('ld'); }, true);
   document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG') t.classList.add('ld'); }, true);
   // keyboard awareness: tuck the nav away while typing (outside chat)
-  if (window.visualViewport) visualViewport.addEventListener('resize', () => { document.body.classList.toggle('kbOpen', innerHeight - visualViewport.height > 150); });
+  // iOS home-screen apps shrink innerHeight with the keyboard, so compare against the tallest viewport we've seen instead
+  let vvBase = 0; addEventListener('orientationchange', () => { vvBase = 0; });
+  window.FU_kb = () => {
+    const vv = window.visualViewport; if (!vv) return false;
+    const a = document.activeElement, ed = !!a && a.matches('textarea,[contenteditable=true],input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=file]):not([type=color])');
+    if (!ed) vvBase = Math.max(vvBase, vv.height, innerHeight);
+    return innerHeight - vv.height > 120 || (ed && vvBase - vv.height > 120);
+  };
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => { document.body.classList.toggle('kbOpen', window.FU_kb()); });
+  document.addEventListener('focusout', () => setTimeout(() => document.body.classList.toggle('kbOpen', window.FU_kb()), 120));
   // tiny haptic ticks where touch feels physical
   const buzz = (ms) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* */ } };
   document.addEventListener('click', (e) => { if (e.target.closest('.nav button,.seg button,.gtile,.chips span,.emojis span')) buzz(6); }, true);
@@ -1410,7 +1419,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=27'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=28'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -3197,7 +3206,7 @@ function chLayout() {
   const app = $('#chatApp'); if (!app || $('#tab-chat').classList.contains('hidden')) return;
   const vv = window.visualViewport;
   const vh = vv ? vv.height : innerHeight, off = vv ? Math.max(0, vv.offsetTop) : 0; // iOS shifts the page up under the keyboard: follow what's visible
-  const kb = !!vv && innerHeight - vv.height > 120;
+  const kb = window.FU_kb ? window.FU_kb() : (!!vv && innerHeight - vv.height > 120);
   document.body.classList.toggle('kbOpen', kb);
   const head = document.querySelector('#mainView header.top'); const top = head && head.offsetParent ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
   const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? Math.max(0, vh - nav.offsetTop) : 0); // offsetTop ignores the slide-in animation; floating docks sit above the edge

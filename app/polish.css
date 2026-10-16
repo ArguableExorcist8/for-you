@@ -70,3 +70,12 @@ html[data-theme] :is(#gameHome,#usHome) > .card:first-child{--tx:inherit;--mu:in
 /* room for top-left theme ornaments on the new cards too */
 html[data-orl="1"] .tab > :is(.fuRitual,.fuCard) .fuRHead,
 html[data-orl="1"] .tab > .fuCard > :is(h2,.fuLoveIn,.fuSpotIn,.fuNightIn){padding-left:22px}
+
+/* ---- nav: steps aside while reading, never sits on top of the last card ---- */
+#app{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 112px)!important}
+.nav{transition:transform .38s var(--uiEase,cubic-bezier(.22,1,.36,1)),opacity .28s ease!important;will-change:transform}
+body.navAway .nav{transform:translateY(calc(100% + 24px))!important;opacity:0;pointer-events:none}
+/* floating-icon navs get a real backdrop so text doesn't show through */
+html[data-navs=float] .nav{background:linear-gradient(rgba(var(--cdR),0),rgba(var(--cdR),.88) 38%,rgba(var(--cdR),.97))!important;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  -webkit-mask:linear-gradient(transparent,#000 22px);mask:linear-gradient(transparent,#000 22px)}
+@media (prefers-reduced-motion: reduce){.nav{transition:opacity .2s!important}body.navAway .nav{transform:none!important}}

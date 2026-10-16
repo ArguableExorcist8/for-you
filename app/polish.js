@@ -104,6 +104,24 @@ function pullToRefresh() {
   });
 }
 
+
+// ---------- nav steps aside while you read, comes back when you scroll up, stop near the end, or reach the top ----------
+function autoNav() {
+  let last = scrollY, acc = 0, raf = 0;
+  const away = (on) => document.body.classList.toggle('navAway', on);
+  addEventListener('scroll', () => {
+    if (raf) return; raf = requestAnimationFrame(() => {
+      raf = 0; const y = scrollY, d = y - last; last = y;
+      if (document.body.classList.contains('inChat') || document.body.classList.contains('kbOpen')) { away(false); acc = 0; return; }
+      const end = document.documentElement.scrollHeight - innerHeight - y < 60;
+      if (y < 80 || end) { away(false); acc = 0; return; }
+      acc = (acc > 0) === (d > 0) ? acc + d : d;
+      if (acc > 28) away(true); else if (acc < -14) away(false);
+    });
+  }, { passive: true });
+  document.addEventListener('click', (e) => { if (e.target.closest('.nav button')) away(false); }, true);
+}
+
 // ---------- boot ----------
 function run() {
   markOrnament(); tidySettings(); tidyNotes(); tidyPings(); orderHome();
@@ -112,5 +130,5 @@ function run() {
 const prevEnter = window.FU_enter;
 window.FU_enter = async (...a) => { const p = prevEnter ? prevEnter(...a) : undefined; run(); try { return await p; } finally { run(); } }; // tidy at once, again when data lands
 if (document.readyState !== 'loading') { markOrnament(); tidySettings(); tidyNotes(); tidyPings(); } else document.addEventListener('DOMContentLoaded', run);
-pullToRefresh();
+pullToRefresh(); autoNav();
 })();
