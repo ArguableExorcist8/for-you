@@ -1431,7 +1431,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=37'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=38'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -2803,7 +2803,7 @@ function chMsgHtml(m, prev, next) {
   const rxH = rx.length ? `<div class="chRx">${Object.entries(rc).map(([e, n]) => `<span class="${(m.reactions || {})[S.user.id] === e ? 'me' : ''}">${e}${n > 1 ? n : ''}</span>`).join('')}</div>` : '';
   const bare = !m.deleted && (m.kind === 'videonote' || (m.kind === 'text' && emojiOnly(chText(m))));
   h += `<div class="chRow ${mine ? 'me' : 'them'}${grpPrev ? ' gp' : ''}${grpNext ? ' gn' : ''}${CH.fresh.has(m.id) ? ' fresh' : ''}" data-id="${m.id}">
-    <div class="chB${bare ? ' bare' : ''} k-${m.kind}${m.deleted ? ' del' : ''}">${quote}${chBody(m)}<div class="chMeta">${hhmm(m.created_at)} ${chTicks(m)}</div></div>${rxH}</div>`;
+    <div class="chB${bare ? ' bare' : ''} k-${m.kind}${m.deleted ? ' del' : ''}${m.meta && m.meta.greet && !m.deleted ? ' greet g-' + (m.meta.greet === 'morning' ? 'am' : 'pm') : ''}">${quote}${chBody(m)}<div class="chMeta">${hhmm(m.created_at)} ${chTicks(m)}</div></div>${rxH}</div>`;
   return h;
 }
 function chPatch(box) {
@@ -3267,7 +3267,7 @@ sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booti
 window.__FU = {
   get S() { return S; }, sb, $, $$, esc, toast, uiConfirm, uiPrompt, uiDialog, notify, loadTable, RENDER, TABLES,
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
-  D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow,
+  D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow, chAddLocal, chInsert,
   get CH() { return CH; }, chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();

@@ -152,3 +152,46 @@ html.fuLocked #app,html.fuLocked .nav,html.fuLocked #fuMom,html.fuLocked .fuPet{
 #loadingView .hero p{display:inline-block;margin-top:4px;padding:7px 16px;border-radius:999px;background:rgba(var(--cdR),.72)!important;-webkit-text-fill-color:var(--tx);color:var(--tx);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(var(--shR),.12);animation:ldTxt 2.4s ease-in-out infinite}
 @keyframes ldTxt{50%{opacity:.7}}
+
+/* ---------- good morning / goodnight + check-ins ---------- */
+#fuNight.morning{background-image:linear-gradient(135deg,rgba(255,196,110,.22),rgba(255,140,120,.12))!important}
+.fuNightIn .sun{font-size:36px;display:inline-block;animation:gmSun 6s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(255,190,80,.6))}
+@keyframes gmSun{50%{transform:translateY(-4px) rotate(18deg)}}
+.fuNightIn .fuGNx{flex:0 0 auto!important;width:auto;margin:2px auto 0!important;padding:4px 10px!important;font-size:12.5px;background:none!important;color:var(--mu)!important;box-shadow:none!important;border:0!important}
+.fuNightIn .fuGNx::before,.fuNightIn .fuGNx::after{content:none!important}
+.fuGreetFx{position:fixed;inset:0;z-index:115;pointer-events:none;overflow:hidden}
+.fuGreetFx .glow{position:absolute;left:50%;bottom:-30vh;width:120vw;height:70vh;margin-left:-60vw;border-radius:50%;opacity:0;animation:gfGlow 2.5s ease-out forwards}
+.fuGreetFx.am .glow{background:radial-gradient(circle at 50% 70%,rgba(255,200,110,.55),rgba(255,140,110,.22) 45%,transparent 70%)}
+.fuGreetFx.pm .glow{background:radial-gradient(circle at 50% 70%,rgba(120,130,255,.4),rgba(40,30,110,.25) 45%,transparent 70%)}
+.fuGreetFx b{position:absolute;left:50%;bottom:-80px;font-size:84px;margin-left:-42px;animation:gfRise 2.5s cubic-bezier(.22,1,.36,1) forwards;filter:drop-shadow(0 0 26px rgba(255,210,120,.8))}
+.fuGreetFx.pm b{filter:drop-shadow(0 0 24px rgba(200,210,255,.8))}
+.fuGreetFx s{position:absolute;text-decoration:none;color:#fff8d0;font-size:16px;opacity:0;animation:gfTw 2.4s ease-in-out forwards;text-shadow:0 0 10px rgba(255,240,180,.9)}
+.fuGreetFx s:nth-of-type(1){left:18%;top:30%}.fuGreetFx s:nth-of-type(2){left:76%;top:24%;animation-delay:.3s}.fuGreetFx s:nth-of-type(3){left:30%;top:52%;animation-delay:.6s}.fuGreetFx s:nth-of-type(4){left:64%;top:46%;animation-delay:.45s}.fuGreetFx s:nth-of-type(5){left:50%;top:18%;animation-delay:.15s}
+@keyframes gfGlow{30%{opacity:1}100%{opacity:0;transform:translateY(-12vh)}}
+@keyframes gfRise{0%{transform:translateY(0) scale(.6);opacity:0}35%{opacity:1}65%{transform:translateY(-52vh) scale(1.1);opacity:1}100%{transform:translateY(-62vh) scale(.9);opacity:0}}
+@keyframes gfTw{30%,60%{opacity:1;transform:scale(1.2)}100%{opacity:0}}
+/* chat bubbles for the greetings */
+.chB.greet{position:relative;overflow:visible}
+.chB.greet.g-am{background:linear-gradient(135deg,#ffd27a,#ff9f7a)!important;color:#4a2412!important}
+.chB.greet.g-pm{background:linear-gradient(135deg,#2c2a6e,#4b3c9e)!important;color:#f3f0ff!important}
+.chB.greet .chMeta{color:inherit!important;opacity:.7}
+.chB.greet::before{content:'';position:absolute;top:-10px;right:-6px;font-size:18px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
+.chB.greet.g-am::before{content:'☀️'}.chB.greet.g-pm::before{content:'🌙'}
+.chRow.them .chB.greet::before{right:auto;left:-6px}
+.chRow.fresh .chB.greet{animation:gfBubble .7s cubic-bezier(.34,1.56,.64,1)}
+@keyframes gfBubble{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.06)}}
+/* quick check-ins */
+.fuCheck{padding:12px 14px!important}
+.ckThem{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:8px;border-radius:14px;background:rgba(var(--acR),.1);animation:rcUp .5s cubic-bezier(.22,1,.36,1) both}
+.ckThem > span{font-size:26px}.ckThem b{display:block;font-size:14.5px}.ckThem small{color:var(--mu);font-size:12px}
+.ckHead{margin:0 2px 8px;font-size:13px;color:var(--mu);text-align:left}.ckHead b{color:var(--tx)}
+.ckChips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:2px 4px 4px;scroll-snap-type:x proximity}
+.ckChips::-webkit-scrollbar{display:none}
+.ckChips button{flex:0 0 auto;display:flex;align-items:center;gap:6px;margin:0!important;padding:8px 12px!important;border-radius:999px!important;font-size:13px;white-space:nowrap;scroll-snap-align:start;
+  background:rgba(var(--acR),.1)!important;color:var(--tx)!important;box-shadow:none!important;border:1px solid rgba(var(--acR),.18)!important}
+.ckChips button::before,.ckChips button::after{content:none!important}
+.ckChips button i{font-style:normal;font-size:16px}
+.ckChips button.on{background:var(--ac)!important;color:var(--on,#fff)!important;border-color:transparent!important}
+.ckChips button.sent{animation:ckSent .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes ckSent{40%{transform:scale(1.12)}}
+@media (prefers-reduced-motion: reduce){.fuGreetFx{display:none}.fuNightIn .sun{animation:none}}

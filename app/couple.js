@@ -21,7 +21,7 @@ const TBL = {
   needs: ['created_at', false, 80], dq_guesses: ['day', false, 160], dq_verdicts: ['created_at', false, 300],
   repairs: ['created_at', false, 30], repair_notes: ['created_at', false, 60], touches: ['created_at', false, 20],
   goodnights: ['day', false, 30], weekly_extra: ['week', false, 60], future_map: ['topic', true, 200],
-  feature_usage: ['n', false, 200], couple_vault: ['created_at', false, 1],
+  feature_usage: ['n', false, 200], couple_vault: ['created_at', false, 1], checkins: ['created_at', false, 20],
 };
 const RENDERERS = {};
 const missing = (e) => e && (/PGRST20[0-9]|42P01/.test(e.code || '') || /does not exist|schema cache|Could not find the table/i.test(e.message || ''));
@@ -51,7 +51,8 @@ function onChange(t, p) {
   const row = p.new || {};
   if (t === 'touches' && p.eventType === 'INSERT' && row.created_by !== me()) setTimeout(() => replayUnplayed(), 600);
   if (t === 'repairs' && p.eventType === 'INSERT' && row.created_by !== me()) F().toast(`🕊️ ${pname()} asked for a pause. Breathe — you'll talk soon.`, 5000);
-  if (t === 'goodnights' && p.eventType === 'INSERT' && row.created_by !== me()) F().toast(`🌙 ${pname()} said goodnight`, 3500);
+  if (t === 'goodnights' && p.eventType === 'INSERT' && row.created_by !== me()) { const mo = row.kind === 'morning'; F().toast(mo ? `☀️ ${pname()} said good morning` : `🌙 ${pname()} said goodnight`, 3500); greetFx(mo ? 'morning' : 'night'); }
+  if (t === 'checkins' && p.eventType === 'INSERT' && row.created_by !== me()) { const c = CHECK[row.status]; if (c) F().toast(`${c.e} ${pname()} ${c.them}`, 4000); }
   if (t === 'needs' && p.eventType === 'INSERT' && row.created_by !== me()) F().toast(`${pname()} needs ${needLabel(row.need)}`, 4000);
   reload(t);
 }
@@ -82,6 +83,7 @@ function ensureDom() {
     <div id="fuStatus" class="fuStatus"></div>
     <div class="card fuRitual" id="fuRitual"></div>
     <div class="card fuCard hidden" id="fuNight"></div>
+    <div class="card fuCard fuCheck" id="fuCheck"></div>
     <div class="card fuCard hidden" id="fuOTD"></div>
     <div class="card fuCard hidden" id="fuLove"></div>
     <div class="card fuCard hidden fuSpot" id="fuSpot"></div>`);
@@ -131,7 +133,7 @@ function ensureDom() {
 
 function paint() {
   if (!S().couple || !$('#fuRitual')) return;
-  paintStatus(); paintRitual(); paintNight(); paintOTD(); paintLove(); paintSou(); paintBadges(); paintLock(); chatStatus(); paintBookYears();
+  paintStatus(); paintRitual(); paintNight(); paintCheck(); paintOTD(); paintLove(); paintSou(); paintBadges(); paintLock(); chatStatus(); paintBookYears();
 }
 // existing renderers re-paint us when their data changes
 const wrap = (t, fn) => { const R = F().RENDER; const old = R[t]; R[t] = (...a) => { const r = old && old(...a); try { fn(); } catch (e) { console.warn('fu', t, e); } return r; }; };
@@ -481,24 +483,65 @@ function chatStatus() {
 }
 window.FU_chatStatus = () => {
   const r = activeRepair(); if (r && new Date(r.ends_at) > Date.now()) return `🕊️ pausing until ${F().hhmm(r.ends_at)}`;
+  const ck = activeCheck(them()); if (ck) return `${CHECK[ck.status].e} ${CHECK[ck.status].l.toLowerCase()} · ${ckAgo(ck.created_at)}${together ? ' · here now 🟢' : ''}`;
   return together ? 'here now 🟢' : lockOn() ? '🔒 private · our little corner' : 'our little corner 💞';
 };
 const nightDay = () => { const d = new Date(); if (d.getHours() < 5) d.setDate(d.getDate() - 1); return F().dayStr(d); };
+const greetWord = (k) => { const w = window.FU_P && window.FU_P.w && window.FU_P.w(k === 'morning' ? 'gm' : 'gn'); return w || (k === 'morning' ? 'Good morning ☀️' : 'Goodnight 🌙'); };
 function paintNight() {
   const box = $('#fuNight'); if (!box) return;
-  const h = new Date().getHours(), show = has('goodnights') && (h >= 20 || h < 5);
+  const h = new Date().getHours(); const kind = h >= 5 && h < 11 ? 'morning' : (h >= 20 || h < 5) ? 'night' : null;
+  const show = has('goodnights') && !!kind;
   box.classList.toggle('hidden', !show); if (!show) return;
-  const d = nightDay(), l = T.goodnights || [];
-  const mineN = l.find((g) => g.created_by === me() && String(g.day) === d), theirN = l.find((g) => g.created_by === them() && String(g.day) === d);
-  const p = esc(pname());
-  box.classList.toggle('both', !!(mineN && theirN));
-  box.innerHTML = mineN && theirN ? `<div class="fuNightIn"><span class="moon">🌙</span><div><h2>Goodnight, you two</h2><p class="muted">Sleep close, even if you're apart ✨</p></div></div>`
-    : mineN ? `<div class="fuNightIn"><span class="moon">🌙</span><div><h2>You said goodnight</h2><p class="muted">Waiting for ${p} to say it back…</p></div></div>`
-    : `<div class="fuNightIn"><span class="moon">🌙</span><div><h2>${theirN ? `${p} said goodnight` : 'Bedtime?'}</h2><p class="muted">${theirN ? 'Say it back 💤' : `Say goodnight to ${p}`}</p></div><button id="fuGN">Goodnight 🌙</button></div>`;
-  const b = $('#fuGN'); if (b) b.onclick = async () => {
-    const { error } = await F().sb.from('goodnights').insert({ day: d }); if (error) return F().toast(error.message);
-    F().notify('ping', theirN ? 'said goodnight back 🌙💤' : 'said goodnight 🌙 Say it back'); F().hearts(6); reload('goodnights');
+  const mo = kind === 'morning'; const d = mo ? F().dayStr(new Date()) : nightDay(), l = T.goodnights || [];
+  const is = (g, who) => g.created_by === who && String(g.day) === d && (g.kind || 'night') === kind;
+  const mineN = l.find((g) => is(g, me())), theirN = l.find((g) => is(g, them()));
+  const p = esc(pname()), ic = mo ? '<span class="sun">☀️</span>' : '<span class="moon">🌙</span>', word = esc(greetWord(kind));
+  box.classList.toggle('both', !!(mineN && theirN)); box.classList.toggle('morning', mo);
+  box.innerHTML = mineN && theirN ? `<div class="fuNightIn">${ic}<div><h2>${mo ? 'Morning, you two' : 'Goodnight, you two'}</h2><p class="muted">${mo ? `You both said it — ${esc(F().hhmm(theirN.created_at))} ✨` : 'Sleep close, even if you\'re apart ✨'}</p></div></div>`
+    : mineN ? `<div class="fuNightIn">${ic}<div><h2>${mo ? 'You said good morning' : 'You said goodnight'}</h2><p class="muted">Sent ${esc(F().hhmm(mineN.created_at))} · waiting for ${p}…</p></div></div>`
+    : `<div class="fuNightIn">${ic}<div><h2>${theirN ? `${p} said ${mo ? 'good morning' : 'goodnight'}` : mo ? 'Morning!' : 'Bedtime?'}</h2><p class="muted">${theirN ? `at ${esc(F().hhmm(theirN.created_at))} · say it back ${mo ? '☀️' : '💤'}` : `Say ${mo ? 'good morning' : 'goodnight'} to ${p}`}</p></div>
+       <button id="fuGN">${word}</button><button class="fuGNx" id="fuGNx" type="button">✏️ add a line</button></div>`;
+  const send = async (extra) => {
+    const { error } = await F().sb.from('goodnights').insert({ day: d, kind }); if (error) return F().toast(error.message);
+    (T.goodnights = T.goodnights || []).unshift({ created_by: me(), day: d, kind, created_at: new Date().toISOString() }); paintNight();
+    // the same words land in the chat as a little sunrise / moon bubble
+    try { const text = (greetWord(kind) + (extra ? ' ' + extra : '')).slice(0, 4000); const m = F().chAddLocal({ kind: 'text', body: text, meta: { greet: kind } }); F().chInsert(m); } catch (e) { console.warn('greet chat', e); }
+    F().hearts(6); greetFx(kind, true); reload('goodnights');
   };
+  const b = $('#fuGN'); if (b) b.onclick = () => send();
+  const x = $('#fuGNx'); if (x) x.onclick = async () => { const line = await F().uiPrompt(`Add a line to your ${mo ? 'good morning' : 'goodnight'}`); if (line != null) send(String(line).trim()); };
+}
+// a sunrise or a moonrise when one arrives (or when you send one)
+function greetFx(kind, mine) {
+  if (!F().motionOn || !F().motionOn()) return; const mo = kind === 'morning';
+  const o = document.createElement('div'); o.className = 'fuGreetFx ' + (mo ? 'am' : 'pm') + (mine ? ' mine' : ''); o.setAttribute('aria-hidden', 'true');
+  o.innerHTML = `<i class="glow"></i><b>${mo ? '☀️' : '🌙'}</b>${mo ? '' : '<s>✦</s><s>✧</s><s>✦</s><s>·</s><s>✧</s>'}`;
+  document.body.appendChild(o); setTimeout(() => o.remove(), 2600);
+}
+// ---------- quick check-ins ----------
+const CHECK = {
+  way: { e: '🚗', l: 'On my way', them: 'is on the way', h: 3 }, home: { e: '🏠', l: 'Home safe', them: 'got home safe', h: 5 },
+  work: { e: '💼', l: 'At work', them: 'is at work', h: 9 }, study: { e: '📚', l: 'Studying', them: 'is studying', h: 4 },
+  bed: { e: '😴', l: 'Heading to bed', them: 'is heading to bed', h: 10 }, busy: { e: '🤐', l: 'Busy, talk later', them: 'is busy — talk later', h: 2 },
+};
+const ckAgo = (t) => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.round(m / 60)}h ago`; };
+const activeCheck = (who) => (T.checkins || []).filter((c) => c.created_by === who && new Date(c.expires_at) > Date.now() && CHECK[c.status]).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+function paintCheck() {
+  const box = $('#fuCheck'); if (!box) return;
+  if (!has('checkins')) { box.classList.add('hidden'); return; } box.classList.remove('hidden');
+  const theirs = activeCheck(them()), mine = activeCheck(me()), p = esc(pname());
+  box.innerHTML = `${theirs ? `<div class="ckThem"><span>${CHECK[theirs.status].e}</span><div><b>${p} · ${esc(CHECK[theirs.status].l)}</b><small>${esc(ckAgo(theirs.created_at))}</small></div></div>` : ''}
+    <p class="ckHead">${mine ? `You: <b>${CHECK[mine.status].e} ${esc(CHECK[mine.status].l)}</b> · ${esc(ckAgo(mine.created_at))}` : 'Quick check-in'}</p>
+    <div class="ckChips">${Object.entries(CHECK).map(([k, c]) => `<button type="button" data-ck="${k}" class="${mine && mine.status === k ? 'on' : ''}"><i>${c.e}</i>${esc(c.l)}</button>`).join('')}</div>`;
+  $$('[data-ck]', box).forEach((b) => b.onclick = async () => {
+    const k = b.dataset.ck, c = CHECK[k]; b.classList.add('sent');
+    const { error } = await F().sb.from('checkins').insert({ status: k, expires_at: new Date(Date.now() + c.h * 3600e3).toISOString() });
+    if (error) { b.classList.remove('sent'); return F().toast(error.message); }
+    (T.checkins = T.checkins || []).unshift({ created_by: me(), status: k, created_at: new Date().toISOString(), expires_at: new Date(Date.now() + c.h * 3600e3).toISOString() }); paintCheck();
+    F().notify('ping', `${c.them} ${c.e}`); F().toast(`${c.e} Sent to ${pname()}`); try { navigator.vibrate && navigator.vibrate(10); } catch { /* */ }
+    reload('checkins');
+  });
 }
 
 // ===================== on this day =====================

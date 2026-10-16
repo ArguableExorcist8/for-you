@@ -296,7 +296,7 @@ async function gather(y, m) {
     safe(sb.from('messages').select('sender,created_at,kind,body').gte('created_at', a).lt('created_at', b).eq('deleted', false).limit(6000)),
     safe(sb.from('pings').select('created_by').gte('created_at', a).lt('created_at', b).limit(5000)),
     safe(sb.from('touches').select('created_by').gte('created_at', a).lt('created_at', b).limit(3000)),
-    safe(sb.from('goodnights').select('created_by').gte('created_at', a).lt('created_at', b).limit(200)),
+    safe(sb.from('goodnights').select('created_by').eq('kind', 'night').gte('created_at', a).lt('created_at', b).limit(200)),
   ]);
   const M = msgs.data || []; const D = s.data || {};
   const byDay = top(M.map((x) => new Date(x.created_at).toDateString()))[0];
