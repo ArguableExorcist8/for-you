@@ -138,3 +138,17 @@ html.fuLocked #app,html.fuLocked .nav,html.fuLocked #fuMom,html.fuLocked .fuPet{
 .tkLane.me i.on{background:rgba(var(--acR),.5)}
 .tkLane.th i.on{background:rgba(var(--txR),.5)}
 .tkDays{justify-content:flex-start!important}
+/* ---------- themed loading ---------- */
+#loadingView .ldWrap{position:relative;width:120px;height:130px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center}
+#loadingView .ldEm{position:relative;z-index:1;font-size:58px;line-height:1;animation:ldHop 1.25s cubic-bezier(.45,.05,.55,.95) infinite;filter:drop-shadow(0 8px 14px rgba(var(--shR),.25))}
+#loadingView .ldShadow{position:absolute;bottom:10px;left:50%;width:46px;height:9px;margin-left:-23px;border-radius:50%;background:rgba(var(--shR),.28);filter:blur(2px);animation:ldShadow 1.25s cubic-bezier(.45,.05,.55,.95) infinite}
+#loadingView .ldRing{position:absolute;inset:4px 4px 14px;border-radius:50%;border:3px solid rgba(var(--acR),.15);border-top-color:var(--ac);border-right-color:rgba(var(--acR),.5);animation:ldSpin 1.1s linear infinite}
+@keyframes ldHop{0%,100%{transform:translateY(6px) scale(1.06,.94)}12%{transform:translateY(4px) scale(1,1)}50%{transform:translateY(-16px) rotate(-6deg)}88%{transform:translateY(4px)}}
+@keyframes ldShadow{0%,100%{transform:scaleX(1);opacity:.9}50%{transform:scaleX(.55);opacity:.45}}
+@keyframes ldSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){#loadingView .ldEm,#loadingView .ldShadow,#loadingView .ldRing{animation:none}}
+#loadingView:not(.hidden){min-height:calc(100vh - 80px);min-height:calc(100dvh - 80px);display:flex;align-items:center;justify-content:center}
+#loadingView .hero{position:relative;z-index:5}
+#loadingView .hero p{display:inline-block;margin-top:4px;padding:7px 16px;border-radius:999px;background:rgba(var(--cdR),.72)!important;-webkit-text-fill-color:var(--tx);color:var(--tx);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(var(--shR),.12);animation:ldTxt 2.4s ease-in-out infinite}
+@keyframes ldTxt{50%{opacity:.7}}

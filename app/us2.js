@@ -17,10 +17,16 @@ const used = (k) => { try { window.FU_used && window.FU_used(k); } catch { /* */
 // 1. APP LOCK — a privacy screen on this phone (Face ID via passkey, PIN fallback)
 // =====================================================================
 const LOCK_KEY = 'fu_applock';
-const lockCfg = () => { try { return JSON.parse(LSg(LOCK_KEY) || 'null'); } catch { return null; } };
+const lockCfg = () => { try { const c = JSON.parse(LSg(LOCK_KEY) || 'null'); if (c && !c.v2) { LSs(LOCK_KEY, null); return null; } return c; } catch { return null; } }; // v36 test locks used an older hash
 const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64 = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
-async function pinHash(pin, salt) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + pin)); return b64(d); }
+async function pinHash(pin, salt) { // slow on purpose: a 4-digit code needs it
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+  return b64(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode('for-us-lock:' + salt), iterations: 150000, hash: 'SHA-256' }, k, 256));
+}
+// the passcode is shared by the couple (couple_settings); turning the lock on is per phone
+const couplePass = () => { try { const r = F() && F().shRow && F().shRow(); if (r && r.lock_hash && r.lock_salt) return { salt: r.lock_salt, hash: r.lock_hash }; } catch { /* */ } const c = lockCfg(); return c && c.hash ? { salt: c.salt, hash: c.hash } : null; };
+async function pinOk(pin) { const p = couplePass(); return !!p && (await pinHash(pin, p.salt)) === p.hash; }
 async function faceIdAvailable() { try { return !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch { return false; } }
 async function faceIdCreate() {
   const cred = await navigator.credentials.create({ publicKey: {
@@ -53,7 +59,7 @@ function showLock(auto) {
   const msg = (t) => { $('.lkMsg', lockEl).textContent = t || ''; };
   const tryPin = async () => {
     if (Date.now() < waitUntil) { msg(`Try again in ${Math.ceil((waitUntil - Date.now()) / 1000)}s`); pin = ''; dots(); return; }
-    if (await pinHash(pin, c.salt) === c.hash) { unlock(); return; }
+    if (await pinOk(pin)) { unlock(); return; }
     fails++; pin = ''; dots(); buzz([30, 40, 30]); const d = $('.lkDots', lockEl); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
     if (fails >= 5) { waitUntil = Date.now() + 30000; fails = 0; msg('Too many tries — wait 30s'); } else msg('Wrong passcode');
   };
@@ -96,16 +102,38 @@ function pinSheet(title, sub) {
     };
   });
 }
+async function newPasscode(title) {
+  const a = await pinSheet(title || 'Choose a passcode', `4 digits — the same on both phones, so ${pname()} can use it too`); if (!a) return null;
+  const b = await pinSheet('Once more', 'Type the same 4 digits'); if (!b) return null;
+  if (a !== b) { F().closeModal(); F().toast('Those didn\'t match — try again'); return null; }
+  F().closeModal(); const salt = b64(crypto.getRandomValues(new Uint8Array(12))); const hash = await pinHash(a, salt);
+  await F().saveShared({ lock_salt: salt, lock_hash: hash }, true);
+  return { salt, hash };
+}
 async function setupLock() {
-  const a = await pinSheet('Choose a passcode', '4 digits — your backup if Face ID can\'t see you'); if (!a) return false;
-  const b = await pinSheet('Once more', 'Type the same 4 digits'); if (!b) return false;
-  if (a !== b) { F().closeModal(); F().toast('Those didn\'t match — try again'); return false; }
-  F().closeModal();
-  const salt = b64(crypto.getRandomValues(new Uint8Array(12))); const cfg = { on: 1, salt, hash: await pinHash(a, salt), after: 60000, cred: null };
-  if (await faceIdAvailable()) { try { cfg.cred = await faceIdCreate(); } catch { /* declined — PIN only */ } }
+  let pass = couplePass();
+  if (!pass) { pass = await newPasscode(); if (!pass) return false; F().notify('generic', 'set an app-lock passcode for For Us 🔒 — ask them for it to lock your phone too'); }
+  else {
+    let ok = false;
+    for (let tries = 0; tries < 3 && !ok; tries++) {
+      const pin = await pinSheet(tries ? 'Not quite — try again' : 'Enter your passcode', `It's the same one as ${pname()}'s — ask them if you don't know it`);
+      if (!pin) return false; ok = await pinOk(pin); if (!ok) buzz([30, 40, 30]);
+    }
+    F().closeModal(); if (!ok) { F().toast(`Ask ${pname()} for the passcode 💬`); return false; }
+  }
+  const cfg = { v2: 1, on: 1, after: 60000, cred: null, salt: pass.salt, hash: pass.hash };
+  if (await faceIdAvailable()) { try { cfg.cred = await faceIdCreate(); } catch { /* declined — passcode only */ } }
   LSs(LOCK_KEY, JSON.stringify(cfg));
   F().toast(cfg.cred ? '🔒 App lock on — Face ID + passcode' : '🔒 App lock on — passcode', 3200);
   return true;
+}
+async function changePasscode() {
+  const pin = await pinSheet('Current passcode', 'Enter the passcode you both use now'); if (!pin) return;
+  if (!(await pinOk(pin))) { F().closeModal(); F().toast('That\'s not the current passcode'); return; }
+  const pass = await newPasscode('New passcode'); if (!pass) return;
+  const c = lockCfg(); if (c) LSs(LOCK_KEY, JSON.stringify({ ...c, ...pass }));
+  F().notify('generic', 'changed the app-lock passcode 🔒 — ask them for the new one');
+  F().toast('Passcode changed on both phones 🔒');
 }
 function lockSettings() {
   const meTab = $('#tab-me'); if (!meTab || $('#fuAppLock')) return;
@@ -114,19 +142,21 @@ function lockSettings() {
   paintLockSettings();
 }
 function paintLockSettings() {
-  const box = $('#fuAppLockIn'); if (!box) return; const c = lockCfg();
-  box.innerHTML = `<p class="muted">Ask for Face ID or a passcode when For Us opens on this phone. It's only for this phone — ${esc(pname())}'s isn't affected.</p>
-    <label class="tgl"><input type="checkbox" id="lkOn" ${c && c.on ? 'checked' : ''}> <span>Lock with Face ID / passcode</span></label>
-    ${c && c.on ? `<div class="lkRow"><span>Lock after</span><div class="seg" id="lkAfter">${[[0, 'Right away'], [60000, '1 min'], [300000, '5 min']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(c.after || 0) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-    <div class="lkBtns"><button type="button" class="soft mini" id="lkTest">Try it</button><button type="button" class="soft mini" id="lkPin">Change passcode</button></div>` : ''}`;
+  const box = $('#fuAppLockIn'); if (!box) return; const c = lockCfg(); const has = !!couplePass(); const on = !!(c && c.on);
+  // keep this phone's copy of the shared passcode fresh (works offline too)
+  if (on) { const p = couplePass(); if (p && (p.hash !== c.hash)) LSs(LOCK_KEY, JSON.stringify({ ...c, ...p })); }
+  box.innerHTML = `<p class="muted">${has ? `You two share one passcode. ${on ? '' : `Turn it on here with the same code ${esc(pname())} uses.`}` : `Set a passcode for both of you — ${esc(pname())} turns it on with the same code.`} Face ID works too.</p>
+    <label class="tgl"><input type="checkbox" id="lkOn" ${on ? 'checked' : ''}> <span>Lock this phone with Face ID / passcode</span></label>
+    ${on ? `<div class="lkRow"><span>Lock after</span><div class="seg" id="lkAfter">${[[0, 'Right away'], [60000, '1 min'], [300000, '5 min']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(c.after || 0) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
+    <div class="lkBtns">${on ? '<button type="button" class="soft mini" id="lkTest">Try it</button>' : ''}${has ? '<button type="button" class="soft mini" id="lkPin">Change passcode</button>' : ''}</div>`;
   $('#lkOn').onchange = async (e) => {
     if (e.target.checked) { const ok = await setupLock(); if (!ok) e.target.checked = false; }
-    else { LSs(LOCK_KEY, null); F().toast('App lock off'); }
+    else { const c2 = lockCfg(); if (c2) LSs(LOCK_KEY, JSON.stringify({ ...c2, on: 0 })); F().toast('App lock off on this phone'); }
     paintLockSettings();
   };
   $$('#lkAfter button').forEach((b) => b.onclick = () => { const c2 = lockCfg(); c2.after = Number(b.dataset.v); LSs(LOCK_KEY, JSON.stringify(c2)); paintLockSettings(); });
   const t = $('#lkTest'); if (t) t.onclick = () => showLock();
-  const p = $('#lkPin'); if (p) p.onclick = async () => { const keep = lockCfg(); const ok = await setupLock(); if (!ok && keep) LSs(LOCK_KEY, JSON.stringify(keep)); paintLockSettings(); };
+  const p = $('#lkPin'); if (p) p.onclick = async () => { await changePasscode(); paintLockSettings(); };
 }
 
 // =====================================================================
@@ -138,9 +168,9 @@ const DEF_OFF = (tz) => (/Cairo|Riyadh|Kuwait|Qatar|Bahrain|Muscat|Baghdad|Amman
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 async function loadPrefs() {
   try { const { data, error } = await F().sb.from('member_prefs').select('created_by,tz,free'); if (!error) { PREFS.rows = data || []; PREFS.loaded = true; try { F().cacheSet && F().cacheSet('fu_prefs', PREFS.rows); } catch { /* */ } } } catch { /* offline */ }
-  if (!PREFS.loaded) { try { const c = F().cacheGet && F().cacheGet('fu_prefs'); if (c) PREFS.rows = c; } catch { /* */ } }
+  if (!PREFS.loaded) { try { const c = F().cacheGet && F().cacheGet('fu_prefs'); const v = Array.isArray(c) ? c : c && Array.isArray(c.data) ? c.data : null; if (v) PREFS.rows = v; } catch { /* */ } }
 }
-const prefOf = (uid) => PREFS.rows.find((r) => r.created_by === uid);
+const prefOf = (uid) => (Array.isArray(PREFS.rows) ? PREFS.rows : []).find((r) => r.created_by === uid);
 const mine = () => { const s = S(); const r = s && prefOf(s.user.id); return r && r.free ? r.free : null; };
 const theirs = () => { const s = S(); const r = s && s.partner && prefOf(s.partner.id); return r && r.free ? { ...r.free, tz: r.tz } : null; };
 function partsAt(tz, t) { // weekday + hour for an instant, in a time zone
@@ -386,7 +416,7 @@ function tiles() {
   $('[data-fu="month"]').onclick = monthPicker;
 }
 async function run() {
-  tiles(); lockSettings(); recapCard();
+  tiles(); lockSettings(); paintLockSettings(); recapCard();
   if (S() && S().couple) { await loadPrefs(); paintTalkHint(); }
 }
 setInterval(() => { if (!document.hidden) paintTalkHint(); }, 5 * 60 * 1000);

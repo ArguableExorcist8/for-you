@@ -1431,7 +1431,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=36'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=37'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -2494,7 +2494,7 @@ $$('.nav button, #gearBtn').forEach((b) => b.addEventListener('click', () => { i
 
 // ================= SHARED COUPLE SETTINGS (v18) =================
 // One couple_settings row per couple, read/updated by either partner (couple-member RLS). created_by = who changed it last.
-const SH_FIELDS = ['notify_level', 'cute_fx', 'wheel_cat', 'chat_receipts', 'chat_typing', 'chat_enter_send', 'theme', 'seasonal'];
+const SH_FIELDS = ['notify_level', 'cute_fx', 'wheel_cat', 'chat_receipts', 'chat_typing', 'chat_enter_send', 'theme', 'seasonal', 'lock_hash'];
 const shRow = () => S.data.couple_settings?.[0] || null;
 function shared(k, def) { const r = shRow(); return r && r[k] != null ? r[k] : def; }
 const onOff = (v) => (v ? 'on ✅' : 'off 💤');
@@ -2507,13 +2507,15 @@ const SH_TOAST = {
   chat_enter_send: (v) => `turned Enter-to-send ${onOff(v)}`,
   theme: (v) => { const t = (window.CC_THEMES || []).find((x) => x.id === v); return t ? `switched our theme to ${t.name} ${t.em}` : 'changed our theme 🎨'; },
   seasonal: (v) => `turned seasonal sprinkles ${onOff(v)}`,
+  lock_hash: (v) => (v ? 'set the app-lock passcode 🔒 — ask them for it to lock your phone too' : 'removed the app-lock passcode'),
+  lock_salt: () => '',
 };
 let shPrev = (() => { try { return JSON.parse(localStorage.getItem('cc_sh_seen')); } catch { return null; } })(), shMigrated = false; // last seen → "while you were away" toasts
 function applyShared() {
   const r = shRow();
   if (r && shPrev && shPrev.couple_id === r.couple_id && r.created_by && r.created_by !== S.user?.id) {
     const ch = SH_FIELDS.filter((k) => shPrev[k] != null && r[k] != null && shPrev[k] !== r[k]);
-    if (ch.length) { toast(`${partnerName()} ${ch.map((k) => SH_TOAST[k](r[k])).join(' · ')}`, 4500); if (ch.includes('notify_level') || ch.includes('cute_fx')) hearts(6); }
+    if (ch.length) { toast(`${partnerName()} ${ch.map((k) => SH_TOAST[k](r[k])).filter(Boolean).join(' · ')}`, 4500); if (ch.includes('notify_level') || ch.includes('cute_fx')) hearts(6); }
   }
   shPrev = r ? { ...r } : null; if (r) localStorage.setItem('cc_sh_seen', JSON.stringify(r));
   if (r && r.cute_fx != null && window.CC_setCute) CC_setCute(r.cute_fx);
@@ -3265,7 +3267,7 @@ sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booti
 window.__FU = {
   get S() { return S; }, sb, $, $$, esc, toast, uiConfirm, uiPrompt, uiDialog, notify, loadTable, RENDER, TABLES,
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
-  D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet,
+  D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow,
   get CH() { return CH; }, chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();
