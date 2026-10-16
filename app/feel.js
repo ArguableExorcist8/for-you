@@ -122,3 +122,34 @@ window.FU_enter = async (...a) => { const r = prevEnter ? prevEnter(...a) : unde
   window.FU_contrast = guard;
   soon(1200);
 })();
+
+// ---------- video previews: every video shows a real frame, not a blank tile ----------
+// iPhones often don't paint a video's first frame until it plays, so we grab one ourselves and use it as the poster.
+(() => {
+  const cache = new Map(); const busy = new Set();
+  const key = (src) => String(src).split('#')[0].split('?')[0];
+  function grab(src) {
+    return new Promise((res) => {
+      const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous';
+      let done = false; const end = (u) => { if (done) return; done = true; v.removeAttribute('src'); v.load(); res(u); };
+      v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 3); } catch { end(null); } };
+      v.onseeked = () => {
+        try { const w = 360, h = Math.round(w * (v.videoHeight / v.videoWidth || 1)); const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(v, 0, 0, w, h); end(c.toDataURL('image/jpeg', 0.72)); } catch { end(null); } // a cross-origin frame can't be read: leave it
+      };
+      v.onerror = () => end(null); setTimeout(() => end(null), 8000);
+      v.src = String(src).split('#')[0];
+    });
+  }
+  async function poster(el) {
+    const src = el.currentSrc || el.getAttribute('src'); if (!src || el.poster || el.dataset.fuPost) return; el.dataset.fuPost = '1';
+    const k = key(src); if (cache.has(k)) { if (cache.get(k)) el.poster = cache.get(k); return; }
+    if (busy.has(k)) return; busy.add(k);
+    const u = await grab(src); cache.set(k, u); busy.delete(k);
+    document.querySelectorAll('video').forEach((x) => { const s = x.currentSrc || x.getAttribute('src'); if (s && key(s) === k && !x.poster && u) x.poster = u; });
+  }
+  let t = 0;
+  const scan = () => { clearTimeout(t); t = setTimeout(() => document.querySelectorAll('.chMedia video, .chRound video, .phVid video, #chViewBox video').forEach((v) => { if (!v.poster) { delete v.dataset.fuPost; poster(v); } }), 250); };
+  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+  scan();
+})();
