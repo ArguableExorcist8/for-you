@@ -202,6 +202,7 @@ function needSheet() {
 function answerNeed(k) {
   const p = pname(); const row = latestNeed(them()); const note = row && row.note && !(window.FU_lockOn && FU_lockOn()) ? String(row.note) : '';
   const label = needLabel(k); const ctx = { who: `${p} needs`, text: label + (note ? ` — “${note}”` : '') };
+  if (k === 'hug' || k === 'reassure') return touchSheet(true, ctx);
   const extra = k === 'hug' || k === 'reassure' ? ['touch', '🫶 Send a touch'] : k === 'fun' ? ['play', '🎮 Play something together'] : k === 'space' ? ['space', '🌙 “Take the space you need”'] : null;
   F().openModal(`<div class="fuNeedAns"><div class="naHead"><span>${esc(label.split(' ')[0])}</span><div><b>${esc(p)} needs ${esc(label.replace(/^\S+ /, ''))}</b>${note ? `<small>“${esc(note)}”</small>` : ''}<small>${row ? esc(ago(row.created_at)) : ''}</small></div></div>
     <button type="button" data-na="chat">💬 Reply in chat</button>${extra ? `<button type="button" class="soft" data-na="${extra[0]}">${esc(extra[1])}</button>` : ''}<button type="button" class="soft" data-close>Not now</button></div>`);
@@ -434,12 +435,12 @@ function repairHistory() {
 // ===================== touch =====================
 const HEART = [90, 140, 90, 650, 90, 140, 90, 650, 90, 140, 90];
 const canBuzz = () => 'vibrate' in navigator;
-function touchSheet(hug) {
+function touchSheet(hug, replyCtx) {
   if (!has('touches')) return notReady();
   let rec = [], t0 = 0, last = 0, pressing = false, timer = null;
-  F().openModal(`<h2>🫶 Send a touch</h2><p class="muted">Tap or hold the heart — ${esc(pname())} feels the same rhythm${canBuzz() ? '' : ' (their phone buzzes if it can)'}.</p>
+  F().openModal(`<h2>🫶 Send a touch</h2>${replyCtx ? `<p class="fuNeedFor">${esc(replyCtx.who)} <b>${esc(replyCtx.text)}</b></p>` : ''}<p class="muted">Tap or hold the heart — ${esc(pname())} feels the same rhythm${canBuzz() ? '' : ' (their phone buzzes if it can)'}.</p>
     <div class="fuPad" id="fuPad"><span>💗</span><i></i></div><p class="fuPadHint" id="fuPadHint">Tap a rhythm · up to 6 seconds</p>
-    <div class="fuRow"><button class="soft" id="fuHeartbeat">💓 Heartbeat</button><button class="soft" id="fuHug">🫂 Long hug</button><button class="soft" id="fuClear">Clear</button></div>
+    <div class="fuRow"><button class="soft" id="fuHeartbeat">💓 Heartbeat</button><button class="soft" id="fuHug">🫂 Long hug</button><button class="soft" id="fuClear">Clear</button>${replyCtx ? '<button class="soft" id="fuTReply">💬 Reply in chat</button>' : ''}</div>
     <button id="fuTouchSend" class="fuWide" disabled>Send 🫶</button>`);
   const pad = $('#fuPad'), hint = $('#fuPadHint'), send = $('#fuTouchSend');
   const setRec = (p, label) => { rec = p; send.disabled = !rec.length; hint.textContent = label || `${Math.ceil(rec.filter((_, i) => i % 2 === 0).length)} touches recorded`; };
@@ -449,6 +450,7 @@ function touchSheet(hug) {
   pad.addEventListener('pointerdown', down); pad.addEventListener('pointerup', up); pad.addEventListener('pointerleave', up); pad.addEventListener('pointercancel', up);
   $('#fuHeartbeat').onclick = () => { setRec(HEART.slice(), 'Heartbeat ready 💓'); playPattern(HEART, pad); };
   $('#fuHug').onclick = () => { setRec([2400], 'Long hug ready 🫂'); playPattern([2400], pad); };
+  const tr = $('#fuTReply'); if (tr) tr.onclick = () => { F().closeModal(); F().chReplyCtx(replyCtx); };
   $('#fuClear').onclick = () => { rec = []; t0 = 0; send.disabled = true; hint.textContent = 'Tap a rhythm · up to 6 seconds'; };
   if (hug === true) $('#fuHug').onclick();
   send.onclick = async () => {
