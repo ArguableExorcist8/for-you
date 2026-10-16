@@ -2911,8 +2911,8 @@ $('#chTxt').addEventListener('input', () => {
   chAutosize(); chComposeState();
   if (CH.ch && shared('chat_typing', true) && Date.now() - CH.lastTyping > 2000) { CH.lastTyping = Date.now(); CH.ch.send({ type: 'broadcast', event: 'typing', payload: { uid: S.user.id } }); }
 });
-$('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window) && shared('chat_enter_send', true)) { e.preventDefault(); chSendText(); } });
-$('#chSend').onclick = () => { if (navigator.vibrate) navigator.vibrate(8); chSendText(); $('#chTxt').focus(); };
+$('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window) && shared('chat_enter_send', true)) { e.preventDefault(); if ($('#chTxt').value.trim() && window.CC_sendFx) CC_sendFx($('#chSend')); chSendText(); } });
+$('#chSend').onclick = () => { if (navigator.vibrate) navigator.vibrate(8); if (window.CC_sendFx) CC_sendFx($('#chSend')); chSendText(); $('#chTxt').focus(); };
 $('#chSend').addEventListener('pointerdown', (e) => e.preventDefault()); // keep the keyboard open on tap
 $('#chPlus').onclick = () => { $('#chAttach').classList.toggle('hidden'); $('#chPlus').classList.toggle('on'); };
 ['chGal', 'chCam', 'chCamV'].forEach((id) => { $('#' + id).onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f); e.target.value = ''; }; });
@@ -3130,7 +3130,7 @@ function chLayout() {
   const app = $('#chatApp'); if (!app || $('#tab-chat').classList.contains('hidden')) return;
   const head = document.querySelector('#mainView header.top'); const top = head ? head.getBoundingClientRect().bottom : 0;
   const vv = window.visualViewport; const vh = vv ? vv.height : innerHeight; const kb = vv && innerHeight - vv.height > 120;
-  const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? nav.getBoundingClientRect().height : 0);
+  const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? Math.max(0, vh - nav.getBoundingClientRect().top) : 0); // floating docks sit above the edge
   app.style.top = Math.max(0, top) + 'px'; app.style.height = Math.max(200, vh - Math.max(0, top) - navH) + 'px';
 }
 if (window.visualViewport) { visualViewport.addEventListener('resize', chLayout); visualViewport.addEventListener('scroll', chLayout); }

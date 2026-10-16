@@ -163,9 +163,55 @@
     titanic: ['💎', '🎨', '🚢', '✉️'], lalaland: ['🎹', '🌃', '🎬', '🎼'], pp: ['🖼️', '🌹', '🕯️', '🪶'], tangled: ['🎨', '🦎', '🏮', '📜'],
     beauty: ['🌹', '🪞', '🕰️', '📚'], frozen: ['❄️', '⛄', '🦌', '📜'], coco: ['🖼️', '💀', '🎸', '🌼'], yourname: ['☄️', '📱', '🌆', '📝'],
     naruto: ['🍥', '🦊', '🌀', '📜'], aot: ['🪽', '🗝️', '🧱', '📜'], demonslayer: ['🪻', '🦋', '🗡️', '📜'], onepiece: ['👒', '🍖', '🏴‍☠️', '🗺️'],
-    sailormoon: ['🌙', '🐈‍⬛', '💫', '💌'], spirited: ['🏮', '🐉', '🐸', '🎫'], halloween: ['🎃', '💀', '🦇', '📜'],
+    sailormoon: ['🌙', '🐈‍⬛', '💫', '💌'], spirited: ['🏮', '🐉', '🐸', '🎫'], halloween: ['🎃', '💀', '🦇', '📜'], howl: ['🏰', '🔥', '⭐', '🗝️'],
   };
   T.forEach((t) => { if (ATT[t.id]) t.att = ATT[t.id]; });
+  // v23: per-theme personality — [button, shape, nav, dialog, motion, send effect, glyphs (send,mic,plus) | icon weight]
+  const TR = {
+    blush: ['soft', 'scallop', 'pill', 'bubble', 'springy', 'burst:💗💕✨', 'w:bold'],
+    lavender: ['tonal', 'squircle', 'float', 'frost', 'floaty', 'rise:💜✨🫧', 'w:thin'],
+    ocean: ['glass', 'wave', 'dock', 'frost', 'sway', 'ripple', 'w:line'],
+    mint: ['outline', 'cut', 'topline', 'note', 'snappy', 'burst:🌿🍃', 'w:duo'],
+    sunset: ['gradient', 'round', 'tabs', 'card', 'elegant', 'streak:#ffb36b', 'w:bold'],
+    midnight: ['crystal', 'glass', 'float', 'neon', 'drowsy', 'streak:#b3a8ff', 'w:thin'],
+    bears: ['jelly', 'stitched', 'bubble', 'note', 'bouncy', 'burst:🍯🐾🤎', '🐾,🐻,🍯'],
+    bunnies: ['cloud', 'blob', 'dock', 'bubble', 'bouncy', 'hop:🐰', '🥕,🐰,🌷'],
+    cats: ['stitch', 'squircle', 'pill', 'bubble', 'snappy', 'trail:🐾', '🐟,🐱,🧶'],
+    penguins: ['frost', 'ice', 'flat', 'frost', 'wobbly', 'burst:❄️🐟', '🐟,🐧,❄️'],
+    foxes: ['wood', 'torn', 'tabs', 'note', 'springy', 'burst:🍂🍁', '🍂,🦊,🍄'],
+    pandas: ['bamboo', 'paper', 'topline', 'scroll', 'drowsy', 'burst:🍃🎋', '🎋,🐼,🍃'],
+    balloons: ['balloon', 'scrapbook', 'shelf', 'note', 'floaty', 'rise:🎈', '🎈,📖,🏠'],
+    starry: ['brush', 'frame', 'float', 'letter', 'magic', 'sparkle:✨⭐', '🌠,🌙,⭐'],
+    fairytale: ['ribbon', 'arch', 'ribbon', 'scroll', 'magic', 'sparkle:✨🪄', '🪄,👑,🏰'],
+    sea: ['balloon', 'scallop', 'bubble', 'bubble', 'floaty', 'rise:🫧', '🐚,🐠,🫧'],
+    garden: ['leaf', 'leaf', 'topline', 'note', 'sway', 'burst:🌸🦋🌼', '🦋,🐝,🌷'],
+    tvd: ['stone', 'parchment', 'tabs', 'scroll', 'swift', 'fly:🦇', '🥀,🦇,🩸'],
+    originals: ['brass', 'frame', 'ribbon', 'tablet', 'elegant', 'burst:⚜️✨', '⚜️,🎷,🕯️'],
+    bridgerton: ['seal', 'scallop', 'pill', 'letter', 'elegant', 'fly:💌', '💌,🦢,🌸'],
+    hp: ['tag', 'parchment', 'scroll', 'scroll', 'magic', 'fly:🦉', '🪄,🦉,📜'],
+    gilmore: ['typewriter', 'paper', 'shelf', 'telegram', 'snappy', 'burst:☕📚', '☕,📚,🍂'],
+    stranger: ['neon', 'neon', 'neon', 'neon', 'glitch', 'streak:#ff3b3b', '💡,📻,🔦'],
+    twilight: ['stone', 'bevel', 'flat', 'tablet', 'drowsy', 'burst:🍎🌲', '🍎,🐺,🌲'],
+    notebook: ['sketch', 'paper', 'topline', 'letter', 'sway', 'fly:🕊️', '🛶,🦢,📓'],
+    titanic: ['foil', 'frame', 'deck', 'letter', 'elegant', 'sparkle:💎✨', '💎,🚢,⚓'],
+    lalaland: ['gradient', 'ticket', 'dock', 'neon', 'springy', 'burst:🎶✨⭐', '🎹,🎷,🌟'],
+    pp: ['ink', 'letter', 'flat', 'letter', 'elegant', 'fly:🪶', '🪶,🌹,📜'],
+    tangled: ['lantern', 'lantern', 'bubble', 'lantern', 'floaty', 'rise:🏮', '🏮,🦎,🌸'],
+    beauty: ['foil', 'arch', 'dock', 'frame', 'elegant', 'burst:🌹🥀', '🌹,🪞,🕰️'],
+    frozen: ['crystal', 'ice', 'float', 'frost', 'magic', 'sparkle:❄️✨', '❄️,⛄,🦌'],
+    coco: ['candy', 'zigzag', 'tabs', 'note', 'bouncy', 'burst:🌼💀🎸', '🌼,💀,🎸'],
+    yourname: ['outline', 'round', 'dock', 'bubble', 'floaty', 'streak:#7fd3ff', '☄️,📱,🌆'],
+    naruto: ['comic', 'comic', 'scroll', 'comic', 'snappy', 'slash:#ff8a1f', '🌀,🍥,📜'],
+    aot: ['metal', 'sharp', 'flat', 'tablet', 'slam', 'slash:#c3bca6', '🪽,🗝️,🧱'],
+    demonslayer: ['brush', 'panel', 'float', 'card', 'swift', 'burst:🪻🌸', '🗡️,🦋,🪻'],
+    onepiece: ['wood', 'comic', 'deck', 'comic', 'bouncy', 'fly:👒', '⚓,👒,🗺️'],
+    sailormoon: ['crystal', 'squircle', 'ribbon', 'frame', 'magic', 'sparkle:🌙⭐💫', '🌙,⭐,💫'],
+    spirited: ['tag', 'ticket', 'tabs', 'lantern', 'drowsy', 'fly:🐉', '🏮,🐉,🐸'],
+    halloween: ['drip', 'torn', 'float', 'tablet', 'sway', 'fly:🦇', '🎃,💀,🕸️'],
+    forest: ['moss', 'blob', 'topline', 'scroll', 'magic', 'rise:✨🍄', '🍄,🦉,🧚'],
+    howl: ['brass', 'squircle', 'deck', 'lantern', 'floaty', 'fly:⭐', '🔥,🏰,⭐'],
+  };
+  T.forEach((t) => { const r = TR[t.id]; if (!r) return; t.tr = { b: r[0], s: r[1], n: r[2], d: r[3], m: r[4], fx: r[5], g: r[6] }; });
   const BY = Object.fromEntries(T.map((t) => [t.id, t]));
   // ---------- seasonal overlay ----------
   const D = (y, m, d) => new Date(y, m - 1, d);
@@ -218,6 +264,10 @@
       + '<i class="ds s1"><b>🕷️</b></i><i class="ds s2"><b>🕷️</b></i>',
   };
   const DECO_BACK = { halloween: '<span class="dmoon"></span><img class="dgy" src="themes/halloween/graveyard.svg" alt="">' };
+  // <sig> generated signature scenery
+  Object.assign(DECO, {"blush": "<i class=\"sg tp bl-bow\">🎀</i>", "lavender": "<i class=\"sg lv-s s0\">🪻</i><i class=\"sg lv-s s1\">🪻</i><i class=\"sg lv-s s2\">🪻</i><i class=\"sg lv-s s3\">🪻</i>", "mint": "<div class=\"sg tp mn-vine\"><i>🌿</i><i>🍃</i><i>🌿</i><i>🍃</i><i>🌿</i><i>🍃</i><i>🌿</i><i>🍃</i><i>🌿</i><i>🍃</i><i>🌿</i><i>🍃</i></div>", "bears": "<i class=\"sg tp br-honey\"></i>", "bunnies": "<div class=\"sg bn-pk\"><i>🐰</i></div><div class=\"sg bn-pk p2\"><i>🐇</i></div>", "cats": "<div class=\"sg ct-w\"><i>🐈</i></div><i class=\"sg ct-sit\">🐈‍⬛</i>", "penguins": "<div class=\"sg pg-sl\"><i>🐧</i></div>", "foxes": "<div class=\"sg tp fx-br\"><i class=\"l1\">🍂</i><i class=\"l2\">🍁</i><i class=\"l3\">🍂</i><i class=\"l4\">🍁</i></div>", "balloons": "<div class=\"sg tp up-b\"><i class=\"c0\"></i><i class=\"c1\"></i><i class=\"c2\"></i><i class=\"c3\"></i><i class=\"c4\"></i><i class=\"c5\"></i><i class=\"c6\"></i><i class=\"c7\"></i><i class=\"c8\"></i></div>", "sea": "<img class=\"sg se-w l\" src=\"themes/sig/seaweed.svg\" alt=\"\"><img class=\"sg se-w r\" src=\"themes/sig/seaweed.svg\" alt=\"\">", "garden": "<i class=\"sg gd-bf\">🦋</i>", "tvd": "<i class=\"sg tp tv-crow\">🐦‍⬛</i>", "originals": "<img class=\"sg tp or-f l\" src=\"themes/sig/filigree.svg\" alt=\"\"><img class=\"sg tp or-f r\" src=\"themes/sig/filigree.svg\" alt=\"\"><img class=\"sg or-f bl\" src=\"themes/sig/filigree.svg\" alt=\"\"><img class=\"sg or-f br\" src=\"themes/sig/filigree.svg\" alt=\"\">", "gilmore": "<div class=\"sg gm-m\"><i>☕</i><b></b><b></b><b></b></div>", "stranger": "<img class=\"sg sx-v tl\" src=\"themes/sig/vines.svg\" alt=\"\"><img class=\"sg sx-v br\" src=\"themes/sig/vines.svg\" alt=\"\">", "pp": "<i class=\"sg pp-ink\"></i><i class=\"sg tp pp-fl\">🌼</i>", "beauty": "<div class=\"sg bt-d\"><i>🌹</i><b></b></div>", "frozen": "<img class=\"sg fz tl\" src=\"themes/sig/frost.svg\" alt=\"\"><img class=\"sg fz tr\" src=\"themes/sig/frost.svg\" alt=\"\"><img class=\"sg fz bl\" src=\"themes/sig/frost.svg\" alt=\"\"><img class=\"sg fz br\" src=\"themes/sig/frost.svg\" alt=\"\">", "naruto": "<div class=\"sg nr-s\"><i>🍃</i><i>🍃</i><i>🍃</i></div>", "demonslayer": "<div class=\"sg tp ds-w\"><i class=\"h0\"></i><i class=\"h1\"></i><i class=\"h2\"></i><i class=\"h3\"></i><i class=\"h4\"></i><i class=\"h5\"></i><i class=\"h6\"></i><i class=\"h7\"></i><i class=\"h8\"></i></div>", "onepiece": "<i class=\"sg tp op-h\">👒</i>", "spirited": "<div class=\"sg tp sp-l\"><i class=\"l0\"></i><i class=\"l1\"></i><i class=\"l2\"></i><i class=\"l3\"></i><i class=\"l4\"></i><i class=\"l5\"></i></div>"});
+  Object.assign(DECO_BACK, {"blush": "<i class=\"sg bl-bk b0\"></i><i class=\"sg bl-bk b1\"></i><i class=\"sg bl-bk b2\"></i><i class=\"sg bl-bk b3\"></i><i class=\"sg bl-bk b4\"></i>", "ocean": "<div class=\"sg oc-w\"><i></i><i></i></div>", "sunset": "<i class=\"sg ss-sun\"></i><i class=\"sg ss-hz\"></i>", "midnight": "<i class=\"sg md-moon\"></i><i class=\"sg md-star\"></i><i class=\"sg md-star s2\"></i>", "penguins": "<i class=\"sg pg-snow\"></i>", "pandas": "<i class=\"sg pd-b l\"></i><i class=\"sg pd-b l2\"></i><i class=\"sg pd-b r\"></i><i class=\"sg pd-lf a\">🍃</i><i class=\"sg pd-lf b\">🍃</i><i class=\"sg pd-lf c\">🍃</i>", "forest": "<i class=\"sg fo-m l\">🍄</i><i class=\"sg fo-m r\">🍄</i><i class=\"sg fo-m s\">🍄</i>", "starry": "<i class=\"sg sr-moon\"></i><i class=\"sg sr-sw w0\"></i><i class=\"sg sr-sw w1\"></i><i class=\"sg sr-sw w2\"></i><i class=\"sg sr-sw w3\"></i>", "fairytale": "<img class=\"sg ft-c\" src=\"themes/sig/castle.svg\" alt=\"\">", "garden": "<div class=\"sg gd-bed\"><i>🌷</i><i>🌼</i><i>🌸</i><i>🌻</i><i>🌷</i><i>🌼</i><i>🌸</i><i>🌻</i><i>🌷</i><i>🌼</i><i>🌸</i><i>🌻</i><i>🌷</i><i>🌼</i></div>", "bridgerton": "<img class=\"sg bg-sw\" src=\"themes/sig/swag.svg\" alt=\"\">", "hp": "<div class=\"sg hp-c\"><i class=\"k0\">🕯️</i><i class=\"k1\">🕯️</i><i class=\"k2\">🕯️</i><i class=\"k3\">🕯️</i><i class=\"k4\">🕯️</i><i class=\"k5\">🕯️</i><i class=\"k6\">🕯️</i><i class=\"k7\">🕯️</i></div>", "twilight": "<img class=\"sg tw-p\" src=\"themes/sig/pines.svg\" alt=\"\">", "notebook": "<div class=\"sg nb-l\"><i class=\"bt\">🛶</i><i class=\"sw\">🦢</i><i class=\"sw s2\">🦢</i></div>", "titanic": "<img class=\"sg ti-r\" src=\"themes/sig/rail.svg\" alt=\"\">", "lalaland": "<img class=\"sg ll-c\" src=\"themes/sig/skyline.svg\" alt=\"\"><i class=\"sg ll-lamp\"><b></b></i>", "tangled": "<div class=\"sg tg-l\"><i class=\"n0\"></i><i class=\"n1\"></i><i class=\"n2\"></i><i class=\"n3\"></i><i class=\"n4\"></i><i class=\"n5\"></i><i class=\"n6\"></i><i class=\"n7\"></i><i class=\"n8\"></i><i class=\"n9\"></i><i class=\"n10\"></i></div>", "howl": "<i class=\"sg hw-cl c0\"></i><i class=\"sg hw-cl c1\"></i><i class=\"sg hw-cl c2\"></i><i class=\"sg hw-cl c3\"></i><i class=\"sg hw-st\">✦</i><i class=\"sg hw-st s2\">✦</i>", "coco": "<div class=\"sg cc-p\"><i class=\"q0\">🌼</i><i class=\"q1\">🌼</i><i class=\"q2\">🌼</i><i class=\"q3\">🌼</i><i class=\"q4\">🌼</i><i class=\"q5\">🌼</i><i class=\"q6\">🌼</i><i class=\"q7\">🌼</i><i class=\"q8\">🌼</i><i class=\"q9\">🌼</i><i class=\"q10\">🌼</i><i class=\"q11\">🌼</i><i class=\"q12\">🌼</i><i class=\"q13\">🌼</i><i class=\"q14\">🌼</i><i class=\"q15\">🌼</i></div>", "yourname": "<i class=\"sg yn-c\"></i><i class=\"sg yn-c c2\"></i>", "aot": "<img class=\"sg ao-w\" src=\"themes/sig/wall.svg\" alt=\"\">", "onepiece": "<img class=\"sg op-s\" src=\"themes/sig/opsea.svg\" alt=\"\">", "sailormoon": "<i class=\"sg sm-m\"></i><i class=\"sg sm-t t0\">✦</i><i class=\"sg sm-t t1\">✦</i><i class=\"sg sm-t t2\">✦</i><i class=\"sg sm-t t3\">✦</i><i class=\"sg sm-t t4\">✦</i><i class=\"sg sm-t t5\">✦</i>"});
+  // </sig>
   function paintDeco(t) {
     [['thDeco', DECO], ['thDecoB', DECO_BACK]].forEach(([id, map]) => {
       let el = document.getElementById(id); const h = map[t.id] || '';
@@ -226,6 +276,41 @@
       if (el.dataset.k !== t.id) { el.dataset.k = t.id; el.innerHTML = h; }
     });
   }
+  function paintTraits(t) {
+    const r = t.tr || { b: 'soft', s: 'round', n: 'pill', d: 'card', m: 'springy', fx: 'burst:💗', g: 'w:bold' };
+    Object.assign(root.dataset, { btn: r.b, shape: r.s, navs: r.n, dlg: r.d, mo: r.m });
+    const w = /^w:/.test(r.g) ? r.g.slice(2) : 'line'; root.dataset.ico = w;
+    const gl = /^w:/.test(r.g) ? null : r.g.split(',');
+    root.dataset.gly = gl ? '1' : '0';
+    [['chSend', 0], ['chMic', 1], ['chPlus', 2]].forEach(([id, i]) => {
+      const b = document.getElementById(id); if (!b) return;
+      let g = b.querySelector('.gly'); if (!g) { g = document.createElement('b'); g.className = 'gly'; g.setAttribute('aria-hidden', 'true'); b.appendChild(g); }
+      g.textContent = gl ? gl[i] : '';
+    });
+  }
+  // v23: the "message sent" moment, one per theme
+  window.CC_sendFx = (from) => {
+    if (!(motionOK() && cuteOn())) return;
+    const r = (cur.tr && cur.tr.fx) || 'burst:💗'; const [type, arg = ''] = r.split(':');
+    const seg = (x) => (window.Intl && Intl.Segmenter ? [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(x)].map((g) => g.segment) : Array.from(x));
+    const em = arg && arg[0] !== '#' ? seg(arg) : ['💗'];
+    const b = (from && from.getBoundingClientRect) ? from.getBoundingClientRect() : { left: innerWidth - 50, top: innerHeight - 120, width: 40, height: 40 };
+    const x0 = b.left + b.width / 2, y0 = b.top + b.height / 2, R = Math.random;
+    const L = document.createElement('div'); L.className = 'sfx'; L.setAttribute('aria-hidden', 'true'); document.body.appendChild(L);
+    const put = (html, css) => { const e = document.createElement('i'); e.innerHTML = html; Object.assign(e.style, { left: x0 + 'px', top: y0 + 'px' }, css || {}); L.appendChild(e); return e; };
+    const anim = (e, kf, o) => e.animate(kf, Object.assign({ fill: 'forwards', easing: 'cubic-bezier(.22,1,.36,1)' }, o));
+    const pick = () => em[Math.floor(R() * em.length)];
+    let life = 1400;
+    if (type === 'burst') for (let i = 0; i < 12; i++) { const a = R() * Math.PI * 2, d = 50 + R() * 90; const e = put(pick(), { fontSize: 14 + R() * 12 + 'px' }); anim(e, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d - 30}px)) scale(1) rotate(${R() * 120 - 60}deg)`, opacity: 1, offset: .6 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d * 1.2}px),calc(-50% + ${Math.sin(a) * d + 40}px)) scale(.8)`, opacity: 0 }], { duration: 900 + R() * 400 }); }
+    else if (type === 'rise') for (let i = 0; i < 7; i++) { const e = put(pick(), { fontSize: 16 + R() * 14 + 'px' }); const dx = R() * 120 - 80; anim(e, [{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 0 }, { opacity: 1, offset: .15 }, { transform: `translate(calc(-50% + ${dx}px),calc(-50% - ${200 + R() * 160}px)) scale(1.1)`, opacity: 0 }], { duration: 1600 + R() * 700, delay: i * 70, easing: 'ease-out' }); life = 2600; }
+    else if (type === 'fly') { const e = put(pick(), { fontSize: '30px' }); anim(e, [{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 0 }, { transform: 'translate(-90px,-120px) scale(1.2) rotate(-12deg)', opacity: 1, offset: .35 }, { transform: `translate(-${innerWidth * .7}px,-${innerHeight * .75}px) scale(.6) rotate(-20deg)`, opacity: 0 }], { duration: 1500, easing: 'cubic-bezier(.45,.05,.55,.95)' }); life = 1600; }
+    else if (type === 'hop') { const e = put(pick(), { fontSize: '28px' }); const k = []; for (let i = 0; i <= 4; i++) { k.push({ transform: `translate(calc(-50% - ${i * 60}px),-50%)`, offset: i / 4.2 }); if (i < 4) k.push({ transform: `translate(calc(-50% - ${i * 60 + 30}px),calc(-50% - 50px))`, offset: (i + .5) / 4.2 }); } k.push({ transform: 'translate(calc(-50% - 260px),-50%)', opacity: 0, offset: 1 }); anim(e, k, { duration: 1500, easing: 'ease-in-out' }); life = 1600; }
+    else if (type === 'trail') { for (let i = 0; i < 6; i++) { const e = put(pick(), { fontSize: '16px', left: x0 - 30 - i * 34 + 'px', top: y0 - 20 - i * 26 + (i % 2) * 14 + 'px' }); anim(e, [{ transform: `translate(-50%,-50%) rotate(-40deg) scale(.4)`, opacity: 0 }, { transform: 'translate(-50%,-50%) rotate(-40deg) scale(1)', opacity: .9, offset: .2 }, { opacity: 0 }], { duration: 1200, delay: i * 120 }); } life = 2000; }
+    else if (type === 'sparkle') { for (let i = 0; i < 14; i++) { const e = put(i % 3 ? '✦' : pick(), { fontSize: 10 + R() * 14 + 'px', color: '#fff6c0', textShadow: '0 0 8px rgba(255,240,160,.9)' }); const t = i / 14; anim(e, [{ transform: 'translate(-50%,-50%) scale(0)', opacity: 0 }, { transform: `translate(calc(-50% - ${t * 220}px),calc(-50% - ${Math.sin(t * Math.PI) * 120 + t * 80}px)) scale(1.2)`, opacity: 1, offset: .5 }, { transform: `translate(calc(-50% - ${t * 220}px),calc(-50% - ${Math.sin(t * Math.PI) * 120 + t * 80 - 20}px)) scale(0)`, opacity: 0 }], { duration: 900, delay: i * 45 }); } life = 1700; }
+    else if (type === 'ripple') { for (let i = 0; i < 3; i++) { const e = put('', { width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,.85)', boxShadow: '0 0 12px rgba(120,200,255,.6)' }); anim(e, [{ transform: 'translate(-50%,-50%) scale(.5)', opacity: .9 }, { transform: 'translate(-50%,-50%) scale(5)', opacity: 0 }], { duration: 1100, delay: i * 180, easing: 'ease-out' }); } }
+    else if (type === 'streak' || type === 'slash') { const c = arg || '#fff'; const sl = type === 'slash'; const e = put('', { left: sl ? '-10vw' : innerWidth + 'px', top: (sl ? y0 - 60 : 90 + R() * 120) + 'px', width: sl ? '130vw' : '160px', height: sl ? '4px' : '3px', borderRadius: '3px', background: `linear-gradient(90deg,transparent,${c},#fff)`, boxShadow: `0 0 14px 3px ${c}` }); if (sl) anim(e, [{ transform: 'rotate(-14deg) scaleX(0)', transformOrigin: 'right', opacity: 1 }, { transform: 'rotate(-14deg) scaleX(1)', opacity: 1, offset: .35 }, { transform: 'rotate(-14deg) scaleX(1)', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(.7,0,.3,1)' }); else anim(e, [{ transform: 'rotate(-25deg) translateX(0)', opacity: 0 }, { opacity: 1, offset: .2 }, { transform: `rotate(-25deg) translateX(-${innerWidth + 300}px)`, opacity: 0 }], { duration: 1100, easing: 'ease-in' }); life = 1200; }
+    setTimeout(() => L.remove(), life + 400);
+  };
   function paintAttach(t) {
     const lum = (h) => { const m = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(String(h).trim()); if (!m) return 1; let x = m[1]; if (x.length === 3) x = x.replace(/./g, '$&$&'); const n = parseInt(x, 16); return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; };
     let cs = (t.conf || []).filter((c) => lum(c) < 0.86);
@@ -241,7 +326,7 @@
     const t = cur;
     document.querySelectorAll('[data-mascot]').forEach((e) => { e.textContent = (t.game && t.game[e.dataset.mascot]) || t.mascot || e.dataset.def || e.textContent; });
     document.querySelectorAll('[data-ni]').forEach((e) => { if (!e.dataset.def) e.dataset.def = e.textContent; e.textContent = (t.nav && t.nav[e.dataset.ni]) || e.dataset.def; });
-    paintAttach(t); paintDeco(t);
+    paintAttach(t); paintDeco(t); paintTraits(t);
     document.getElementById('thMark')?.remove();
     paintHero(); paintSeason(); paintAmb(); paintPics();
     paintIcon(BY[LS('cc_theme')] || t);
