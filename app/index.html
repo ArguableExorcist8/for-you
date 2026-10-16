@@ -12,8 +12,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=23"><link rel="stylesheet" href="skins.css?v=23"><link rel="stylesheet" href="chat.css?v=23"><link rel="stylesheet" href="traits.css?v=23"><link rel="stylesheet" href="sig.css?v=23">
-<script src="themes.js?v=23"></script>
+<link rel="stylesheet" href="style.css?v=24"><link rel="stylesheet" href="ui.css?v=24"><link rel="stylesheet" href="skins.css?v=24"><link rel="stylesheet" href="chat.css?v=24"><link rel="stylesheet" href="traits.css?v=24"><link rel="stylesheet" href="sig.css?v=24">
+<script src="themes.js?v=24"></script>
 </head>
 <body data-tab="home">
 <div id="app">
@@ -62,9 +62,10 @@
 
   <!-- MAIN -->
   <section id="mainView" class="view hidden">
-    <header class="top"><span id="coupleTitle">💕</span><button class="gear" id="gearBtn" aria-label="Settings">⚙️</button></header>
+    <header class="top"><span id="coupleTitle">💕</span><button class="gear" id="gearBtn" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
 
     <div class="tab" id="tab-home">
+      <div class="homeHi" id="homeHi" aria-live="polite"></div>
       <div class="card today"><h2>🌈 Today</h2>
         <div id="homeStreak"></div>
         <div class="todayq" id="homeDQ"></div>
@@ -499,11 +500,11 @@
 <div id="chMenu" class="chMenu hidden"><div class="chMenuBox"><div class="chReacts" id="chReacts"></div><div class="chActs" id="chActs"></div></div></div>
 <div id="chVN" class="chVN hidden"><div class="chVNring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="bg"/><circle cx="60" cy="60" r="56" class="pr" id="chVNpr"/></svg><video id="chVNprev" playsinline muted autoplay></video></div><p id="chVNt">Tap ⏺ to record (max 60s)</p><div class="row"><button class="soft" id="chVNx">Cancel</button><button id="chVNgo">⏺ Record</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="config.js?v=23"></script>
-<script src="data.js?v=23"></script>
-<script src="trivia.js?v=23"></script>
-<script src="anim.js?v=23"></script>
-<script src="app.js?v=23"></script>
-<script src="cute.js?v=23"></script>
+<script src="config.js?v=24"></script>
+<script src="data.js?v=24"></script>
+<script src="trivia.js?v=24"></script>
+<script src="anim.js?v=24"></script>
+<script src="app.js?v=24"></script>
+<script src="cute.js?v=24"></script>
 </body>
 </html>

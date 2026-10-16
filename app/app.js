@@ -14,7 +14,7 @@ function uiDialog(msg, withInput) {
     o.querySelector('p').textContent = msg;
     document.body.appendChild(o);
     const inp = o.querySelector('.uiIn'); setTimeout(() => (inp || o.querySelector('.uiYes')).focus(), 50);
-    const done = v => { o.remove(); res(v); };
+    const done = v => { o.classList.add('out'); setTimeout(() => o.remove(), 190); res(v); };
     o.querySelector('.uiYes').onclick = () => done(withInput ? inp.value : true);
     o.querySelector('.uiNo').onclick = () => done(withInput ? null : false);
     o.onclick = e => { if (e.target === o) done(withInput ? null : false); };
@@ -36,6 +36,20 @@ const toast = (m, ms = 2600) => { const t = $('#toast'); if (window.__ccQueuedAt
 const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const fmtTime = (d) => new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(id).classList.remove('hidden'); if (id === '#mainView' || id === '#pairView') setTimeout(() => window.CC_maybeInstall && CC_maybeInstall(), 2500); };
+// ---- v24 smoothness helpers ----
+(() => {
+  let tick = 0; // header tightens once you scroll
+  addEventListener('scroll', () => { if (tick) return; tick = requestAnimationFrame(() => { tick = 0; document.body.classList.toggle('scrolled', window.scrollY > 12); }); }, { passive: true });
+  // images fade in when they arrive
+  document.addEventListener('load', (e) => { const t = e.target; if (t && t.tagName === 'IMG') t.classList.add('ld'); }, true);
+  document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG') t.classList.add('ld'); }, true);
+  // keyboard awareness: tuck the nav away while typing (outside chat)
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => { document.body.classList.toggle('kbOpen', innerHeight - visualViewport.height > 150); });
+  // tiny haptic ticks where touch feels physical
+  const buzz = (ms) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* */ } };
+  document.addEventListener('click', (e) => { if (e.target.closest('.nav button,.seg button,.gtile,.chips span,.emojis span')) buzz(6); }, true);
+  document.addEventListener('change', (e) => { if (e.target.matches('.tgl input[type=checkbox]')) buzz(10); }, true);
+})();
 const errMsg = (e) => (e && (e.message || e.error_description)) || String(e);
 
 // ---- state ----
@@ -438,9 +452,18 @@ const partnerName = () => nickFor(S.partner?.id)?.nickname || S.partner?.display
 const partnerEmoji = () => nickFor(S.partner?.id)?.emoji || S.partner?.emoji || '💗';
 function applyNames() {
   if (!S.partner) return;
-  $('#coupleTitle').textContent = `${S.me.emoji} ${S.me.display_name} 💕 ${partnerName()} ${partnerEmoji()}`;
+  $('#coupleTitle').textContent = `${S.me.emoji} ${S.me.display_name} 💕 ${partnerName()} ${partnerEmoji()}`; paintHi();
   $$('.pname').forEach((el) => (el.textContent = partnerName()));
 }
+// v24: a warm, time-aware hello at the top of Home
+function paintHi() {
+  const el = $('#homeHi'); if (!el || !S.me) return;
+  const d = new Date(), h = d.getHours();
+  const [g, e] = h < 5 ? ['Up late', '🌙'] : h < 12 ? ['Good morning', '☀️'] : h < 17 ? ['Good afternoon', '🌤️'] : h < 22 ? ['Good evening', '🌆'] : ['Good night', '🌙'];
+  const day = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  el.innerHTML = `<small>${esc(day)}</small><b>${g}, ${esc(S.me.display_name || 'love')} ${e}</b>`;
+}
+setInterval(paintHi, 10 * 60 * 1000);
 window.CC_partnerName = () => (S.partner ? partnerName() : null);
 const nameOf = (uid) => uid === S.user.id ? 'You' : (partnerName() || 'Your love');
 const emojiOf = (uid) => uid === S.user.id ? S.me.emoji : (partnerEmoji() || '💗');
@@ -689,8 +712,23 @@ $('#gallery').onclick = (e) => {
     if (error) toast(errMsg(error)); else closeModal();
   };
 };
-function openModal(html) { $('#modalBox').innerHTML = html; $('#modal').classList.remove('hidden'); }
-function closeModal() { $('#modal').classList.add('hidden'); }
+function openModal(html) { clearTimeout(closeModal.t); $('#modalBox').innerHTML = html; $('#modalBox').scrollTop = 0; $('#modalBox').style.transform = ''; $('#modal').classList.remove('hidden', 'out'); }
+function closeModal() {
+  const m = $('#modal'); if (m.classList.contains('hidden')) return;
+  if (!motionOn()) { m.classList.add('hidden'); return; }
+  m.classList.add('out'); clearTimeout(closeModal.t); closeModal.t = setTimeout(() => { m.classList.add('hidden'); m.classList.remove('out'); $('#modalBox').style.transform = ''; }, 240);
+}
+(() => { // drag the sheet down to dismiss it
+  const box = $('#modalBox'); let y0 = null, dy = 0, t0 = 0;
+  box.addEventListener('touchstart', (e) => { if (box.scrollTop > 0 || e.touches.length > 1) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); }, { passive: true });
+  box.addEventListener('touchmove', (e) => { if (y0 === null) return; dy = e.touches[0].clientY - y0; if (dy <= 0) { box.classList.remove('drag'); box.style.transform = ''; return; } if (box.scrollTop > 0) { y0 = null; return; } box.classList.add('drag'); box.style.transform = `translateY(${dy}px)`; }, { passive: true });
+  box.addEventListener('touchend', () => {
+    if (y0 === null) return; y0 = null; box.classList.remove('drag');
+    const fast = dy > 60 && Date.now() - t0 < 250;
+    if (dy > 130 || fast) { box.style.transition = 'transform .22s ease-in'; box.style.transform = 'translateY(100%)'; setTimeout(() => { box.style.transition = ''; $('#modal').classList.add('hidden'); box.style.transform = ''; }, 220); }
+    else if (dy > 0) { box.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)'; box.style.transform = ''; setTimeout(() => { box.style.transition = ''; }, 360); }
+  });
+})();
 $('#modal').onclick = (e) => { if (e.target.id === 'modal' || e.target.hasAttribute('data-close')) closeModal(); };
 
 // ---- timeline ----
@@ -1377,7 +1415,24 @@ function openFeat(f) {
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
 }
-function goTab(tab) { document.body.dataset.tab = tab; window.CC_picNext && window.CC_picNext(); $$('.nav button').forEach((x) => x.classList.toggle('on', x.dataset.tab === tab)); $$('.tab').forEach((t) => t.classList.add('hidden')); $('#tab-' + tab).classList.remove('hidden'); window.scrollTo(0, 0); }
+const TAB_ORDER = ['home', 'notes', 'us', 'memories', 'chat', 'play', 'me'];
+const tabScroll = {};
+function goTab(tab) {
+  const prev = document.body.dataset.tab;
+  if (prev === tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } // re-tap the current tab = back to top
+  if (prev) tabScroll[prev] = window.scrollY;
+  document.body.dataset.tab = tab; window.CC_picNext && window.CC_picNext();
+  $$('.nav button').forEach((x) => x.classList.toggle('on', x.dataset.tab === tab));
+  $$('.tab').forEach((t) => t.classList.add('hidden'));
+  const el = $('#tab-' + tab); el.classList.remove('hidden', 'tabIn', 'fromL');
+  if (prev && motionOn()) {
+    void el.offsetWidth; el.classList.add('tabIn'); if (TAB_ORDER.indexOf(tab) < TAB_ORDER.indexOf(prev)) el.classList.add('fromL');
+    el.addEventListener('animationend', function done(ev) { if (ev.target === el) { el.classList.remove('tabIn', 'fromL'); el.removeEventListener('animationend', done); } });
+  }
+  window.scrollTo({ top: tabScroll[tab] || 0, behavior: 'instant' });
+  document.body.classList.toggle('scrolled', window.scrollY > 12);
+}
+function motionOn() { return !(matchMedia('(prefers-reduced-motion: reduce)').matches || localStorage.getItem('cc_reduce_motion') === '1'); }
 $$('[data-feat]').forEach((b) => b.onclick = () => openFeat(b.dataset.feat));
 $('#featBack').onclick = () => { curFeat = null; $('#featPanel').classList.add('hidden'); $('#usHome').classList.remove('hidden'); };
 $('#gearBtn').onclick = () => goTab('me');

@@ -1,0 +1,188 @@
+/* ================= UI v24 — whole-app polish & smoothness =================
+   Loaded after style.css and before the theme layers (skins/traits/sig), so it lifts the
+   base app everywhere while every theme still gets the last word on its own look. */
+
+:root{
+  --uiSpring:cubic-bezier(.34,1.56,.64,1);
+  --uiEase:cubic-bezier(.22,1,.36,1);
+  --uiFast:.18s;--uiMed:.32s;
+  --uiFont:ui-rounded,"SF Pro Rounded","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",Roboto,"Helvetica Neue",system-ui,sans-serif;
+}
+
+/* ---------- type & rendering ---------- */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:var(--uiFont);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;line-height:1.45;font-feature-settings:"kern","liga"}
+button,input,textarea,select{font-family:inherit}
+h1,h2,h3{letter-spacing:-.015em;line-height:1.2}
+.card h2{font-weight:750;font-size:19px;margin-bottom:12px}
+.muted{line-height:1.5}
+::selection{background:rgba(var(--acR),.28)}
+:focus-visible{outline:2.5px solid rgba(var(--acR),.75);outline-offset:2px;border-radius:10px}
+button:focus:not(:focus-visible){outline:none}
+
+/* ---------- sticky glass app bar that tightens as you scroll ---------- */
+#mainView>header.top{position:sticky;top:0;z-index:30;margin:calc(-1 * (env(safe-area-inset-top,0px) + 8px)) -14px 4px;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 56px 10px;transition:padding var(--uiMed) var(--uiEase),box-shadow var(--uiMed),background-color var(--uiMed)}
+#mainView>header.top::before{content:'';position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity var(--uiMed);
+  background:rgba(var(--cdR),.72);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);border-bottom:.5px solid rgba(var(--shR),.14)}
+body.scrolled #mainView>header.top .gear{top:calc(env(safe-area-inset-top,0px) + 4px);width:36px;height:36px}
+body.scrolled #mainView>header.top{padding-top:calc(env(safe-area-inset-top,0px) + 6px);padding-bottom:6px;box-shadow:0 6px 20px rgba(var(--shR),.10)}
+body.scrolled #mainView>header.top::before{opacity:1}
+body.scrolled #thHero img{height:28px!important}
+body.scrolled #thHero .hw{font-size:22px!important}
+body.scrolled #thHero .ha{font-size:18px!important}
+body.scrolled #coupleTitle{font-size:14px!important}
+#coupleTitle{transition:font-size var(--uiMed) var(--uiEase);letter-spacing:-.01em}
+#thHero img,#thHero .hw,#thHero .ha{transition:height var(--uiMed) var(--uiEase),font-size var(--uiMed) var(--uiEase)!important}
+/* settings button: a real icon button, not an emoji */
+#mainView>header.top .gear{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 8px);bottom:auto;transform:none;width:40px;height:40px;margin:0;padding:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--tx);background:rgba(var(--cdR),.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 2px 10px rgba(var(--shR),.14),inset 0 0 0 .5px rgba(var(--shR),.12);transition:transform .3s var(--uiSpring),background .2s}
+#mainView>header.top .gear svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .6s var(--uiSpring)}
+#mainView>header.top .gear:active{transform:scale(.86)}
+#mainView>header.top .gear:active svg,body[data-tab=me] #mainView>header.top .gear svg{transform:rotate(90deg)}
+body[data-tab=me] #mainView>header.top .gear{background:var(--ac);color:var(--on)}
+html[data-pic] #mainView>header.top .gear{color:#fff;background:rgba(0,0,0,.25)}
+
+/* ---------- tab transitions ---------- */
+.tab.tabIn{animation:tabIn var(--uiMed) var(--uiEase) both}
+.tab.tabIn.fromL{animation-name:tabInL}
+@keyframes tabIn{from{opacity:0;transform:translate3d(18px,0,0)}}
+@keyframes tabInL{from{opacity:0;transform:translate3d(-18px,0,0)}}
+#tab-chat.tabIn{animation:none}
+
+/* ---------- bottom nav ---------- */
+.nav{padding-top:7px;transition:transform .35s var(--uiEase)}
+.nav button{transition:color .2s,background-color .25s,transform .25s var(--uiSpring);-webkit-touch-callout:none;user-select:none}
+.nav button i.ni{display:inline-block;font-style:normal;transition:transform .35s var(--uiSpring)}
+.nav button:active i.ni{transform:scale(.82)}
+.nav button.on i.ni{animation:navPop .45s var(--uiSpring)}
+@keyframes navPop{40%{transform:scale(1.22) translateY(-2px)}}
+.nav button span{font-size:10.5px;font-weight:650;letter-spacing:.01em;opacity:.9;margin-top:2px}
+.nav button:not(.on){color:rgba(var(--txR),.62)}
+.nav button.on span{opacity:1}
+/* hide the bar while the keyboard is up (chat handles itself) */
+body.kbOpen:not(.inChat) .nav{transform:translateY(110%)}
+
+/* ---------- cards & sections ---------- */
+.card{padding:20px 18px;margin:16px 0;transition:transform .3s var(--uiSpring),box-shadow .3s}
+.gsec{font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mu);margin:22px 6px 8px;display:flex;align-items:center;gap:6px}
+.secHead{font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mu)}
+.tab>p.muted:first-child{margin-top:4px}
+
+/* ---------- universal press feedback ---------- */
+:where(.gtile,.chips span,.env,.polaroid,.person,.coupon,.emojis span,.mc,.opt,.pol,.thP){transition:transform .28s var(--uiSpring),box-shadow .25s,background-color .2s}
+:where(.gtile,.chips span,.env,.polaroid,.person,.emojis span,.mc,.opt,.pol,.thP):active{transform:scale(.95)}
+button:active{transition-duration:.08s}
+.emojis span{transition:transform .3s var(--uiSpring),background-color .2s,border-color .2s}
+.emojis span:hover{transform:scale(1.15)}
+.emojis span:active{transform:scale(.88)}
+.emojis span.on{animation:navPop .45s var(--uiSpring)}
+
+/* ---------- inputs ---------- */
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),textarea,select{
+  transition:border-color .2s,box-shadow .25s,background-color .2s;border-width:1.5px}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):focus,textarea:focus,select:focus{box-shadow:0 0 0 4px rgba(var(--acR),.16);background-color:var(--cd)}
+select{-webkit-appearance:none;appearance:none;padding-right:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+textarea{line-height:1.45}
+
+/* ---------- iOS-style switches for every checkbox toggle ---------- */
+.tgl{padding:12px 2px;border-bottom:.5px solid rgba(var(--shR),.12);gap:14px}
+.tgl:last-child{border-bottom:0}
+.tgl span{font-weight:600}
+.tgl small{font-weight:400;margin-top:2px}
+.tgl input[type=checkbox]{order:2;-webkit-appearance:none;appearance:none;width:50px!important;height:30px!important;border-radius:30px;margin:0;flex:none;cursor:pointer;position:relative;
+  background:rgba(var(--txR),.16);border:0;transition:background-color .25s var(--uiEase);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06)}
+.tgl input[type=checkbox]::after{content:'';position:absolute;left:2px;top:2px;width:26px;height:26px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.22),0 0 0 .5px rgba(0,0,0,.05);transition:transform .32s var(--uiSpring),width .18s}
+.tgl input[type=checkbox]:checked{background:var(--ac)}
+.tgl input[type=checkbox]:checked::after{transform:translateX(20px)}
+.tgl input[type=checkbox]:active::after{width:31px}
+.tgl input[type=checkbox]:checked:active::after{transform:translateX(15px)}
+
+/* ---------- segmented controls ---------- */
+.seg{padding:4px;gap:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+.seg button{transition:background-color .25s var(--uiEase),color .2s,box-shadow .25s,transform .2s var(--uiSpring);font-weight:700}
+.seg button.on{box-shadow:0 3px 10px rgba(var(--acR),.3)}
+.segCol{gap:6px}
+
+/* ---------- chips ---------- */
+.chips span{font-weight:600;padding:7px 14px;box-shadow:inset 0 0 0 1px rgba(var(--acR),.12)}
+.chips span.on{box-shadow:0 3px 10px rgba(var(--acR),.3);animation:navPop .4s var(--uiSpring)}
+
+/* ---------- toast: a floating pill that springs in ---------- */
+#toast{display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;font-weight:600;font-size:14.5px;line-height:1.35;
+  box-shadow:0 12px 32px rgba(0,0,0,.22),inset 0 0 0 .5px rgba(255,255,255,.12);
+  transform:translate(-50%,24px) scale(.92);transition:opacity .25s,transform .45s var(--uiSpring);text-align:left}
+#toast.show{transform:translate(-50%,0) scale(1)}
+body.inChat #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 140px)}
+
+/* ---------- dialogs ---------- */
+.uiDlg{background:rgba(var(--txR),.28);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);animation:uiFade .22s ease both}
+.uiBox{animation:uiPop .42s var(--uiSpring) both;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.uiBox p{font-weight:600}
+.uiBtns button{transition:transform .25s var(--uiSpring),filter .2s}
+.uiDlg.out{animation:uiFade .18s ease reverse both}.uiDlg.out .uiBox{animation:uiPop .2s ease reverse both}
+@keyframes uiFade{from{opacity:0}}
+@keyframes uiPop{from{opacity:0;transform:scale(.86) translateY(14px)}}
+
+/* ---------- modal → bottom sheet (games, photos, details) ---------- */
+.modal{align-items:flex-end;padding:0;background:rgba(var(--txR),.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:uiFade .25s ease both}
+.modal>.card{max-width:520px;width:100%;margin:0 auto!important;max-height:calc(92vh - env(safe-area-inset-top,0px));
+  border-radius:28px 28px 0 0!important;padding:26px 18px calc(env(safe-area-inset-bottom,0px) + 22px);overscroll-behavior:contain;
+  animation:sheetUp .5s var(--uiEase) both;position:relative;touch-action:pan-y}
+.modal>.card::before{content:'';position:sticky;display:block;top:-16px;margin:-14px auto 10px;width:40px;height:5px;border-radius:5px;background:rgba(var(--txR),.22);z-index:3}
+.modal.out{animation:uiFade .22s ease reverse both}.modal.out>.card{animation:sheetDown .26s ease-in both}
+.modal>.card.drag{transition:none;animation:none}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+@keyframes sheetDown{to{transform:translateY(100%)}}
+@media (min-width:700px){.modal{align-items:center;padding:20px}.modal>.card{border-radius:28px!important;animation:uiPop .42s var(--uiSpring) both}}
+
+/* ---------- images fade in instead of popping ---------- */
+:is(.polaroid,.pf,.chMedia,#gallery) img{opacity:0;transition:opacity .45s ease}
+:is(.polaroid,.pf,.chMedia,#gallery) img.ld{opacity:1}
+
+/* ---------- loading & skeletons ---------- */
+#loadingView .hero p{font-weight:700;letter-spacing:.02em;background:linear-gradient(90deg,var(--mu),var(--ac),var(--mu));background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 1.6s linear infinite}
+@keyframes shine{to{background-position:-200% 0}}
+
+/* ---------- scrolling ---------- */
+html{scroll-padding-top:80px}
+body{overscroll-behavior-y:none}
+.modal>.card,.chatList{-webkit-overflow-scrolling:touch}
+
+/* ---------- performance: long settings list renders lazily ---------- */
+#tab-me>.card{content-visibility:auto;contain-intrinsic-size:auto 220px}
+
+@media (prefers-reduced-motion: reduce){
+  .tab.tabIn,.uiBox,.uiDlg,.modal,.modal>.card,.nav button.on i.ni,#toast,.emojis span.on,.chips span.on{animation:none!important;transition:none!important}
+}
+html.still .tab.tabIn{animation:none}
+
+/* title stays readable on the glass bar */
+body.scrolled #coupleTitle,body.scrolled #mainView>header.top{color:var(--tx)!important;text-shadow:none!important}
+/* sheets keep a clean straight edge whatever the theme's card shape is */
+.modal>.card{-webkit-mask:none!important;mask:none!important;clip-path:none!important;transform-origin:50% 100%}
+html[data-shape=scrapbook] .modal>.card{rotate:0deg}
+
+/* ---------- Home greeting ---------- */
+.homeHi{text-align:left;padding:6px 6px 2px;animation:tabIn .5s var(--uiEase) both}
+.homeHi:empty{display:none}
+.homeHi small{display:block;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);opacity:.9}
+.homeHi b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-top:2px;color:var(--tx);font-family:var(--skF,inherit)}
+html[data-pic=bg] .homeHi :is(small,b){color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+
+/* ---------- performance: paint the theme background once, on a fixed layer ----------
+   (background-attachment:fixed forces a full repaint on every scroll frame on phones) */
+html{background:var(--bg)}
+body{background:transparent!important;background-attachment:scroll!important}
+body::after{content:'';position:fixed;inset:0;z-index:-5;background:var(--bg);pointer-events:none}
+
+/* a toast never lands on top of an open sheet */
+body:has(.modal:not(.hidden)) #toast{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translate(-50%,-24px) scale(.92)}
+body:has(.modal:not(.hidden)) #toast.show{transform:translate(-50%,0) scale(1)}
+/* loose text sits above background scenery */
+.homeHi,.gsec,.secHead,.tab>p.muted,.tab>h2,.tab>.muted{position:relative;z-index:2}
