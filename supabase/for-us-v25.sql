@@ -282,7 +282,7 @@ create extension if not exists supabase_vault;
 do $$
 begin
   if not exists (select 1 from vault.secrets where name = 'fu_nudge_key') then
-    perform vault.create_secret(encode(gen_random_bytes(24), 'hex'), 'fu_nudge_key');
+    perform vault.create_secret(encode(extensions.gen_random_bytes(24), 'hex'), 'fu_nudge_key');
   end if;
 end $$;
 create or replace function public.fu_nudge_key() returns text
