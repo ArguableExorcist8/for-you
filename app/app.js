@@ -2775,8 +2775,8 @@ function chPatch(box) {
   CH.list.forEach((m, i) => {
     const html = chMsgHtml(m, CH.list[i - 1], CH.list[i + 1]); const key = html.replace(' fresh', '');
     let n = old[m.id];
-    if (n && n.__k === key) delete old[m.id];
-    else { if (n) { n.remove(); delete old[m.id]; } n = document.createElement('div'); n.className = 'chU'; n.dataset.u = m.id; n.innerHTML = html; n.__k = key; }
+    if (n) { delete old[m.id]; if (n.__k !== key) { n.innerHTML = html; n.__k = key; } } // update in place, never detach the anchor
+    else { n = document.createElement('div'); n.className = 'chU'; n.dataset.u = m.id; n.innerHTML = html; n.__k = key; }
     if (n !== at) box.insertBefore(n, at); else at = at.nextSibling;
   });
   Object.values(old).forEach((n) => n.remove());
