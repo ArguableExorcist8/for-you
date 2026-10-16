@@ -1,0 +1,35 @@
+/* ================= v28 theme personalities ================= */
+/* emoji confetti */
+.conf.fuConfE{width:auto;height:auto;background:none!important;line-height:1}
+
+/* "just for us" card */
+.fuThemeQ > h2{margin-bottom:6px}
+.fuThemeQ .fuTQ{font-size:17px;font-weight:700;line-height:1.35;margin:4px 0 10px;text-align:left}
+.fuThemeQ .fuTQb{display:flex;gap:8px;flex-wrap:wrap}
+.fuThemeQ .fuTQb button{margin:0!important;flex:0 0 auto}
+.fuThemeQ .fuTI{margin:10px 0 0;font-size:13px;text-align:left}
+
+/* day & night: the theme shifts with the hour */
+#fuTint{position:fixed;inset:0;pointer-events:none;z-index:35;opacity:0;transition:opacity 1.2s}
+html[data-tod=golden]:not([data-dark="1"]) #fuTint{opacity:1;background:linear-gradient(180deg,rgba(255,170,90,.10),rgba(255,120,80,.06) 60%,transparent);mix-blend-mode:multiply}
+html[data-tod=night]:not([data-dark="1"]) #fuTint{opacity:1;background:linear-gradient(180deg,rgba(40,40,110,.16),rgba(30,20,80,.08) 55%,rgba(30,20,80,.04));mix-blend-mode:multiply}
+html[data-tod=night][data-dark="1"] #thDeco,html[data-tod=night][data-dark="1"] #thDecoB{filter:brightness(1.18) drop-shadow(0 0 10px rgba(255,220,150,.25))}
+#fuSky{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+#fuSky i{position:absolute;font-style:normal;font-size:14px;opacity:0;animation:fuTw 7s ease-in-out infinite;filter:drop-shadow(0 0 6px rgba(255,240,190,.7))}
+#fuSky i:nth-child(even){font-size:10px;color:#fff6c8}
+@keyframes fuTw{0%,100%{opacity:0;transform:scale(.6)}40%,60%{opacity:.75;transform:scale(1)}}
+
+/* hidden surprise */
+.fuEgg{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(10,5,20,0);transition:background .35s;padding:24px}
+.fuEgg.on{background:rgba(10,5,20,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.fuEggIn{text-align:center;color:#fff;transform:scale(.6);opacity:0;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.fuEgg.on .fuEggIn{transform:none;opacity:1}
+.fuEggIn b{display:block;font-size:96px;line-height:1.1;animation:fuEggB 1.6s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(0,0,0,.4))}
+.fuEggIn p{font-size:19px;font-weight:800;margin:12px auto 6px;max-width:300px;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.fuEggIn small{opacity:.8;font-size:12.5px}
+@keyframes fuEggB{50%{transform:translateY(-10px) rotate(-4deg) scale(1.05)}}
+
+/* both here */
+.fuMoment{position:fixed;left:0;top:0;z-index:118;font-size:54px;line-height:1;pointer-events:none;margin:-27px 0 0 -27px;filter:drop-shadow(0 0 10px rgba(var(--acR),.9)) drop-shadow(0 0 22px rgba(255,255,255,.35))}
+
+@media (prefers-reduced-motion: reduce){#fuSky{display:none}.fuEggIn b{animation:none}}

@@ -472,7 +472,7 @@ function paintHi() {
   const d = new Date(), h = d.getHours();
   const [g, e] = h < 5 ? ['Up late', '🌙'] : h < 12 ? ['Good morning', '☀️'] : h < 17 ? ['Good afternoon', '🌤️'] : h < 22 ? ['Good evening', '🌆'] : ['Good night', '🌙'];
   const day = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  el.innerHTML = `<small>${esc(day)}</small><b>${g}, ${esc(S.me.display_name || 'love')} ${e}</b>`;
+  el.innerHTML = `<small>${esc(day)}</small><b>${g}, ${esc(S.me.display_name || 'love')} ${TP('hiEm', h) || e}</b>`;
 }
 setInterval(paintHi, 10 * 60 * 1000);
 window.CC_partnerName = () => (S.partner ? partnerName() : null);
@@ -527,17 +527,18 @@ async function sendPing() {
   const { error } = await sb.from('pings').insert({});
   if (error) { toast('Ping failed: ' + errMsg(error)); return false; }
   floatHearts(document.body, 14);
-  notify('ping', D.pingLines[Math.floor(Math.random() * D.pingLines.length)]);
-  toast(`Ping sent to ${partnerName()}! 💗`);
+  notify('ping', TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)]);
+  TP('sound', 'ping'); toast(TP('pingSent', partnerName()) || `Ping sent to ${partnerName()}! 💗`);
   return true;
 }
 $('#pingBtn').onclick = () => sendPing();
 function showPingFrom(p) {
   if (p.kind === 'hug') { showHugOverlay(`${partnerName()} is hugging you 🤗`); return; }
-  const line = D.pingLines[Math.floor(Math.random() * D.pingLines.length)];
+  const line = TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)];
+  TP('sound', 'ping');
   $('#heartTxt').textContent = `${partnerName()} ${line}`;
   const o = $('#heartOverlay'); o.classList.remove('hidden'); floatHearts(o, 24);
-  if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+  if (navigator.vibrate) navigator.vibrate(TP('buzz', 'ping') || [100, 60, 100]);
 }
 $('#heartOverlay').onclick = () => $('#heartOverlay').classList.add('hidden');
 function floatHearts(el, n) {
@@ -553,7 +554,7 @@ RENDER.pings = () => {
   const l = S.data.pings || [];
   const today = l.filter((p) => new Date(p.created_at).toDateString() === new Date().toDateString());
   $('#pingHint').textContent = `Today: you sent ${today.filter((p) => p.created_by === S.user.id).length}, got ${today.filter((p) => p.created_by !== S.user.id).length} 💞`;
-  $('#pingList').innerHTML = l.length ? l.map((p) => `<div class="row"><span>${esc(emojiOf(p.created_by))} ${p.created_by === S.user.id ? 'You pinged ' + esc(partnerName()) : esc(partnerName()) + ' pinged you'}</span><small>${fmtTime(p.created_at)}</small></div>`).join('') : '<p class="muted">No pings yet. Tap the big heart!</p>';
+  $('#pingList').innerHTML = l.length ? l.map((p) => `<div class="row"><span>${esc(emojiOf(p.created_by))} ${p.created_by === S.user.id ? 'You pinged ' + esc(partnerName()) : esc(partnerName()) + ' pinged you'}</span><small>${fmtTime(p.created_at)}</small></div>`).join('') : `<p class="muted">${esc(TP('w', 'empty') || 'No pings yet. Tap the big heart!')}</p>`;
 };
 async function runPendingAction() {
   const a = localStorage.getItem(ACTION_KEY);
@@ -690,7 +691,7 @@ RENDER.photos = async () => {
     (data || []).forEach((d) => { if (d.signedUrl) S.signedUrls[d.path] = { url: d.signedUrl, exp: Date.now() + 3600 * 5 * 1000 }; });
   }
   await chSign(l.filter((p) => p.bucket === 'chat').map((p) => p.path));
-  $('#gallery').innerHTML = l.length ? l.map((p) => `<div class="polaroid${phIsVid(p) ? ' isVid' : ''}" data-photo="${p.id}"><button class="phDel" data-pdel="${p.id}" aria-label="Delete">✕</button>${p.message_id ? '<span class="phSrc" title="From our chat">💬</span>' : ''}${phIsVid(p) ? `<div class="phVid"><video src="${esc(phUrl(p))}#t=0.1" preload="metadata" muted playsinline></video><span class="chPlay">▶</span>${p.duration ? `<span class="chDur">${fmtDur(p.duration)}</span>` : ''}</div>` : `<img loading="lazy" src="${esc(phUrl(p))}" alt="">`}<p>${esc(p.caption || '')}</p></div>`).join('') : '<p class="muted" style="grid-column:1/-1">No photos yet 📷 — photos & videos you send in Chat land here too 💬</p>';
+  $('#gallery').innerHTML = l.length ? l.map((p) => `<div class="polaroid${phIsVid(p) ? ' isVid' : ''}" data-photo="${p.id}"><button class="phDel" data-pdel="${p.id}" aria-label="Delete">✕</button>${p.message_id ? '<span class="phSrc" title="From our chat">💬</span>' : ''}${phIsVid(p) ? `<div class="phVid"><video src="${esc(phUrl(p))}#t=0.1" preload="metadata" muted playsinline></video><span class="chPlay">▶</span>${p.duration ? `<span class="chDur">${fmtDur(p.duration)}</span>` : ''}</div>` : `<img loading="lazy" src="${esc(phUrl(p))}" alt="">`}<p>${esc(p.caption || '')}</p></div>`).join('') : `<p class="muted" style="grid-column:1/-1">${esc(TP('w', 'empty') || 'No photos yet 📷')} — photos & videos you send in Chat land here too 💬</p>`;
 };
 async function photoDelete(p) {
   const fromChat = !!p.message_id || p.bucket === 'chat';
@@ -880,6 +881,8 @@ function welcomeBack() {
 // ================= GAMES =================
 // ---- fx helpers ----
 const rnd = (a) => a[Math.floor(Math.random() * a.length)];
+// v28: the theme's personality (persona.js) — every call falls back to the default when it's missing
+const TP = (k, ...a) => { try { const p = window.FU_P; const f = p && p[k]; return f ? f(...a) : undefined; } catch { return undefined; } };
 let AC = null;
 function snd(type) {
   try {
@@ -897,6 +900,7 @@ function hearts(n, x, y) {
   }
 }
 function confetti(n = 80) {
+  TP('confettiEm', n);
   const c = ['#e75480', '#ff8fab', '#ffd166', '#a0e7e5', '#c77dff', '#fff'];
   for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'conf'; d.style.left = Math.random() * 100 + 'vw'; d.style.background = rnd(c); d.style.animationDuration = (2 + Math.random() * 2) + 's'; d.style.animationDelay = Math.random() * .5 + 's'; document.body.appendChild(d); setTimeout(() => d.remove(), 5000); }
 }
@@ -1419,7 +1423,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=28'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=29'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -1457,7 +1461,7 @@ async function refreshProgress() {
 setInterval(() => { if (!document.hidden && S.couple) refreshProgress(); }, 60000);
 function renderStreak() {
   const st = S.streak; const myToday = didToday(S.user.id);
-  const html = `<div class="streak"><div class="flame">🔥 ${st.current}<small>day streak</small></div><div class="flame">🏆 ${st.best}<small>best</small></div></div>
+  const html = `<div class="streak"><div class="flame">${TP('w', 'streakIcon') || '🔥'} ${st.current}<small>${TP('w', 'streak') || 'day streak'}</small></div><div class="flame">🏆 ${st.best}<small>best</small></div></div>
     <p class="muted">${st.today_both ? 'You both showed up today 💞' : myToday ? `Waiting for ${pn()} to check in today…` : 'Answer, check in or drop a gratitude to keep the flame alive!'}</p>`;
   $('#homeStreak').innerHTML = html; $('#usStreak').innerHTML = html;
 }
@@ -2883,7 +2887,7 @@ function chSubscribe() {
       const list = $('#chatList'); const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 140;
       chRender(isNew && chMine(r) ? 'bottom' : undefined); chSaveCache();
       if (isNew && !chMine(r)) {
-        hideTyping(); snd('pop'); if (navigator.vibrate && chOpen()) navigator.vibrate(20);
+        hideTyping(); if (!TP('sound', 'recv')) snd('pop'); if (navigator.vibrate && chOpen()) navigator.vibrate(TP('buzz', 'recv') || 20);
         if (!chOpen()) { CH.unreadServer++; toast(`${partnerEmoji()} ${partnerName()}: ${chPreview(r).slice(0, 60)}`, 3500); }
         else if (!nearBottom) { CH.newBelow++; chDownBtn(); }
         chMarkSoon();
@@ -2987,7 +2991,7 @@ $('#chTxt').addEventListener('input', () => {
   if (CH.ch && shared('chat_typing', true) && Date.now() - CH.lastTyping > 2000) { CH.lastTyping = Date.now(); CH.ch.send({ type: 'broadcast', event: 'typing', payload: { uid: S.user.id } }); }
 });
 $('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window) && shared('chat_enter_send', true)) { e.preventDefault(); if ($('#chTxt').value.trim() && window.CC_sendFx) CC_sendFx($('#chSend')); chSendText(); } });
-$('#chSend').onclick = () => { if (navigator.vibrate) navigator.vibrate(8); if (window.CC_sendFx) CC_sendFx($('#chSend')); chSendText(); $('#chTxt').focus(); };
+$('#chSend').onclick = () => { if (navigator.vibrate) navigator.vibrate(TP('buzz', 'send') || 8); TP('sound', 'send'); if (window.CC_sendFx) CC_sendFx($('#chSend')); chSendText(); $('#chTxt').focus(); };
 $('#chSend').addEventListener('pointerdown', (e) => e.preventDefault()); // keep the keyboard open on tap
 $('#chPlus').onclick = () => { $('#chAttach').classList.toggle('hidden'); $('#chPlus').classList.toggle('on'); };
 ['chGal', 'chCam', 'chCamV'].forEach((id) => { $('#' + id).onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f); e.target.value = ''; }; });
@@ -3058,7 +3062,7 @@ $('#chMsgs').addEventListener('click', (e) => {
 function chJump(id) { const el = document.querySelector(`.chRow[data-id="${id}"]`); if (!el) return toast('That message is further up 💭'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
 function chMenu(id) {
   const m = CH.byId[id]; if (!m || m.deleted || m._pending) return; if (navigator.vibrate) navigator.vibrate(15);
-  $('#chReacts').innerHTML = CH_REACTS.map((e) => `<button data-r="${e}" class="${(m.reactions || {})[S.user.id] === e ? 'on' : ''}">${e}</button>`).join('');
+  $('#chReacts').innerHTML = (TP('rx') || CH_REACTS).map((e) => `<button data-r="${e}" class="${(m.reactions || {})[S.user.id] === e ? 'on' : ''}">${e}</button>`).join('');
   const acts = [['reply', 'Reply', '↩️']]; if (m.kind === 'text') acts.push(['copy', 'Copy', '📋']); if (m.media_path) acts.push(['open', m.kind === 'file' ? 'Download' : 'Open', m.kind === 'file' ? '⬇️' : '🔍']);
   if (chMine(m)) acts.push(['del', 'Delete for both', '🗑️']);
   $('#chActs').innerHTML = acts.map(([k, l, i]) => `<button data-a="${k}" class="${k === 'del' ? 'danger' : ''}"><span>${l}</span><span class="ai">${i}</span></button>`).join('');

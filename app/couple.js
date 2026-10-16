@@ -43,7 +43,7 @@ function subscribe() {
   const c = S().couple; if (!c) return;
   chan = F().sb.channel('v25-' + c.id, { config: { presence: { key: me() }, broadcast: { self: false } } });
   [...HAS].forEach((t) => chan.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: `couple_id=eq.${c.id}` }, (p) => onChange(t, p)));
-  chan.on('presence', { event: 'sync' }, () => { together = Object.keys(chan.presenceState()).includes(them()); paintStatus(); chatStatus(); });
+  chan.on('presence', { event: 'sync' }, () => { together = Object.keys(chan.presenceState()).includes(them()); paintStatus(); chatStatus(); document.dispatchEvent(new CustomEvent('fu:together', { detail: together })); });
   chan.on('broadcast', { event: 'touch' }, (p) => { if (p.payload?.from !== me()) playTouch(p.payload.pattern, p.payload.id); });
   chan.subscribe((st) => { if (st === 'SUBSCRIBED' && !document.hidden) chan.track({ at: Date.now() }); });
 }
