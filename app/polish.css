@@ -80,7 +80,8 @@ html[data-navs=float] .nav{background:linear-gradient(rgba(var(--cdR),0),rgba(va
   -webkit-mask:linear-gradient(transparent,#000 22px);mask:linear-gradient(transparent,#000 22px)}
 @media (prefers-reduced-motion: reduce){.nav{transition:opacity .2s!important}body.navAway .nav{transform:none!important}}
 /* ground scenery follows the nav up and down */
-#thDeco .sg,#thDecoB .sg{transition:bottom .38s var(--uiEase,cubic-bezier(.22,1,.36,1))}
+#thDeco .fuGround,#thDecoB .fuGround{transition:translate .42s var(--uiEase,cubic-bezier(.22,1,.36,1))}
+body.navAway :is(#thDeco,#thDecoB) .fuGround,body.kbOpen :is(#thDeco,#thDecoB) .fuGround{translate:0 var(--navDrop,0px)}
 /* floating-icon navs: no dead band under the icons */
 html[data-navs=float] .nav{padding-top:4px!important;padding-bottom:max(2px,calc(env(safe-area-inset-bottom,0px) - 12px))!important}
 html[data-navs=float] .nav button{padding-top:2px;padding-bottom:0}

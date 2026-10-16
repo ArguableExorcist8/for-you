@@ -123,15 +123,26 @@ function autoNav() {
 }
 
 
-// ---------- the theme's ground scenery sits on the nav's real top edge, and drops with it ----------
+// ---------- the theme's ground scenery sits on the nav, and slides down with it (transform only, so it stays smooth) ----------
 function navEdge() {
   const n = document.querySelector('.nav'); if (!n) return;
-  const away = document.body.classList.contains('navAway') || document.body.classList.contains('kbOpen') || document.body.classList.contains('inChat');
-  const h = away ? 0 : Math.max(0, innerHeight - n.getBoundingClientRect().top + (parseFloat(getComputedStyle(n).transform.split(',')[5]) || 0));
-  document.documentElement.style.setProperty('--navTop', away ? 'env(safe-area-inset-bottom,0px)' : Math.round(h) + 'px');
+  const away = document.body.classList.contains('navAway') || document.body.classList.contains('kbOpen');
+  if (away) return; // keep the resting height; the ground just slides down by it
+  const ty = parseFloat((getComputedStyle(n).transform.split(',')[5]) || 0) || 0;
+  const h = Math.max(0, Math.round(innerHeight - n.getBoundingClientRect().top + ty));
+  const r = document.documentElement.style; if (r.getPropertyValue('--navTop') !== h + 'px') { r.setProperty('--navTop', h + 'px'); r.setProperty('--navDrop', h + 'px'); setTimeout(markGround, 60); }
+}
+function markGround() {
+  const H = innerHeight;
+  document.querySelectorAll('#thDeco > *, #thDecoB > *').forEach((el) => {
+    if (el.classList.contains('fuGround')) return;
+    const b = el.getBoundingClientRect(); if (!b.height && !b.width) return;
+    if (b.bottom > H * 0.72 && b.top > H * 0.35) el.classList.add('fuGround');
+  });
 }
 new MutationObserver(navEdge).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-addEventListener('resize', navEdge); document.addEventListener('cc:theme', () => setTimeout(navEdge, 120));
+addEventListener('resize', () => { navEdge(); markGround(); });
+document.addEventListener('cc:theme', () => setTimeout(() => { navEdge(); markGround(); }, 150));
 
 // ---------- boot ----------
 function run() {
@@ -141,5 +152,5 @@ function run() {
 const prevEnter = window.FU_enter;
 window.FU_enter = async (...a) => { const p = prevEnter ? prevEnter(...a) : undefined; run(); try { return await p; } finally { run(); } }; // tidy at once, again when data lands
 if (document.readyState !== 'loading') { markOrnament(); tidySettings(); tidyNotes(); tidyPings(); } else document.addEventListener('DOMContentLoaded', run);
-pullToRefresh(); autoNav(); setTimeout(navEdge, 300);
+pullToRefresh(); autoNav(); setTimeout(() => { navEdge(); markGround(); }, 300);
 })();
