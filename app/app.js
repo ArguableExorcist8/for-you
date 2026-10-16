@@ -1410,7 +1410,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=26'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=27'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -3192,15 +3192,24 @@ $('#chVNgo').onclick = () => {
 };
 
 // ---- layout & lifecycle ----
+let chKb = false;
 function chLayout() {
   const app = $('#chatApp'); if (!app || $('#tab-chat').classList.contains('hidden')) return;
-  const head = document.querySelector('#mainView header.top'); const top = head ? head.getBoundingClientRect().bottom : 0;
-  const vv = window.visualViewport; const vh = vv ? vv.height : innerHeight; const kb = vv && innerHeight - vv.height > 120;
-  const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? Math.max(0, vh - nav.getBoundingClientRect().top) : 0); // floating docks sit above the edge
-  app.style.top = Math.max(0, top) + 'px'; app.style.height = Math.max(200, vh - Math.max(0, top) - navH) + 'px';
+  const vv = window.visualViewport;
+  const vh = vv ? vv.height : innerHeight, off = vv ? Math.max(0, vv.offsetTop) : 0; // iOS shifts the page up under the keyboard: follow what's visible
+  const kb = !!vv && innerHeight - vv.height > 120;
+  document.body.classList.toggle('kbOpen', kb);
+  const head = document.querySelector('#mainView header.top'); const top = head && head.offsetParent ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
+  const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? Math.max(0, vh - nav.offsetTop) : 0); // offsetTop ignores the slide-in animation; floating docks sit above the edge
+  const list = $('#chatList'); const nearBottom = list && list.scrollHeight - list.scrollTop - list.clientHeight < 160;
+  app.style.top = (off + top) + 'px'; app.style.height = Math.max(160, vh - top - navH) + 'px';
+  if (kb !== chKb) { chKb = kb; if (list && nearBottom) requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; }); }
 }
 if (window.visualViewport) { visualViewport.addEventListener('resize', chLayout); visualViewport.addEventListener('scroll', chLayout); }
 addEventListener('resize', chLayout);
+// iOS: focusing the composer scrolls the page; settle the layout once the keyboard is up
+$('#chTxt').addEventListener('focus', () => { [60, 250, 500].forEach((ms) => setTimeout(chLayout, ms)); });
+$('#chTxt').addEventListener('blur', () => { setTimeout(() => { if (document.body.classList.contains('inChat')) window.scrollTo(0, 0); chLayout(); }, 120); });
 function chOnTab(tab) {
   document.body.classList.toggle('inChat', tab === 'chat');
   if (tab !== 'chat') { if (CH.audio) CH.audio.pause(); return; }

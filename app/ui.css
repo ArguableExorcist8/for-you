@@ -62,7 +62,7 @@ html[data-pic] #mainView>header.top .gear{color:#fff;background:rgba(0,0,0,.25)}
 .nav button:not(.on){color:rgba(var(--txR),.62)}
 .nav button.on span{opacity:1}
 /* hide the bar while the keyboard is up (chat handles itself) */
-body.kbOpen:not(.inChat) .nav{transform:translateY(110%)}
+body.kbOpen .nav{transform:translateY(110%);visibility:hidden;opacity:0;pointer-events:none}
 
 /* ---------- cards & sections ---------- */
 .card{padding:20px 18px;margin:16px 0;transition:transform .3s var(--uiSpring),box-shadow .3s}
