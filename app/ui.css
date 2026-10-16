@@ -155,7 +155,7 @@ body{overscroll-behavior-y:none}
 .modal>.card,.chatList{-webkit-overflow-scrolling:touch}
 
 /* ---------- performance: long settings list renders lazily ---------- */
-#tab-me>.card{content-visibility:auto;contain-intrinsic-size:auto 220px}
+/* (removed content-visibility: it could flash blank cards while scrolling) */
 
 @media (prefers-reduced-motion: reduce){
   .tab.tabIn,.uiBox,.uiDlg,.modal,.modal>.card,.nav button.on i.ni,#toast,.emojis span.on,.chips span.on{animation:none!important;transition:none!important}

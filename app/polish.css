@@ -1,0 +1,72 @@
+/* ================= v26 polish — consistent titles, tidy settings, quiet empties, page titles ================= */
+
+/* ---- one title style everywhere: left-aligned, with room for the theme's corner ornaments ---- */
+.tab .card:not(.ping-card):not(.game) > h2:first-child,
+.tab .card:not(.ping-card):not(.game) > h2:first-child + p.muted{text-align:left}
+.tab .card:not(.ping-card):not(.game) > h2:first-child{padding-right:28px}
+html[data-orl="1"] .tab > .card:not(.ping-card):not(.game) > h2:first-child{padding-left:26px}
+html[data-orl="1"] .tab > .card:not(.ping-card):not(.game) > h2:first-child + p.muted{padding-left:26px}
+
+/* ---- big page titles instead of mostly-empty header cards ---- */
+#gameHome > .card:first-child,#usHome > .card:first-child{background:none!important;background-image:none!important;box-shadow:none!important;border:0!important;
+  -webkit-mask:none!important;mask:none!important;clip-path:none!important;filter:none!important;outline:0!important;padding:6px 6px 2px!important;margin-top:4px!important;animation:none!important;transform:none!important}
+#gameHome > .card:first-child::before,#gameHome > .card:first-child::after,#usHome > .card:first-child::before,#usHome > .card:first-child::after{content:none!important}
+#gameHome > .card:first-child > h2,#usHome > .card:first-child > h2{font-size:30px!important;font-weight:800;letter-spacing:-.02em;text-align:left!important;padding:0!important;margin:0 0 4px}
+#gameHome > .card:first-child > p{text-align:left;margin:0}
+html[data-pic=bg] :is(#gameHome,#usHome) > .card:first-child :is(h2,p){color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+
+/* ---- collapsible blocks ---- */
+.accBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s var(--uiEase,cubic-bezier(.22,1,.36,1))}
+.acc.open > .accBody{grid-template-rows:1fr}
+.accIn{overflow:hidden;min-height:0}
+.acc.open .accIn{animation:accIn .32s ease both}
+@keyframes accIn{from{opacity:0;transform:translateY(-6px)}}
+
+/* settings rows */
+#tab-me > .card.acc{padding:0 16px;margin:8px 0;transition:padding .3s var(--uiEase,ease)}
+#tab-me > .card.acc.open{padding-bottom:16px}
+#tab-me > .card.acc > h2.accHead{display:flex;align-items:center;gap:6px;margin:0!important;padding:16px 28px 16px 0!important;font-size:16.5px!important;cursor:pointer;position:relative;user-select:none;-webkit-user-select:none}
+html[data-orl="1"] #tab-me > .card.acc > h2.accHead{padding-left:24px!important}
+.accChev{position:absolute;right:2px;top:50%;width:9px;height:9px;margin-top:-6px;border-right:2.2px solid var(--mu);border-bottom:2.2px solid var(--mu);transform:rotate(45deg);transition:transform .3s var(--uiSpring,ease)}
+.acc.open .accChev{transform:rotate(225deg);margin-top:-2px}
+#tab-me > .card.acc > h2.accHead:active{opacity:.6}
+#tab-me > .card.acc:not(.open){box-shadow:0 2px 10px rgba(var(--shR),.08)!important}
+#tab-me > .card.acc::after,#tab-me > .card.acc::before{top:14px!important}
+#tab-me .setHead{margin:26px 6px 4px;font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mu);text-align:left}
+#tab-me .setSub{text-align:left;margin:0 6px 8px;font-size:12.5px}
+
+/* notes: creators behind a button */
+.accToggle{display:block;margin:4px 0 0!important}
+.card.acc.open > .accToggle{margin-bottom:8px!important}
+
+/* ---- quiet empty states ---- */
+.card.quiet{padding-top:12px!important;padding-bottom:12px!important;opacity:.82;box-shadow:none!important}
+.card.quiet > h2{font-size:15px!important;margin-bottom:2px!important}
+.card.quiet :is(p,.muted,div){font-size:13px}
+
+/* ---- ping history: last 3 ---- */
+#pingList:not(.all) > :nth-child(n+4){display:none}
+.pingMore{display:block;margin:8px auto 0!important}
+
+/* ---- photos: delete lives in the photo view, not on every tile ---- */
+.gallery .phDel{display:none!important}
+
+/* ---- pull to refresh ---- */
+.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) - 46px);z-index:60;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:rgba(var(--cdR),.95);box-shadow:0 6px 18px rgba(var(--shR),.25);opacity:0;transform:translate(-50%,0);transition:transform .35s var(--uiSpring,ease),opacity .25s;pointer-events:none}
+.ptr span{font-size:22px;line-height:1}
+.ptr.on{transition:none}
+.ptr.ready{box-shadow:0 0 0 3px rgba(var(--acR),.35),0 6px 18px rgba(var(--shR),.25)}
+.ptr.spin{opacity:1!important;transition:transform .35s var(--uiSpring,ease)}
+.ptr.spin span{animation:ptrSpin .8s linear infinite}
+@keyframes ptrSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.ptr.spin span{animation:none}.accBody{transition:none}.acc.open .accIn{animation:none}}
+
+/* the theme's corner ornament would sit on the row arrow */
+#tab-me > .card.acc:not(.open)::after{content:none!important}
+
+/* page titles sit on the page, so they use the page's ink, not a theme's card ink */
+html[data-theme] :is(#gameHome,#usHome) > .card:first-child{--tx:inherit;--mu:inherit;--sf:inherit;--sf2:inherit;--sf3:inherit;--cd:inherit;--cdR:inherit;color:var(--tx)!important}
+/* room for top-left theme ornaments on the new cards too */
+html[data-orl="1"] .tab > :is(.fuRitual,.fuCard) .fuRHead,
+html[data-orl="1"] .tab > .fuCard > :is(h2,.fuLoveIn,.fuSpotIn,.fuNightIn){padding-left:22px}

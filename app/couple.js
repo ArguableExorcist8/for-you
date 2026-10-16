@@ -58,8 +58,8 @@ function onChange(t, p) {
 document.addEventListener('visibilitychange', () => { if (!chan) return; if (document.hidden) chan.untrack(); else chan.track({ at: Date.now() }); });
 
 window.FU_enter = async () => {
-  ensureDom();
-  await Promise.all(Object.keys(TBL).map(load)); triedLoad = true;
+  ensureDom(); try { paint(); } catch { /* data not here yet */ }
+  await Promise.all(Object.keys(TBL).map((t) => load(t).then(() => { triedLoad = true; try { paint(); } catch { /* */ } }))); triedLoad = true;
   subscribe(); paint(); orderMenus();
   try { await F().sb.rpc('fu_set_tz', { z: Intl.DateTimeFormat().resolvedOptions().timeZone }); } catch { /* not installed yet */ }
   await vaultInit();
