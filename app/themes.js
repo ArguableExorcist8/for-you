@@ -219,6 +219,8 @@
     { id: 'eid', name: 'Eid Mubarak 🌙', art: ['🎉', '🌙', '🎁'], frame: 'bunting', amb: [['fall', ['🎉', '✨', '🍬', '🎊'], 10]], parts: ['🌙', '✨', '🎉', '🏮', '🍬'], r: [[D(2026, 3, 19), D(2026, 3, 22)], [D(2026, 5, 26), D(2026, 5, 29)], [D(2027, 3, 9), D(2027, 3, 12)], [D(2027, 5, 15), D(2027, 5, 18)]] },
     { id: 'valentine', name: "Valentine's week 💝", art: ['🌹', '💝', '💌'], frame: 'garland', fe: ['💗', '🌹', '💗', '🤍'], amb: [['rise', ['💗', '💕', '🌹'], 8]], parts: ['💝', '🌹', '💌', '💘', '🍫'], md: [[2, 7], [2, 14]] },
     { id: 'ramadan', name: 'Ramadan Kareem 🌙', art: ['🏮', '🌙', '🏮'], frame: 'lanterns', amb: [['twinkle', ['✦', '⭐', '✧'], 12], ['glow', null, 2]], parts: ['🌙', '🏮', '⭐', '✨'], r: [[D(2026, 2, 18), D(2026, 3, 18)], [D(2027, 2, 8), D(2027, 3, 8)]] },
+    { id: 'spooky', name: 'Spooky season 🎃', art: ['🎃', '👻', '🦇'], frame: 'garland', fe: ['🎃', '🕸️', '🦇', '🍬'], amb: [['drift', ['🦇', '🦇'], 3], ['fall', ['🍂', '🍁', '🍬'], 6]], parts: ['🎃', '👻', '🦇', '🍬', '🕸️'], md: [[10, 24], [11, 1]] },
+    { id: 'newyear', name: 'Happy New Year 🎆', art: ['🎆', '🥂', '🎇'], frame: 'garland', fe: ['✨', '🎉', '⭐', '🎊'], amb: [['fall', ['🎊', '✨', '🎉'], 10], ['twinkle', ['✦', '✧'], 10]], parts: ['🎆', '🥂', '🎉', '✨', '🎇'], md: [[12, 30], [1, 2]], wrap: true },
     { id: 'winter', name: 'Cozy winter ❄️', art: ['❄️', '⛄', '❄️'], frame: 'snowcap', amb: [['fall', ['❄️', '❅', '❆', '•'], 16]], parts: ['❄️', '❄️', '⛄', '✨', '☃️'], md: [[12, 1], [1, 31]], wrap: true },
   ];
   const day0 = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -236,9 +238,26 @@
     }
     return null;
   }
+  // v29: first-time / never-picked default follows the calendar
+  function defaultTheme(now) {
+    const t = day0(now || new Date()), k = (t.getMonth() + 1) * 100 + t.getDate();
+    const on = (id) => { const x = SEASONS.find((z) => z.id === id); return x && x.r && x.r.some(([a, b]) => t >= a && t <= b); };
+    if (on('ramadan')) return 'midnight';
+    if (on('eid')) return 'balloons';
+    if (k >= 1001 && k <= 1102) return 'halloween';
+    if (k >= 1201 || k <= 106) return 'frozen';
+    if (k >= 207 && k <= 214) return 'blush';
+    if (k <= 206) return 'penguins';
+    if (k <= 319) return 'lavender';
+    if (k <= 531) return 'garden';
+    if (k <= 831) return 'sea';
+    if (k <= 930) return 'sunset';
+    return 'foxes';
+  }
+  window.CC_defaultTheme = () => defaultTheme(new Date());
   // ---------- state ----------
   const LS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { return null; } };
-  let cur = BY[LS('cc_theme')] || BY.blush, season = null, seasonOn = LS('cc_seasonal') !== '0', anniv = LS('cc_anniv') || null;
+  let cur = BY[LS('cc_theme')] || BY[defaultTheme()] || BY.blush, season = null, seasonOn = LS('cc_seasonal') !== '0', anniv = LS('cc_anniv') || null;
   const root = document.documentElement;
   function paintVars(t) {
     Object.entries(t.v).forEach(([k, v]) => root.style.setProperty('--' + k, v));

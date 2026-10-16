@@ -1423,7 +1423,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=29'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=30'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -2580,7 +2580,7 @@ function annivDate() {
 function syncTheme(r) {
   if (!window.CC_applyTheme) return;
   CC_setSeason(r ? r.seasonal !== false : true, annivDate());
-  const want = (r && r.theme) || 'blush';
+  const want = (r && r.theme) || (window.CC_defaultTheme ? CC_defaultTheme() : 'blush');
   if (thPreview) return; // don't yank a preview away; it resolves on apply/cancel
   if (CC_theme().id !== want) themeGo(want, r && r.created_by && r.created_by !== S.user?.id ? { x: innerWidth / 2, y: innerHeight / 3 } : null);
 }
@@ -2609,7 +2609,7 @@ function thMock(t, big) {
 }
 function renderThemePicker() {
   const g = $('#thGrid'); if (!g || !window.CC_THEMES) return;
-  const saved = (shRow() && shRow().theme) || 'blush', cur = CC_theme().id, sp = window.CC_seasonPreviewing ? CC_seasonPreviewing() : null;
+  const saved = (shRow() && shRow().theme) || (window.CC_defaultTheme ? CC_defaultTheme() : 'blush'), cur = CC_theme().id, sp = window.CC_seasonPreviewing ? CC_seasonPreviewing() : null;
   const T = CC_THEMES.find((x) => x.id === saved) || CC_THEMES[0];
   const card = (t) => `<button class="thP${t.id === saved ? ' on' : ''}${thPreview && t.id === cur ? ' prev' : ''}" data-th="${t.id}" aria-label="${esc(t.name)} theme">${thMock(t)}<span class="pn">${esc(t.name)}</span>${t.id === saved ? '<span class="ck">✓</span>' : ''}</button>`;
   const sCard = (s) => `<button class="thP thS${sp === s.id ? ' prev' : ''}" data-season="${s.id}" aria-label="${esc(s.name)} overlay"><span class="sv sv-${s.id}"><b>${s.art.join('')}</b></span><span class="pn">${esc(s.name)}</span></button>`;
@@ -2645,7 +2645,7 @@ $('#thGrid').addEventListener('click', (e) => {
     thSeasonPrev = id; CC_previewSeason(id); g.dataset.k = ''; renderThemePicker();
     const s = CC_seasonList().find((x) => x.id === id); $('#thBarTxt').textContent = `Previewing ${s.name} — it appears by itself on its dates`; $('#thApply').textContent = 'Keep sprinkles on ✨'; $('#thBar').classList.remove('hidden'); return;
   }
-  const b = e.target.closest('[data-th]'); if (!b) return; const id = b.dataset.th, saved = (shRow() && shRow().theme) || 'blush';
+  const b = e.target.closest('[data-th]'); if (!b) return; const id = b.dataset.th, saved = (shRow() && shRow().theme) || (window.CC_defaultTheme ? CC_defaultTheme() : 'blush');
   if (b.closest('.thNow')) { thUI.open = true; g.querySelector('.thAcc').classList.add('open'); return; }
   if (thSeasonPrev) seasonEndPreview();
   const rc = b.getBoundingClientRect(), at = { x: rc.left + rc.width / 2, y: rc.top + rc.height / 2 };
@@ -2654,7 +2654,7 @@ $('#thGrid').addEventListener('click', (e) => {
   const t = CC_THEMES.find((x) => x.id === id); $('#thBarTxt').textContent = `Previewing ${t.name} ${t.em}`; $('#thBar').classList.remove('hidden');
 });
 function seasonEndPreview() { if (!thSeasonPrev) return; thSeasonPrev = null; CC_previewSeason(null); $('#thBar').classList.add('hidden'); $('#thGrid').dataset.k = ''; renderThemePicker(); }
-function themeEndPreview() { if (thSeasonPrev) return seasonEndPreview(); if (!thPreview) return; thPreview = null; $('#thBar').classList.add('hidden'); themeGo((shRow() && shRow().theme) || 'blush', null); }
+function themeEndPreview() { if (thSeasonPrev) return seasonEndPreview(); if (!thPreview) return; thPreview = null; $('#thBar').classList.add('hidden'); themeGo((shRow() && shRow().theme) || (window.CC_defaultTheme ? CC_defaultTheme() : 'blush'), null); }
 $('#thCancel').onclick = themeEndPreview;
 $('#thApply').onclick = () => {
   if (thSeasonPrev) { seasonEndPreview(); CC_setSeason(true, annivDate()); saveShared({ seasonal: true }); toast('Seasonal sprinkles on ✨', 2500); return renderThemePicker(); }
@@ -3245,7 +3245,7 @@ sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booti
 window.__FU = {
   get S() { return S; }, sb, $, $$, esc, toast, uiConfirm, uiPrompt, uiDialog, notify, loadTable, RENDER, TABLES,
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
-  D, hearts, confetti, snd, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet,
+  D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet,
   get CH() { return CH; }, chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();

@@ -171,7 +171,7 @@ window.FU_P = {
   sound, buzz, confettiEm, playEgg,
 };
 
-function apply() { applyWords(); setTod(); paintCorner(); }
+function apply() { try { F() && F().paintHi && F().paintHi(); } catch { /* */ } applyWords(); setTod(); paintCorner(); }
 document.addEventListener('cc:theme', () => { off = 0; setTimeout(apply, 60); });
 const prevEnter = window.FU_enter;
 window.FU_enter = async (...a) => { const r = prevEnter ? prevEnter(...a) : undefined; try { return await r; } finally { apply(); eggDates(); } };

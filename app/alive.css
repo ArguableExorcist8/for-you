@@ -1,0 +1,114 @@
+/* ================= v29 living scenes ================= */
+#fuAlive{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+#fuAlive .al{position:absolute;font-style:normal;will-change:transform,opacity}
+#fuAlive .al b{display:inline-block;font-weight:normal}
+
+/* soft floating lights */
+#fuAlive .bk{bottom:-100px;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 40% 40%,var(--c),transparent 68%);opacity:0;filter:blur(2px);animation:alBk linear infinite}
+@keyframes alBk{0%{transform:translate(0,0) scale(.8);opacity:0}12%{opacity:.42}50%{transform:translate(28px,-55vh) scale(1.05)}88%{opacity:.3}100%{transform:translate(-18px,-112vh) scale(.9);opacity:0}}
+html[data-dark="1"] #fuAlive .bk{mix-blend-mode:screen}
+
+/* falling petals that sway and flip */
+#fuAlive .pt{top:-40px;opacity:.8;animation:alPt linear infinite}
+#fuAlive .pt b{animation:alFlip ease-in-out infinite alternate}
+@keyframes alPt{0%{transform:translate(0,0)}25%{transform:translate(34px,26vh)}50%{transform:translate(-18px,52vh)}75%{transform:translate(26px,78vh)}100%{transform:translate(-10px,108vh)}}
+@keyframes alFlip{0%{transform:rotate(-30deg) rotateY(0)}100%{transform:rotate(40deg) rotateY(160deg)}}
+
+/* butterflies / bees on a wandering path */
+#fuAlive .bf{left:-40px;font-size:20px;animation:alBf linear infinite;opacity:.9}
+#fuAlive .bf.r{animation-name:alBfR}
+#fuAlive .bf b{animation:alWing .22s ease-in-out infinite alternate}
+@keyframes alBf{0%{transform:translate(0,0)}20%{transform:translate(24vw,-40px)}40%{transform:translate(46vw,30px)}60%{transform:translate(64vw,-24px)}80%{transform:translate(86vw,40px)}100%{transform:translate(115vw,0)}}
+@keyframes alBfR{0%{transform:translate(115vw,0) scaleX(-1)}25%{transform:translate(80vw,50px) scaleX(-1)}50%{transform:translate(55vw,-30px) scaleX(-1)}75%{transform:translate(28vw,30px) scaleX(-1)}100%{transform:translate(-10vw,-10px) scaleX(-1)}}
+@keyframes alWing{to{transform:scaleX(.55) rotate(-6deg)}}
+
+/* leaves caught in a breeze */
+#fuAlive .sw{left:-30px;opacity:.8;animation:alSw linear infinite}
+@keyframes alSw{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(35vw,-60px) rotate(220deg)}55%{transform:translate(60vw,30px) rotate(400deg)}80%{transform:translate(85vw,-40px) rotate(560deg)}100%{transform:translate(112vw,20px) rotate(720deg)}}
+
+/* sparkles */
+#fuAlive .sp{font-size:10px;color:#fff6c8;opacity:0;text-shadow:0 0 8px rgba(255,240,170,.9);animation:alSp ease-in-out infinite}
+html[data-dark="0"] #fuAlive .sp{color:rgba(var(--acR),.7);text-shadow:0 0 6px rgba(255,255,255,.9)}
+@keyframes alSp{0%,100%{opacity:0;transform:scale(.4) rotate(0)}50%{opacity:.85;transform:scale(1.1) rotate(90deg)}}
+
+/* birds crossing the sky */
+#fuAlive .flock{left:-90px;display:flex;gap:6px;animation:alFlock 26s linear infinite;opacity:.55}
+#fuAlive .flock + .flock{animation-delay:-13s;transform:scale(.7)}
+#fuAlive .flock svg{width:18px;height:8px;overflow:visible;animation:alFlap .5s ease-in-out infinite alternate}
+#fuAlive .flock svg:nth-child(2){margin-top:8px;animation-delay:-.2s}#fuAlive .flock svg:nth-child(3){margin-top:-4px;animation-delay:-.35s}#fuAlive .flock svg:nth-child(4){margin-top:12px;animation-delay:-.1s}
+#fuAlive .flock path{fill:none;stroke:rgba(var(--txR),.75);stroke-width:1.6;stroke-linecap:round}
+@keyframes alFlock{0%{transform:translate(0,0)}50%{transform:translate(55vw,-24px)}100%{transform:translate(118vw,10px)}}
+@keyframes alFlap{to{transform:scaleY(-.5)}}
+
+/* sun rays / light through water */
+#fuAlive .rays.sun{right:-35vw;top:-35vw;width:90vw;height:90vw;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,210,140,.28) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 20%,transparent 70%);mask:radial-gradient(circle,#000 20%,transparent 70%);animation:alSpin 80s linear infinite}
+#fuAlive .rays.cau{left:-20%;top:0;width:140%;height:70vh;background:repeating-linear-gradient(105deg,rgba(255,255,255,.16) 0 18px,transparent 18px 70px);-webkit-mask:linear-gradient(#000,transparent);mask:linear-gradient(#000,transparent);animation:alCau 14s ease-in-out infinite alternate}
+@keyframes alSpin{to{transform:rotate(360deg)}}
+@keyframes alCau{to{transform:translateX(60px) skewX(-6deg)}}
+#fuAlive .boat{top:36%;left:-40px;font-size:22px;opacity:.75;animation:alBoat 60s linear infinite}
+@keyframes alBoat{0%{transform:translate(0,0) rotate(-3deg)}25%{transform:translate(28vw,4px) rotate(3deg)}50%{transform:translate(56vw,0) rotate(-3deg)}75%{transform:translate(84vw,4px) rotate(3deg)}100%{transform:translate(115vw,0) rotate(-3deg)}}
+
+/* northern lights */
+#fuAlive .aur{left:-30%;width:160%;height:38vh;top:-6vh;border-radius:50%;filter:blur(26px);opacity:.38;mix-blend-mode:screen;animation:alAur 16s ease-in-out infinite alternate}
+#fuAlive .aur.a1{background:linear-gradient(90deg,transparent,rgba(90,255,190,.55),rgba(110,170,255,.5),transparent)}
+#fuAlive .aur.a2{top:4vh;background:linear-gradient(90deg,transparent,rgba(190,120,255,.45),rgba(90,220,255,.4),transparent);animation-duration:22s;animation-direction:alternate-reverse}
+@keyframes alAur{0%{transform:translateX(-8%) skewY(-4deg) scaleY(.8)}100%{transform:translateX(8%) skewY(4deg) scaleY(1.15)}}
+
+/* balloons drifting up */
+#fuAlive .bl{bottom:-70px;font-size:26px;animation:alBl linear infinite;opacity:.85}
+#fuAlive .bl b{animation:alSway 3s ease-in-out infinite alternate;transform-origin:50% 120%}
+#fuAlive .bl::after{content:'';position:absolute;left:50%;top:92%;height:34px;border-left:1px solid rgba(var(--txR),.35)}
+@keyframes alBl{0%{transform:translateY(0)}100%{transform:translateY(-120vh)}}
+@keyframes alSway{0%{transform:rotate(-8deg)}100%{transform:rotate(8deg)}}
+
+/* winter gust, ramadan moon glow */
+#fuAlive .gust{left:-40%;top:30%;width:60%;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);filter:blur(1px);animation:alGust 9s ease-in infinite}
+@keyframes alGust{0%,60%{transform:translateX(0);opacity:0}70%{opacity:.8}100%{transform:translateX(220vw);opacity:0}}
+#fuAlive .moonglow{right:-10vw;top:-6vh;width:50vw;height:50vw;border-radius:50%;background:radial-gradient(circle,rgba(255,226,140,.3),transparent 62%);animation:alGlow 5s ease-in-out infinite alternate}
+@keyframes alGlow{to{transform:scale(1.15);opacity:.6}}
+
+/* shooting star */
+.fuShoot{position:fixed;z-index:2;width:120px;height:2px;border-radius:2px;pointer-events:none;transform-origin:0 50%;background:linear-gradient(90deg,#fff,rgba(255,255,255,0));box-shadow:0 0 8px rgba(255,255,255,.8)}
+/* fireworks */
+.fuFw{position:fixed;z-index:2;width:0;height:0;pointer-events:none}
+.fuFw i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:alFw 1.5s cubic-bezier(.12,.8,.3,1) forwards}
+.fuFw b{position:absolute;left:-14px;top:-16px;font-size:26px;font-weight:normal;animation:alFwB 1.6s ease-out forwards}
+@keyframes alFw{0%{transform:rotate(var(--a)) translateX(0) scale(1);opacity:1}70%{opacity:1}100%{transform:rotate(var(--a)) translateX(90px) translateY(26px) scale(.3);opacity:0}}
+@keyframes alFwB{0%{transform:scale(.2);opacity:0}30%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:0}}
+
+/* the pet */
+.fuPet{position:fixed;left:0;z-index:39;font-size:38px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 4px 6px rgba(0,0,0,.25));user-select:none;-webkit-user-select:none}
+.fuPet .body{display:inline-block}
+.fuPet b{display:inline-block;font-weight:normal}
+.fuPet.flip .body{transform:scaleX(-1)}
+.fuPet .lead{position:absolute;font-size:20px;bottom:2px;left:-26px;animation:alRoll .8s linear infinite}
+.fuPet.flip .lead{left:auto;right:-26px;animation-direction:reverse}
+.fuPet.g-hop b{animation:petHop .55s cubic-bezier(.3,0,.5,1) infinite}
+.fuPet.g-waddle b{animation:petWaddle .5s ease-in-out infinite alternate;transform-origin:50% 100%}
+.fuPet.g-trot b{animation:petTrot .32s ease-in-out infinite alternate}
+.fuPet.g-roll b{animation:alRoll 1.4s linear infinite}
+.fuPet.flip.g-roll b{animation-direction:reverse}
+.fuPet.sliding b{animation:none;transform:rotate(-80deg) translateY(10px)}
+.fuPet.idle b{animation:petIdle 1.3s ease-in-out infinite}
+.fuPet.idle .lead{animation:none}
+.fuPet.happy b{animation:petHappy .8s cubic-bezier(.34,1.56,.64,1)}
+.fuPet .say{position:absolute;left:50%;top:-30px;font-size:20px;font-style:normal;animation:petSay 2.6s ease forwards}
+.fuPet.flip .say{transform:scaleX(1)}
+@keyframes petHop{0%,100%{transform:translateY(0) scaleY(.92)}45%{transform:translateY(-22px) scaleY(1.05)}}
+@keyframes petWaddle{0%{transform:rotate(-9deg)}100%{transform:rotate(9deg)}}
+@keyframes petTrot{0%{transform:translateY(0)}100%{transform:translateY(-5px)}}
+@keyframes alRoll{to{transform:rotate(-360deg)}}
+@keyframes petIdle{0%,100%{transform:scale(1)}20%{transform:scale(1.06,.92)}40%{transform:translateY(-8px)}60%{transform:scale(1)}}
+@keyframes petHappy{0%{transform:scale(1)}40%{transform:translateY(-30px) scale(1.25) rotate(-10deg)}100%{transform:scale(1)}}
+@keyframes petSay{0%{opacity:0;transform:translate(-50%,8px) scale(.5)}20%{opacity:1;transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-10px)}}
+
+/* season banner: shimmer + pop on tap */
+#seasonBanner{position:relative;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#seasonBanner::after{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);animation:alShine 4.5s ease-in-out infinite;pointer-events:none}
+#seasonBanner .sa i{animation:alBannerB 2.4s cubic-bezier(.34,1.56,.64,1) infinite!important;animation-delay:calc(var(--i) * .25s)!important}
+#seasonBanner.pop{animation:alPop .6s cubic-bezier(.34,1.56,.64,1)}
+@keyframes alShine{0%,55%{left:-60%}100%{left:130%}}
+@keyframes alBannerB{0%,60%,100%{transform:translateY(0) rotate(0)}20%{transform:translateY(-7px) rotate(-10deg)}40%{transform:translateY(0) rotate(8deg)}}
+@keyframes alPop{40%{transform:scale(1.06)}}
+
+@media (prefers-reduced-motion: reduce){#fuAlive,.fuPet,.fuShoot,.fuFw{display:none!important}#seasonBanner::after{animation:none;display:none}}
