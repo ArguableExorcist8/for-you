@@ -148,6 +148,19 @@
     spirited: { pics: 6, font: "'FU Corm'", nav: { home: '🏮', notes: '📜', us: '🐉', memories: '🌸', chat: '🐸', play: '🍙' }, amb: [['rise', ['🏮'], 6], ['glow', null, 2], ['drift', ['🐉', '☁️'], 2]] },
   };
   T.forEach((t) => Object.assign(t, X[t.id] || {}));
+  // v22: chat attach sheet — per-theme icons [gallery, camera, video, file]; Colours themes keep line icons
+  const ATT = {
+    bears: ['🧸', '🐻', '🍯', '🧺'], bunnies: ['🌷', '🐰', '🥕', '🧺'], cats: ['🐟', '🐱', '🧶', '📦'], penguins: ['🧊', '🐧', '⛸️', '✉️'],
+    foxes: ['🍂', '🦊', '🍄', '🌰'], pandas: ['🎋', '🐼', '🍃', '📜'], balloons: ['🎈', '📷', '🏠', '📖'], starry: ['🌌', '🔭', '🌠', '📜'],
+    fairytale: ['🏰', '🪞', '🦄', '📜'], sea: ['🐚', '🐠', '🐙', '🍾'], garden: ['🌷', '🦋', '🐝', '🌿'], forest: ['🍄', '🦉', '🧚', '🌿'],
+    tvd: ['🥀', '🪞', '🦇', '📓'], originals: ['⚜️', '🕯️', '🎷', '📜'], bridgerton: ['🌸', '🦢', '💃', '💌'], hp: ['🖼️', '🦉', '🪄', '📜'],
+    gilmore: ['📚', '☕', '🎬', '📝'], stranger: ['🎄', '📸', '📼', '📻'], twilight: ['🍎', '🐺', '🌲', '📖'], notebook: ['🛶', '📷', '🦢', '📓'],
+    titanic: ['💎', '🎨', '🚢', '✉️'], lalaland: ['🎹', '🌃', '🎬', '🎼'], pp: ['🖼️', '🌹', '🕯️', '🪶'], tangled: ['🎨', '🦎', '🏮', '📜'],
+    beauty: ['🌹', '🪞', '🕰️', '📚'], frozen: ['❄️', '⛄', '🦌', '📜'], coco: ['🖼️', '💀', '🎸', '🌼'], yourname: ['☄️', '📱', '🌆', '📝'],
+    naruto: ['🍥', '🦊', '🌀', '📜'], aot: ['🪽', '🗝️', '🧱', '📜'], demonslayer: ['🪻', '🦋', '🗡️', '📜'], onepiece: ['👒', '🍖', '🏴‍☠️', '🗺️'],
+    sailormoon: ['🌙', '🐈‍⬛', '💫', '💌'], spirited: ['🏮', '🐉', '🐸', '🎫'],
+  };
+  T.forEach((t) => { if (ATT[t.id]) t.att = ATT[t.id]; });
   const BY = Object.fromEntries(T.map((t) => [t.id, t]));
   // ---------- seasonal overlay ----------
   const D = (y, m, d) => new Date(y, m - 1, d);
@@ -193,11 +206,23 @@
     set('meta[name=theme-color]', mk('meta', { name: 'theme-color' }), 'content', t.dark ? solid(t.v.deep || t.v.bg) : solid(t.v.bg));
     const lb = document.querySelector('#loadingView .big'); if (lb) lb.textContent = t.mascot || '💗';
   }
+  // tiles take the theme's own palette (its confetti colours, minus near-whites) and its icon set
+  function paintAttach(t) {
+    const lum = (h) => { const m = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(String(h).trim()); if (!m) return 1; let x = m[1]; if (x.length === 3) x = x.replace(/./g, '$&$&'); const n = parseInt(x, 16); return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; };
+    let cs = (t.conf || []).filter((c) => lum(c) < 0.86);
+    const ac = (t.v && (t.v.ac || t.v.act)) || '#e75480';
+    if (!cs.length) cs = [ac];
+    for (let i = 0; i < 4; i++) root.style.setProperty('--at' + (i + 1), cs[i % cs.length]);
+    const box = document.getElementById('chAttach'); if (!box) return;
+    box.classList.toggle('emo', !!t.att);
+    box.querySelectorAll('.chAtE').forEach((e, i) => { e.textContent = t.att ? t.att[i] : ''; });
+  }
   function paintDom() {
     if (!document.body) return;
     const t = cur;
     document.querySelectorAll('[data-mascot]').forEach((e) => { e.textContent = (t.game && t.game[e.dataset.mascot]) || t.mascot || e.dataset.def || e.textContent; });
     document.querySelectorAll('[data-ni]').forEach((e) => { if (!e.dataset.def) e.dataset.def = e.textContent; e.textContent = (t.nav && t.nav[e.dataset.ni]) || e.dataset.def; });
+    paintAttach(t);
     document.getElementById('thMark')?.remove();
     paintHero(); paintSeason(); paintAmb(); paintPics();
     paintIcon(BY[LS('cc_theme')] || t);
