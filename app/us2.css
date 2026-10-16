@@ -195,3 +195,5 @@ html.fuLocked #app,html.fuLocked .nav,html.fuLocked #fuMom,html.fuLocked .fuPet{
 .ckChips button.sent{animation:ckSent .5s cubic-bezier(.34,1.56,.64,1)}
 @keyframes ckSent{40%{transform:scale(1.12)}}
 @media (prefers-reduced-motion: reduce){.fuGreetFx{display:none}.fuNightIn .sun{animation:none}}
+/* the fortune slip is always paper-coloured, so its ink is too */
+.paperSlip,.paperSlip p,#fortune{color:#4a3424!important;-webkit-text-fill-color:#4a3424}

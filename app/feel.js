@@ -74,3 +74,51 @@ addEventListener('scroll', () => {
 const prevEnter = window.FU_enter;
 window.FU_enter = async (...a) => { const r = prevEnter ? prevEnter(...a) : undefined; try { return await r; } finally { const t = document.querySelector('.tab:not(.hidden)'); if (t) onTab(t); } };
 })();
+
+// ---------- contrast guard: no theme may leave text unreadable ----------
+// Some screens put a fixed light "paper" or a themed surface behind text that inherits the theme's ink.
+// After any repaint we look for text that's nearly invisible on its own background and give it readable ink.
+(() => {
+  const parse = (s) => { const m = s && s.match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+  const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  function bgOf(el) {
+    for (let a = el; a && a !== document.documentElement; a = a.parentElement) {
+      const s = getComputedStyle(a); const c = parse(s.backgroundColor); const img = s.backgroundImage;
+      if (img && img !== 'none') {
+        if (c && c.a > 0.85) return c;
+        if (/gradient/.test(img) && !/url\(/.test(img)) { const cs = [...img.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0])).filter(Boolean); if (cs.length) { const n = cs.length, avg = cs.reduce((o, k) => ({ r: o.r + k.r / n, g: o.g + k.g / n, b: o.b + k.b / n, a: o.a + k.a / n }), { r: 0, g: 0, b: 0, a: 0 }); if (avg.a > 0.6) return avg; } }
+        return null; // a picture: can't judge
+      }
+      if (c && c.a > 0.5) return c;
+    }
+    return null;
+  }
+  const DARK = { r: 34, g: 24, b: 30 }, LIGHT = { r: 255, g: 255, b: 255 };
+  function guard(root) {
+    root = root || document.body;
+    root.querySelectorAll('[data-fucg]').forEach((e) => { e.style.removeProperty('color'); e.style.removeProperty('-webkit-text-fill-color'); delete e.dataset.fucg; });
+    const els = root.querySelectorAll('h1,h2,h3,h4,p,span,b,small,label,button,a,li,div,td,blockquote,em,strong,i');
+    for (const el of els) {
+      if (el.closest('#fuMom,#fuAlive,#thAmb,#thDeco,#thDecoB,.chList .chB,#fuRecap')) continue;
+      let has = false; for (const n of el.childNodes) if (n.nodeType === 3 && /[A-Za-z0-9]/.test(n.textContent)) { has = true; break; }
+      if (!has) continue;
+      const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
+      const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.backgroundClip === 'text' || cs.webkitBackgroundClip === 'text') continue;
+      const fg = parse(cs.webkitTextFillColor && !/currentcolor/i.test(cs.webkitTextFillColor) ? cs.webkitTextFillColor : cs.color); if (!fg || fg.a < 0.2) continue;
+      const bg = bgOf(el); if (!bg) continue;
+      if (ratio(fg, bg) >= 2.3) continue;
+      const ink = ratio(DARK, bg) >= ratio(LIGHT, bg) ? 'rgb(34,24,30)' : '#fff';
+      el.style.setProperty('color', ink, 'important'); el.style.setProperty('-webkit-text-fill-color', ink, 'important'); el.dataset.fucg = '1';
+    }
+  }
+  const roots = () => ['.tab:not(.hidden)', '#modal:not(.hidden)', '#mainView > header.top', '#authView:not(.hidden)'].map((q) => document.querySelector(q)).filter(Boolean);
+  let t = 0;
+  const soon = (ms = 300) => { clearTimeout(t); t = setTimeout(() => { const go = () => { try { roots().forEach((r) => guard(r)); } catch (e) { /* never break the app */ } }; (window.requestIdleCallback || ((f) => setTimeout(f, 1)))(go, { timeout: 600 }); }, ms); };
+  document.addEventListener('cc:theme', () => soon(250));
+  document.addEventListener('click', (e) => { if (e.target.closest('.nav button,[data-game],[data-feat],[data-fu],.gtile,.acc .accHead,.accToggle,#cookie,#cookieNew,#reason')) soon(450); }, true);
+  const m = document.getElementById('modal'); if (m) new MutationObserver(() => soon(250)).observe(m, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+  const prev = window.FU_enter; window.FU_enter = async (...a) => { const r = prev ? prev(...a) : undefined; try { return await r; } finally { soon(600); } };
+  window.FU_contrast = guard;
+  soon(1200);
+})();
