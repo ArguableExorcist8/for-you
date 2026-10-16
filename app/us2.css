@@ -1,0 +1,140 @@
+/* ================= v35 app lock · best time to talk · our month ================= */
+/* ---------- app lock ---------- */
+html.fuLocked #app,html.fuLocked .nav,html.fuLocked #fuMom,html.fuLocked .fuPet{visibility:hidden}
+#fuLockScr{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:var(--bg);background-color:rgb(var(--cdR));color:var(--tx);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 20px calc(env(safe-area-inset-bottom,0px) + 20px);opacity:0;transition:opacity .3s ease}
+#fuLockScr::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(var(--acR),.18),transparent 60%);pointer-events:none}
+#fuLockScr.on{opacity:1}
+#fuLockScr.out{opacity:0;transition:opacity .38s ease}
+#fuLockScr.out .lkIn{transform:scale(1.06);opacity:0}
+.lkIn{position:relative;text-align:center;width:min(320px,100%);transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .3s}
+#fuLockScr.on .lkIn{animation:lkIn .5s cubic-bezier(.22,1,.36,1) both}
+@keyframes lkIn{from{transform:translateY(16px) scale(.97);opacity:0}}
+.lkEm{font-size:56px;line-height:1;animation:lkBob 3s ease-in-out infinite;filter:drop-shadow(0 6px 14px rgba(var(--shR),.25))}
+@keyframes lkBob{50%{transform:translateY(-6px)}}
+#fuLockScr h2{margin:10px 0 2px;font-size:26px;text-align:center!important;padding:0!important}
+.lkSub{margin:0 0 18px;color:var(--mu);font-size:14px}
+.lkDots{display:flex;justify-content:center;gap:16px;margin:8px 0 6px}
+.lkDots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ac);transition:background-color .15s,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.lkDots i.on{background:var(--ac);transform:scale(1.12)}
+.lkDots.shake{animation:lkShake .42s cubic-bezier(.36,.07,.19,.97)}
+@keyframes lkShake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+.lkMsg{min-height:20px;margin:4px 0 10px;font-size:13px;color:var(--dg,#c0264f)}
+.lkPad{display:grid;grid-template-columns:repeat(3,72px);gap:14px 22px;justify-content:center;margin-top:6px}
+.lkPad button{width:72px;height:72px;border-radius:50%!important;margin:0!important;padding:0!important;font-size:28px;font-weight:600;display:flex;align-items:center;justify-content:center;
+  background:rgba(var(--acR),.12)!important;color:var(--tx)!important;border:0!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
+.lkPad button:active{background:rgba(var(--acR),.3)!important}
+.lkPad .lkDel{background:none!important;font-size:18px}
+.lkPad .lkFace{background:none!important;color:var(--ac)!important}
+.lkPad .lkFace.off{visibility:hidden}
+.lkSheet{text-align:center}.lkSheet h2{text-align:center!important}
+.lkSheet .lkPad{margin-bottom:6px}
+.lkRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0}
+.lkRow .seg{display:flex;gap:4px}
+.lkRow .seg button{margin:0!important;padding:6px 10px!important;font-size:13px}
+.lkRow .seg button:not(.on){background:rgba(var(--acR),.1)!important;color:var(--tx)!important;box-shadow:none!important}
+.lkBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.lkBtns button{margin:0!important}
+
+/* ---------- best time to talk ---------- */
+.fuTalkHint{display:flex;align-items:center;gap:8px;width:auto;max-width:100%;margin:2px 6px 12px!important;padding:8px 14px!important;border-radius:999px!important;font-size:14px;font-weight:600;text-align:left;
+  background:rgba(var(--cdR),.7)!important;color:var(--tx)!important;border:1px solid rgba(var(--acR),.25)!important;box-shadow:0 4px 14px rgba(var(--shR),.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.fuTalkHint i{font-style:normal}
+.fuTalkHint.now{border-color:rgba(var(--acR),.6)!important;animation:tkGlow 2.6s ease-in-out infinite}
+@keyframes tkGlow{50%{box-shadow:0 0 0 4px rgba(var(--acR),.16),0 4px 14px rgba(var(--shR),.1)}}
+.tkSheet h2{margin-bottom:6px}
+.tkSum{font-size:16px;font-weight:700;margin:2px 0 12px;line-height:1.35}
+.tkSum.now{color:var(--act,var(--ac))}
+.tkDays{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:12px}
+.tkDays::-webkit-scrollbar{display:none}
+.tkDays button{flex:0 0 auto;margin:0!important;padding:6px 12px!important;font-size:13px;border-radius:999px!important}
+.tkDays button:not(.on){background:rgba(var(--acR),.1)!important;color:var(--tx)!important;box-shadow:none!important}
+.tkBars{background:rgba(var(--acR),.06);border-radius:16px;padding:12px 12px 8px}
+.tkRow{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:8px;margin-bottom:8px}
+.tkRow b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tkLane{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;height:22px}
+.tkLane i{border-radius:4px;background:rgba(var(--txR),.08);transform-origin:50% 100%;animation:tkUp .5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--h) * 18ms)}
+@keyframes tkUp{from{transform:scaleY(.2);opacity:0}}
+.tkLane.me i.on{background:var(--ac2,var(--ac))}
+.tkLane.th i.on{background:var(--ac3,var(--ac2))}
+.tkLane.bo i.on{background:var(--ac);box-shadow:0 0 10px rgba(var(--acR),.55)}
+.tkLane i.nowH{outline:2px solid var(--tx);outline-offset:1px}
+.tkRow.both b{color:var(--act,var(--ac))}
+.tkAxis{display:flex;justify-content:space-between;margin-left:70px;font-size:10.5px;color:var(--mu)}
+.tkTz{font-size:12.5px;margin:8px 2px 0}
+.tkBtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.tkBtns button{margin:0!important}
+.tkTabs{display:flex;gap:6px;margin:10px 0}
+.tkTabs button{flex:1;margin:0!important}
+.tkTabs button:not(.on){background:rgba(var(--acR),.1)!important;color:var(--tx)!important;box-shadow:none!important}
+.tkOffRow{display:flex;align-items:center;gap:10px;margin:4px 0 12px;font-size:13px;flex-wrap:wrap}
+.tkOffRow .chips{display:flex;gap:4px;flex-wrap:wrap}
+.tkOffRow .chips span{padding:4px 8px;font-size:12px}
+.tkGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;touch-action:none;user-select:none;-webkit-user-select:none}
+.tkGrid button{margin:0!important;padding:10px 0!important;font-size:12px;border-radius:10px!important;background:rgba(var(--txR),.06)!important;color:var(--tx)!important;box-shadow:none!important;border:0!important;
+  transition:background-color .15s,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.tkGrid button.on{background:var(--ac)!important;color:var(--on,#fff)!important;transform:scale(1.04)}
+.tkPre{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- our month ---------- */
+.fuRecapCard{padding:12px 14px!important}
+.rcCardIn{display:flex;align-items:center;gap:12px}
+.rcCardIn > div{flex:1;min-width:0}.rcCardIn b{display:block;font-size:16px}.rcCardIn small{color:var(--mu);font-size:12.5px}
+.rcCardEm{font-size:30px;animation:lkBob 3s ease-in-out infinite}
+.rcCardIn button{margin:0!important;flex:0 0 auto}
+.rcPickL{display:grid;gap:8px;margin:12px 0}
+.rcPickL button{margin:0!important}
+#fuRecap{position:fixed;inset:0;z-index:250;background:var(--bg);background-color:rgb(var(--cdR));color:var(--tx);overflow:hidden;opacity:0;transform:scale(.98);
+  transition:opacity .35s ease,transform .45s cubic-bezier(.22,1,.36,1);touch-action:none;user-select:none;-webkit-user-select:none}
+#fuRecap::before{content:'';position:absolute;inset:-20%;background:radial-gradient(circle at 30% 20%,rgba(var(--acR),.22),transparent 45%),radial-gradient(circle at 80% 80%,rgba(var(--acR),.16),transparent 50%);animation:rcDrift 14s ease-in-out infinite alternate;pointer-events:none}
+@keyframes rcDrift{to{transform:translate(4%,-3%) rotate(6deg)}}
+#fuRecap.on{opacity:1;transform:none}
+#fuRecap.out{opacity:0;transform:translateY(30px) scale(.97)}
+.rcBars{position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);display:flex;gap:4px;z-index:2}
+.rcBars i{flex:1;height:3px;border-radius:3px;background:rgba(var(--txR),.2);overflow:hidden}
+.rcBars i b{display:block;height:100%;width:100%;background:var(--tx);transform:scaleX(0);transform-origin:0 50%}
+.rcBars i.done b{transform:scaleX(1)}
+.rcBars i.run b{animation:rcRun var(--d,5s) linear forwards}
+#fuRecap.paused .rcBars i.run b{animation-play-state:paused}
+@keyframes rcRun{to{transform:scaleX(1)}}
+.rcX{position:absolute;right:10px;top:calc(env(safe-area-inset-top,0px) + 20px);z-index:3;width:38px;height:38px;border-radius:50%!important;margin:0!important;padding:0!important;font-size:16px;
+  background:rgba(var(--txR),.1)!important;color:var(--tx)!important;box-shadow:none!important;border:0!important}
+.rcStage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 60px) 26px calc(env(safe-area-inset-bottom,0px) + 40px)}
+.rcSlide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:calc(env(safe-area-inset-top,0px) + 60px) 28px calc(env(safe-area-inset-bottom,0px) + 40px);
+  opacity:0;transform:translateX(30px) scale(.98);transition:opacity .42s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+.rcSlide.in,.rcSlide.rcLoad{opacity:1;transform:none}
+.rcSlide.gone{opacity:0;transform:translateX(-30px) scale(.98)}
+.rcSlide > *{margin:6px 0}
+.rcSlide.in > *{animation:rcUp .6s cubic-bezier(.22,1,.36,1) both}
+.rcSlide.in > :nth-child(2){animation-delay:.08s}.rcSlide.in > :nth-child(3){animation-delay:.16s}.rcSlide.in > :nth-child(4){animation-delay:.24s}.rcSlide.in > :nth-child(5){animation-delay:.32s}.rcSlide.in > :nth-child(6){animation-delay:.4s}
+@keyframes rcUp{from{opacity:0;transform:translateY(18px)}}
+.rcLoad p{color:var(--mu);animation:lkBob 2s ease-in-out infinite}
+.rcSlide h1{font-size:34px;line-height:1.1;margin:8px 0;letter-spacing:-.02em}
+.rcSlide p{font-size:17px;max-width:320px;line-height:1.4}
+.rcBig{font-size:84px;line-height:1;filter:drop-shadow(0 10px 22px rgba(var(--shR),.3));animation:lkBob 3.2s ease-in-out infinite}
+.rcK{font-size:13px!important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.rcNum{font-size:76px;font-weight:800;line-height:1;letter-spacing:-.03em;background:linear-gradient(135deg,var(--ac),var(--ac2,var(--ac)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.rcSplit,.rcTrio,.rcMoods{display:flex;gap:12px;justify-content:center;width:100%;max-width:340px}
+.rcSplit > div,.rcTrio > div,.rcMoods > div{flex:1;background:rgba(var(--cdR),.55);border-radius:18px;padding:14px 8px;box-shadow:0 6px 18px rgba(var(--shR),.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.rcSplit b,.rcTrio b{display:block;font-size:30px;font-weight:800}
+.rcSplit small,.rcTrio small,.rcMoods small{display:block;color:var(--mu);font-size:12.5px;margin-top:2px}
+.rcTrio i{font-style:normal;font-size:28px;display:block}
+.rcMoods span{font-size:54px;display:block;line-height:1.1}
+.rcFoot{font-size:15px!important;color:var(--mu)}.rcFoot b{color:var(--tx)}
+.rcEmo{display:flex;gap:10px}
+.rcEmo span{font-size:64px;animation:rcPop .7s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(.2s + var(--i) * .15s)}
+@keyframes rcPop{from{transform:scale(0) rotate(-20deg);opacity:0}}
+.rcPics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:330px}
+.rcPics.n1{grid-template-columns:1fr}.rcPics.n2,.rcPics.n4{grid-template-columns:repeat(2,1fr)}
+.rcPics img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;box-shadow:0 6px 16px rgba(0,0,0,.18);animation:rcPop .6s cubic-bezier(.34,1.3,.64,1) both;animation-delay:calc(.15s + var(--i) * .09s)}
+.rcPics.n1 img{aspect-ratio:4/5}
+.rcQuote{font-size:22px;font-weight:600;line-height:1.4;max-width:320px;margin:10px 0!important;font-style:italic}
+.rcList{list-style:none;padding:0;margin:0;display:grid;gap:8px;width:100%;max-width:320px}
+.rcList li{background:rgba(var(--cdR),.55);border-radius:14px;padding:12px 14px;font-weight:600;animation:rcUp .5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(.2s + var(--i) * .1s)}
+.rcHint{color:var(--mu);font-size:12px;margin-top:18px!important;animation:lkBob 2.4s ease-in-out infinite}
+.rcEnd{display:flex;gap:8px;margin-top:16px!important}.rcEnd button{margin:0!important}
+@media (prefers-reduced-motion: reduce){#fuRecap::before,.rcBig,.lkEm,.rcCardEm,.fuTalkHint.now{animation:none}.rcSlide,.rcSlide > *{transition:none;animation:none}}
+/* theme button decorations (drips, ribbons…) don't belong on keypads and small chips */
+:is(.lkPad,.tkGrid,.tkDays,.tkTabs,#lkAfter) button::before,:is(.lkPad,.tkGrid,.tkDays,.tkTabs,#lkAfter) button::after,.rcX::before,.rcX::after,.fuTalkHint::before,.fuTalkHint::after{content:none!important;display:none!important}
+.tkDays{flex-wrap:nowrap!important}
+.tkLane.me i.on{background:rgba(var(--acR),.5)}
+.tkLane.th i.on{background:rgba(var(--txR),.5)}
+.tkDays{justify-content:flex-start!important}

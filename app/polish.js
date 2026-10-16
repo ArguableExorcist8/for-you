@@ -71,7 +71,7 @@ function tidyPings() {
 function orderHome() {
   const home = $('#tab-home'); if (!home) return;
   const card = (sel) => { const el = $(sel, home); return el && (el.classList.contains('card') ? el : el.closest('.card')) || el; };
-  const order = ['#seasonBanner', '#homeHi', '#fuStatus', '#fuRitual', '#fuThemeQ', '#fuNight', '.ping-card', '#fuLove', '#fuOTD', '#cdList', '#homeUpcoming', '#fuSpot', '#homeDist', '#homeBanner', '#daily', '#pingList', '.card.today'];
+  const order = ['#seasonBanner', '#homeHi', '#fuTalkHint', '#fuRecapCard', '#fuStatus', '#fuRitual', '#fuThemeQ', '#fuNight', '.ping-card', '#fuLove', '#fuOTD', '#cdList', '#homeUpcoming', '#fuSpot', '#homeDist', '#homeBanner', '#daily', '#pingList', '.card.today'];
   order.map(card).filter(Boolean).forEach((el) => home.appendChild(el));
 }
 
