@@ -472,7 +472,8 @@ function paintHi() {
   const d = new Date(), h = d.getHours();
   const [g, e] = h < 5 ? ['Up late', '🌙'] : h < 12 ? ['Good morning', '☀️'] : h < 17 ? ['Good afternoon', '🌤️'] : h < 22 ? ['Good evening', '🌆'] : ['Good night', '🌙'];
   const day = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  el.innerHTML = `<small>${esc(day)}</small><b>${g}, ${esc(S.me.display_name || 'love')} ${TP('hiEm', h) || e}</b>`;
+  const g2 = (window.FU_hiWord && window.FU_hiWord(h)) || g; // v32: a different hello now and then
+  el.innerHTML = `<small>${esc(day)}</small><b>${g2}, ${esc(S.me.display_name || 'love')} ${TP('hiEm', h) || e}</b>`;
 }
 setInterval(paintHi, 10 * 60 * 1000);
 window.CC_partnerName = () => (S.partner ? partnerName() : null);
@@ -1423,7 +1424,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=31'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=32'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();

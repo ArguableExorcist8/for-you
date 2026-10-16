@@ -1,0 +1,29 @@
+/* ================= v32 feel ================= */
+/* tabs slide in with a little variety (vars set per switch) */
+@keyframes tabIn{from{opacity:0;transform:translate3d(var(--fx,18px),var(--fy,0),0) scale(var(--fs,1))}}
+@keyframes tabInL{from{opacity:0;transform:translate3d(calc(var(--fx,18px) * -1),var(--fy,0),0) scale(var(--fs,1))}}
+
+/* touch ripple */
+.fuRip{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;z-index:0}
+.fuRip i{position:absolute;border-radius:50%;background:radial-gradient(circle,currentColor 0,rgba(255,255,255,.5) 30%,transparent 65%);opacity:0}
+
+/* springy presses everywhere */
+:where(button:not(:disabled)){transition:scale .38s cubic-bezier(.34,1.56,.64,1),filter .2s,background-color .25s,box-shadow .25s,opacity .2s}
+:where(button:not(:disabled)):active{scale:.955;transition-duration:.08s}
+:where(.gtile,.chips span,.emojis span):active{scale:.93}
+.nav button:active{scale:1}
+
+/* depth: background layers drift slower than the page */
+#thAmb,#fuAlive{translate:0 var(--par,0)}
+
+/* theme moments layer */
+#fuMom{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}
+#fuMom .mo{position:absolute;left:0;top:0;font-style:normal;line-height:1;will-change:transform,opacity;filter:drop-shadow(0 3px 6px rgba(0,0,0,.18))}
+#fuMom .mo.flip b{display:inline-block;font-weight:normal;transform:scaleX(-1)}
+#fuMom .mo.spk{color:#fff3b8;text-shadow:0 0 8px rgba(255,236,160,.95);filter:none}
+html[data-dark="0"] #fuMom .mo.spk{color:rgba(var(--acR),.85);text-shadow:0 0 6px rgba(255,255,255,.95)}
+#fuMom .mo.pulse{filter:blur(1px) drop-shadow(0 0 30px rgba(var(--acR),.5))}
+#fuMom .mo.drop::before{content:'';position:absolute;left:50%;bottom:70%;height:calc(var(--len,200px) + 60px);border-left:1px solid rgba(var(--txR),.45)}
+html[data-dark="1"] #fuMom .mo.drop::before{border-color:rgba(255,255,255,.55)}
+
+@media (prefers-reduced-motion: reduce){#fuMom{display:none}#thAmb,#fuAlive{translate:none}}
