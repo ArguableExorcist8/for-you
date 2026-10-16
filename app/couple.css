@@ -1,0 +1,191 @@
+/* ================= v25 couple features — built on theme variables ================= */
+.fuOld{display:none!important}
+.fi{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ---------- status strip ---------- */
+.fuStatus{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px;position:relative;z-index:2}
+.fuStatus:empty{display:none}
+.fuChips{display:flex;flex-wrap:wrap;gap:6px}
+.fuChip{display:inline-flex;align-items:center;gap:6px;margin:0;padding:8px 13px;border-radius:999px;font-size:13.5px;font-weight:600;line-height:1.2;
+  background:rgba(var(--cdR),.82);color:var(--tx);border:0;box-shadow:0 2px 10px rgba(var(--shR),.12),inset 0 0 0 .5px rgba(var(--shR),.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);text-align:left;animation:fuIn .45s var(--uiSpring,cubic-bezier(.34,1.56,.64,1)) both}
+.fuChip small{font-weight:500;opacity:.65;margin-left:2px;font-size:11.5px}
+.fuChip.here i{width:9px;height:9px;border-radius:50%;background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.25);animation:fuPulse 2s ease-in-out infinite}
+.fuChip.need{background:var(--ac);color:var(--on);box-shadow:0 6px 16px rgba(var(--acR),.35)}
+.fuChip.need b{font-weight:800}
+.fuChip.mine{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(var(--acR),.35);color:var(--act);backdrop-filter:none}
+.fuBanner{display:flex;align-items:center;gap:12px;width:100%;margin:0;padding:12px 14px;border-radius:20px;text-align:left;border:0;color:var(--tx);
+  background:linear-gradient(135deg,rgba(var(--cdR),.92),rgba(var(--cdR),.78));box-shadow:0 8px 24px rgba(var(--shR),.16);animation:fuIn .5s var(--uiEase,ease) both}
+.fuBanner b{display:block;font-size:15px}.fuBanner small{display:block;font-weight:500;opacity:.7;font-size:12.5px;margin-top:1px}
+.fuBanner .dove{width:42px;height:42px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(var(--acR),.14);color:var(--act)}
+.fuBanner.calm .dove{animation:fuFloat 4s ease-in-out infinite}
+.fuBanner.warm{background:linear-gradient(135deg,var(--ac2),var(--ac));color:var(--on)}
+.fuBanner.warm .dove{background:rgba(255,255,255,.25);color:var(--on)}
+.fuHint{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;background:rgba(var(--cdR),.75);font-size:13.5px;color:var(--tx);text-align:left}
+.fuHint span{flex:1}.fuHint button{margin:0}
+.fuX{background:none!important;color:var(--mu)!important;padding:4px 6px!important;margin:0!important;box-shadow:none!important;border:0!important;font-size:14px}
+
+/* ---------- ritual ---------- */
+.fuRitual{text-align:left}
+.fuRHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.fuRHead small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mu)}
+.fuRHead h2{margin:3px 0 0!important;text-align:left}
+.fuRHead p{margin:4px 0 0;font-size:13.5px}
+.fuDots{display:flex;gap:5px;padding-top:6px;flex:none}
+.fuDots i{width:8px;height:8px;border-radius:8px;background:rgba(var(--txR),.15);transition:all .35s var(--uiSpring,ease)}
+.fuDots i.on{background:var(--ac)}.fuDots i.cur{width:22px;background:var(--ac2)}
+.fuMoods{justify-content:flex-start;gap:4px}
+.fuMoods span{font-size:31px!important}
+.fuNeedGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 8px}
+.fuNeed{margin:0!important;padding:10px 4px!important;border-radius:16px!important;background:var(--sf)!important;color:var(--tx)!important;font-size:12.5px!important;font-weight:600!important;
+  display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:none!important;line-height:1.2;clip-path:none!important;border:0!important;text-shadow:none!important}
+.fuNeed b{font-size:24px;font-weight:normal}
+.fuNeed:active{transform:scale(.92)}
+.fuSkip{background:none!important;color:var(--mu)!important;box-shadow:none!important;border:0!important;font-weight:600!important;padding:8px 10px!important;clip-path:none!important;text-shadow:none!important;font-size:14px!important}
+.fuRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.fuRow button{margin:0}
+.fuQ{font-size:18px;font-weight:700;line-height:1.35;margin:4px 0 10px;color:var(--tx);font-family:var(--skF,inherit)}
+.fuQ.sm{font-size:15px;margin:14px 0 8px}
+.fuGuessMine{font-size:13.5px;color:var(--mu);margin:0 0 6px;padding:8px 12px;border-radius:12px;background:var(--sf)}
+.fuCols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fuCol{background:var(--sf);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fuCol small{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
+.fuCol span{font-size:14px;overflow-wrap:anywhere}
+.fuCol.wait span{color:var(--mu);font-style:italic}
+.fuBig{font-size:30px;line-height:1.1;font-weight:normal}
+.fuGuessRes{margin-top:10px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,rgba(var(--acR),.10),rgba(var(--acR),.04));display:flex;flex-direction:column;gap:3px;font-size:14px}
+.fuGuessRes small{font-weight:700;color:var(--mu);font-size:12px}
+.fuGuessRes b{color:var(--act);font-size:13.5px}
+.fuVerdict{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.fuVerdict button{margin:0}
+.fuSync{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;font-weight:700;color:var(--mu)}
+.fuMeter{flex:1;height:8px;border-radius:8px;background:rgba(var(--txR),.1);overflow:hidden}
+.fuMeter i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--ac2),var(--ac));transition:width 1s var(--uiEase,ease)}
+.fuSync b{color:var(--act);font-size:15px}
+.fuRitual .fuStreak{margin-top:12px}
+.fuRitual.done{background-image:radial-gradient(circle at 100% 0,rgba(var(--acR),.12),transparent 50%),var(--skTex,none)}
+
+/* ---------- cards on Home ---------- */
+.fuCard h2{text-align:left}
+.fuNightIn,.fuLoveIn,.fuSpotIn{display:flex;align-items:center;gap:12px;text-align:left}
+.fuNightIn>div,.fuLoveIn>div,.fuSpotIn>div{flex:1;min-width:0}
+.fuNightIn h2{margin:0!important;font-size:17px}.fuNightIn p{margin:2px 0 0}
+.fuNightIn button{margin:0;flex:none}
+.fuNightIn .moon{font-size:36px;animation:fuFloat 5s ease-in-out infinite}
+#fuNight{background-image:radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.9),transparent),radial-gradient(1px 1px at 70% 20%,rgba(255,255,255,.8),transparent),radial-gradient(1.5px 1.5px at 85% 70%,rgba(255,255,255,.7),transparent),linear-gradient(135deg,#1f2150,#3a2a66)!important;color:#f3efff}
+#fuNight h2,#fuNight .muted{color:#f3efff!important}
+#fuNight.both .moon{animation:fuGlow 3s ease-in-out infinite}
+.fuThumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.fuThumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer}
+.fuQuote{font-size:17px;font-style:italic;line-height:1.45;font-family:var(--skF,Georgia,serif);margin:6px 0 0;text-align:left}
+.fuLoveE,.fuSpotI{font-size:30px;width:52px;height:52px;flex:none;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--sf)}
+.fuLoveIn small,.fuSpotIn small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mu)}
+.fuLoveIn b,.fuSpotIn b{display:block;font-size:15px;line-height:1.35;margin-top:2px}
+.fuLoveIn p,.fuSpotIn p{margin:3px 0 0;font-size:13px}
+.fuLoveIn button,.fuSpotIn button{margin:0;flex:none}
+.fuSpot{border:1.5px dashed rgba(var(--acR),.35)!important}
+.fuTouchBtn{margin-top:4px}
+
+/* ---------- chat header ---------- */
+#chatApp .chPause{color:var(--mu)}
+#chatApp .chPause svg{width:21px;height:21px}
+#chatApp .chTxt.locked{font-style:italic;opacity:.7}
+
+/* ---------- sheets ---------- */
+.fuDoveHead{width:64px;height:64px;margin:0 auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(var(--acR),.12);color:var(--act);animation:fuFloat 4s ease-in-out infinite}
+.fuDoveHead svg{width:32px;height:32px}
+.fuLbl{font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin:16px 0 6px;text-align:left}
+.fuWide{display:block!important;width:100%;margin:10px 0 0!important}
+.fuTip{font-size:13.5px;color:var(--mu);background:var(--sf);border-radius:14px;padding:10px 12px;text-align:left;line-height:1.45}
+.fuRCards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;text-align:left}
+.fuRCard{background:var(--sf);border-radius:16px;padding:12px;font-size:14px;line-height:1.45}
+.fuRCard small{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
+.fuRCard p{margin:6px 0 0}
+.fuLine{font-style:italic;color:var(--act);font-weight:700}
+.fuTopics{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.fuTopic{display:flex!important;align-items:center;gap:12px;width:100%;margin:0!important;padding:11px 12px!important;border-radius:16px!important;text-align:left;
+  background:var(--sf)!important;color:var(--tx)!important;font-weight:600!important;font-size:14.5px!important;box-shadow:none!important;border:0!important;clip-path:none!important;text-shadow:none!important;text-transform:none!important;letter-spacing:0!important}
+.fuTopic>span{font-size:24px}
+.fuTopic b{display:block;font-size:12px;margin-top:2px;color:var(--mu)}
+.fuTopic b.ok{color:var(--act)}.fuTopic b.go{color:var(--ac)}
+.fuStepTop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.fuStepTop small{font-weight:800;color:var(--mu)}
+.fuSyncBig{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.fuSyncBig div{background:var(--sf);border-radius:18px;padding:14px;text-align:center}
+.fuSyncBig b{display:block;font-size:34px;color:var(--act);letter-spacing:-.02em}
+.fuSyncBig small{font-size:12.5px;color:var(--mu);font-weight:600}
+.fuList{text-align:left;font-size:13.5px;line-height:1.5;padding-left:20px;color:var(--tx)}
+.fuCenter{text-align:center}
+
+/* ---------- state of us ---------- */
+.fuSou{margin-bottom:10px}
+.fuPlan{padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(var(--acR),.14),rgba(var(--acR),.05));text-align:left;margin-bottom:6px}
+.fuPlan small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
+.fuPlan b{font-size:15.5px}
+.fuRate{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.fuRate button{margin:0!important;padding:9px 0!important;border-radius:10px!important;font-size:13.5px!important;background:var(--sf)!important;color:var(--tx)!important;box-shadow:none!important;border:0!important;clip-path:none!important;text-shadow:none!important;min-width:0}
+.fuRate button.on{background:var(--ac)!important;color:var(--on)!important;transform:scale(1.08)}
+.fuTrend{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.fuTrend>div{display:flex;align-items:flex-end;gap:8px;height:34px}
+.fuTrend small{width:70px;font-size:11.5px;font-weight:700;color:var(--mu);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center}
+.fuTrend span{flex:1;display:flex;align-items:flex-end;gap:4px;height:100%}
+.fuTrend i{flex:1;border-radius:4px 4px 2px 2px;background:linear-gradient(var(--ac2),var(--ac));min-height:3px;transition:height .6s var(--uiEase,ease)}
+.fuTrend i.empty{background:rgba(var(--txR),.1)}
+
+/* ---------- "More" section ---------- */
+.fuMore{margin:18px 0 0;text-align:left}
+.fuMore summary{font-weight:800;font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--mu);padding:10px 6px;list-style:none;cursor:pointer}
+.fuMore summary::-webkit-details-marker{display:none}
+.fuMore summary::after{content:' ▾'}.fuMore[open] summary::after{content:' ▴'}
+.fuMore summary small{text-transform:none;letter-spacing:0;font-weight:500}
+
+/* ---------- breathe overlay ---------- */
+.fuBreath{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;text-align:center;color:#fff;
+  background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--ac) 55%,#1a1530),#120f22);animation:uiFade .4s ease both}
+.fuBreath.out{animation:uiFade .3s ease reverse both}
+.fuBX{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;width:42px;height:42px;border-radius:50%;padding:0!important;margin:0!important;background:rgba(255,255,255,.14)!important;color:#fff!important;box-shadow:none!important;border:0!important;clip-path:none!important}
+.fuOrb{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
+.fuOrb i{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.08) 60%,transparent 70%);animation:fuBreathe 14s ease-in-out infinite}
+.fuOrb span{position:relative;font-size:22px;font-weight:700;letter-spacing:.02em}
+.fuBreath b{font-size:40px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.fuBreath p{max-width:320px;font-size:16px;line-height:1.5;opacity:.9;min-height:48px}
+.fuBreath .soft{background:rgba(255,255,255,.16)!important;color:#fff!important}
+@keyframes fuBreathe{0%{transform:scale(.55)}28.5%{transform:scale(1)}57%{transform:scale(1)}100%{transform:scale(.55)}}
+
+/* ---------- touch ---------- */
+.fuPad{position:relative;width:170px;height:170px;margin:14px auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;
+  background:radial-gradient(circle,var(--ac2),var(--ac));box-shadow:0 14px 34px rgba(var(--acR),.45);transition:transform .12s ease}
+.fuPad span{font-size:64px;transition:transform .12s ease;pointer-events:none}
+.fuPad i{position:absolute;inset:-8px;border-radius:50%;border:3px solid rgba(var(--acR),.35);opacity:0;pointer-events:none}
+.fuPad.press{transform:scale(.9)}.fuPad.press span{transform:scale(1.25)}
+.fuPad.press i{animation:fuRing .6s ease-out}
+.fuPad.big{width:200px;height:200px}
+.fuPadHint{font-size:13px;color:var(--mu);margin:4px 0 8px}
+.fuTouchIn{position:fixed;inset:0;z-index:310;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;
+  background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--ac) 70%,transparent),rgba(20,8,20,.92));animation:uiFade .35s ease both}
+.fuTouchIn.out{animation:uiFade .35s ease reverse both}
+.fuTouchIn b{font-size:22px}.fuTouchIn small{opacity:.8}
+
+/* ---------- motion ---------- */
+@keyframes fuIn{from{opacity:0;transform:translateY(8px) scale(.96)}}
+@keyframes fuPulse{50%{box-shadow:0 0 0 6px rgba(46,204,113,.08)}}
+@keyframes fuFloat{50%{transform:translateY(-5px)}}
+@keyframes fuGlow{50%{filter:drop-shadow(0 0 12px rgba(255,230,150,.9))}}
+@keyframes fuRing{from{opacity:1;transform:scale(.9)}to{opacity:0;transform:scale(1.35)}}
+@media (prefers-reduced-motion: reduce){.fuChip,.fuBanner,.fuOrb i,.fuDoveHead,.fuNightIn .moon,.fuBanner.calm .dove,.fuChip.here i,.fuPad i{animation:none!important}}
+html.still .fuOrb i{animation-duration:14s}
+
+/* dark themes: soft panels read better slightly lifted */
+html[data-dark="1"] :is(.fuCol,.fuRCard,.fuTopic,.fuSyncBig div,.fuTip,.fuNeed,.fuRate button,.fuLoveE,.fuSpotI,.fuGuessMine){background:rgba(255,255,255,.07)!important}
+
+/* ---------- review fixes ---------- */
+.fuRHead{padding-right:24px}
+.fuMoods{display:grid!important;grid-template-columns:repeat(6,1fr);justify-items:center}
+/* compact streak line inside the ritual */
+.fuRitual .fuStreak{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:.5px solid rgba(var(--shR),.14)}
+.fuRitual .fuStreak .streak{flex:none;gap:6px}
+.fuRitual .fuStreak .streak>div{flex:none;padding:4px 10px;border-radius:999px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:4px}
+.fuRitual .fuStreak .streak small{display:inline!important;font-size:11px;font-weight:600;color:var(--mu);margin-left:2px}
+.fuRitual .fuStreak p{margin:0;font-size:12.5px;line-height:1.35;text-align:left;flex:1}
+/* evening card: text first, button full width */
+.fuNightIn{flex-wrap:wrap}
+.fuNightIn>div{flex:1 1 60%}
+.fuNightIn button{flex:1 1 100%!important;margin-top:4px!important}

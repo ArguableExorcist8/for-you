@@ -186,3 +186,5 @@ body:has(.modal:not(.hidden)) #toast{bottom:auto;top:calc(env(safe-area-inset-to
 body:has(.modal:not(.hidden)) #toast.show{transform:translate(-50%,0) scale(1)}
 /* loose text sits above background scenery */
 .homeHi,.gsec,.secHead,.tab>p.muted,.tab>h2,.tab>.muted{position:relative;z-index:2}
+/* toasts size to their text instead of wrapping at half the screen */
+#toast{width:max-content;max-width:calc(100vw - 32px)}

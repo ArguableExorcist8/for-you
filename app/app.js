@@ -50,6 +50,7 @@ const show = (id) => { $$('.view').forEach((v) => v.classList.add('hidden')); $(
   document.addEventListener('click', (e) => { if (e.target.closest('.nav button,.seg button,.gtile,.chips span,.emojis span')) buzz(6); }, true);
   document.addEventListener('change', (e) => { if (e.target.matches('.tgl input[type=checkbox]')) buzz(10); }, true);
 })();
+const loadScript = (src) => new Promise((res) => { const el = document.createElement('script'); el.src = src; el.onload = el.onerror = () => res(); document.head.appendChild(el); });
 const errMsg = (e) => (e && (e.message || e.error_description)) || String(e);
 
 // ---- state ----
@@ -289,6 +290,7 @@ function teardown() {
   if (S.pairChannel) { sb.removeChannel(S.pairChannel); S.pairChannel = null; }
   if (typeof CH !== 'undefined' && CH.ch) { sb.removeChannel(CH.ch); CH.ch = null; }
   S.couple = null; S.partner = null; S.data = {};
+  if (window.FU_leave) window.FU_leave();
 }
 async function loadMe() {
   for (let i = 0; i < 3; i++) {
@@ -480,6 +482,7 @@ async function enterCouple() {
   runPendingAction();
   if (navigator.onLine) flushQueue(); updateQueueBadge();
   chatInit(); refreshStorage();
+  if (window.FU_enter) window.FU_enter();
   if (params.get('k') === 'chat') { goTab('chat'); history.replaceState(null, '', location.pathname); }
 }
 function subscribeCouple() {
@@ -504,16 +507,10 @@ function subscribeCouple() {
   S.channel = ch;
 }
 document.addEventListener('visibilitychange', async () => { if (!document.hidden && S.couple) {
-  const { data: still } = await sb.from('couples').select('id').eq('id', S.couple.id).eq('active', true).maybeSingle(); if (!still) { boot(); return; } Object.keys(TABLES).forEach(loadTable); refreshProgress(); loadLocked(); } });
+  const { data: still } = await sb.from('couples').select('id').eq('id', S.couple.id).eq('active', true).maybeSingle(); if (!still) { boot(); return; } Object.keys(TABLES).forEach(loadTable); refreshProgress(); loadLocked(); if (window.FU_resume) window.FU_resume(); } });
 
 // ---- tabs ----
-$$('.nav button').forEach((b) => b.onclick = () => {
-  document.body.dataset.tab = b.dataset.tab; window.CC_picNext && window.CC_picNext();
-  $$('.nav button').forEach((x) => x.classList.toggle('on', x === b));
-  $$('.tab').forEach((t) => t.classList.add('hidden'));
-  $('#tab-' + b.dataset.tab).classList.remove('hidden');
-  window.scrollTo(0, 0);
-});
+$$('.nav button').forEach((b) => b.onclick = () => goTab(b.dataset.tab));
 
 // ---- pings ----
 async function sendPing() {
@@ -712,7 +709,7 @@ $('#gallery').onclick = (e) => {
     if (error) toast(errMsg(error)); else closeModal();
   };
 };
-function openModal(html) { clearTimeout(closeModal.t); $('#modalBox').innerHTML = html; $('#modalBox').scrollTop = 0; $('#modalBox').style.transform = ''; $('#modal').classList.remove('hidden', 'out'); }
+function openModal(html) { clearTimeout(closeModal.t); $('#modalBox').onclick = null; $('#modalBox').innerHTML = html; $('#modalBox').scrollTop = 0; $('#modalBox').style.transform = ''; $('#modal').classList.remove('hidden', 'out'); }
 function closeModal() {
   const m = $('#modal'); if (m.classList.contains('hidden')) return;
   if (!motionOn()) { m.classList.add('hidden'); return; }
@@ -905,6 +902,7 @@ function setBadge(id, txt, isNew) { const el = document.getElementById('tb-' + i
 // ---- game navigation ----
 let curGame = null;
 function openGame(g) {
+  if (window.FU_used) window.FU_used('g:' + g);
   curGame = g;
   $('#gameHome').classList.add('hidden'); $('#gamePanel').classList.remove('hidden');
   $$('.game').forEach((p) => p.classList.toggle('on', p.dataset.panel === g));
@@ -1410,7 +1408,9 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 
 // ---- navigation inside Us ----
 let curFeat = null;
-function openFeat(f) {
+async function openFeat(f) {
+  if (window.FU_used) window.FU_used(f);
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=25'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -1536,18 +1536,20 @@ RENDER.gratitude = () => {
 
 // ---- 10. journal ----
 $('#jDate').value = dayStr();
-$('#jDate').onchange = () => { const e = (S.data.journal || []).find((j) => mine(j) && j.day === $('#jDate').value); $('#jBody').value = e ? e.body : ''; };
+const jText = (j) => (j._pt != null ? j._pt : (window.FU_isEnc && FU_isEnc(j.body) ? '🔒 Locked entry' : j.body));
+$('#jDate').onchange = () => { const e = (S.data.journal || []).find((j) => mine(j) && j.day === $('#jDate').value); $('#jBody').value = e ? jText(e) : ''; };
 $('#jSave').onclick = async () => {
-  const day = $('#jDate').value || dayStr(), body = $('#jBody').value.trim(); if (!body) return;
+  const day = $('#jDate').value || dayStr(); let body = $('#jBody').value.trim(); if (!body) return;
+  if (window.FU_lockOn && FU_lockOn()) { if (!FU_hasKey()) return FU_unlock(); body = await FU_enc(body); }
   const ex = (S.data.journal || []).find((j) => mine(j) && j.day === day);
   const { error } = ex ? await sb.from('journal').update({ body, updated_at: new Date().toISOString() }).eq('id', ex.id) : await sb.from('journal').insert({ day, body });
   if (error) return toast(errMsg(error)); toast('Saved 📔'); loadTable('journal');
 };
 RENDER.journal = () => {
-  const l = S.data.journal || []; const days = [...new Set(l.map((j) => j.day))].sort().reverse();
+  const l = S.data.journal || []; if (window.FU_decList) FU_decList(l, () => RENDER.journal()); const days = [...new Set(l.map((j) => j.day))].sort().reverse();
   if (!$('#jBody').value) $('#jDate').onchange();
   $('#jList').innerHTML = days.length ? days.map((d) => { const m = l.find((j) => mine(j) && j.day === d), p = l.find((j) => !mine(j) && j.day === d);
-    return `<h3 class="gsec">${fmtDay(d)}</h3><div class="side"><div class="ans"><small>You ${m ? `<a href="#" data-jedit="${d}">✏️</a>` : ''}</small>${m ? esc(m.body) : '<i>—</i>'}</div><div class="ans"><small>${pn()}</small>${p ? esc(p.body) : '<i>—</i>'}</div></div>`; }).join('') : '<p class="muted">Start your shared diary ✨</p>';
+    return `<h3 class="gsec">${fmtDay(d)}</h3><div class="side"><div class="ans"><small>You ${m ? `<a href="#" data-jedit="${d}">✏️</a>` : ''}</small>${m ? esc(jText(m)) : '<i>—</i>'}</div><div class="ans"><small>${pn()}</small>${p ? esc(jText(p)) : '<i>—</i>'}</div></div>`; }).join('') : '<p class="muted">Start your shared diary ✨</p>';
   const t = l.find((j) => !mine(j) && j.day === dayStr()); setFB('journal', t ? `${partnerName()} wrote today` : '', !!t);
 };
 $('#jList').onclick = (e) => { const d = e.target.dataset.jedit; if (!d) return; e.preventDefault(); $('#jDate').value = d; $('#jDate').onchange(); $('#jBody').focus(); window.scrollTo(0, 0); };
@@ -2084,7 +2086,7 @@ $('#jkList').addEventListener('click', async (e) => {
 });
 
 // ---- trivia night ----
-const TQ = window.CC_TRIVIA || [];
+let TQ = window.CC_TRIVIA || [];
 function seeded(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function triviaRound(day) {
   const r = seeded(hashS(S.couple.id + '~' + day)); const idx = []; while (idx.length < 10 && idx.length < TQ.length) { const i = Math.floor(r() * TQ.length); if (!idx.includes(i)) idx.push(i); }
@@ -2714,9 +2716,10 @@ const fmtDur = (s) => { s = Math.max(0, Math.round(s || 0)); return `${Math.floo
 const fmtSize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
 const hhmm = (d) => new Date(d).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 function dayLabel(d) { const x = new Date(d), t = new Date(); const y = new Date(); y.setDate(t.getDate() - 1); if (x.toDateString() === t.toDateString()) return 'Today'; if (x.toDateString() === y.toDateString()) return 'Yesterday'; return x.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: x.getFullYear() === t.getFullYear() ? undefined : 'numeric' }); }
+const chText = (m) => (m && m._pt != null ? m._pt : (window.FU_isEnc && FU_isEnc(m && m.body) ? '🔒 Locked message' : (m && m.body) || ''));
 function chPreview(m) {
   if (!m) return ''; if (m.deleted) return '🚫 Deleted message';
-  return { text: m.body || '', image: '📷 Photo', video: '🎬 Video', voice: `🎤 Voice message (${fmtDur(m.duration)})`, videonote: '⭕ Video message', file: `📎 ${m.media_name || 'File'}` }[m.kind] + (m.kind !== 'text' && m.body ? ' · ' + m.body : '');
+  return { text: chText(m), image: '📷 Photo', video: '🎬 Video', voice: `🎤 Voice message (${fmtDur(m.duration)})`, videonote: '⭕ Video message', file: `📎 ${m.media_name || 'File'}` }[m.kind] + (m.kind !== 'text' && m.body ? ' · ' + m.body : '');
 }
 async function chSign(paths) {
   const need = [...new Set(paths.filter(Boolean))].filter((p) => !CH.urls[p] || CH.urls[p].exp < Date.now());
@@ -2728,7 +2731,7 @@ async function chSign(paths) {
 }
 function chIdx() { CH.byId = {}; CH.list.forEach((m) => { CH.byId[m.id] = m; }); }
 function chSort() { CH.list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); chIdx(); }
-function chSaveCache() { clearTimeout(CH.saveT); CH.saveT = setTimeout(() => { if (!S.couple) return; cacheSet('chat:' + S.couple.id, CH.list.slice(-120).map((m) => { const { _local, ...r } = m; return r; })); }, 400); }
+function chSaveCache() { clearTimeout(CH.saveT); CH.saveT = setTimeout(() => { if (!S.couple) return; cacheSet('chat:' + S.couple.id, CH.list.slice(-120).map((m) => { const { _local, _pt, _dec, ...r } = m; return r; })); }, 400); }
 function chMerge(rows) { rows.forEach((r) => { const old = CH.byId[r.id]; if (old) Object.assign(old, r, { _pending: false, _queued: false, _failed: false }); else CH.list.push(r); }); chSort(); }
 
 // ---- rendering ----
@@ -2745,7 +2748,7 @@ function chBody(m) {
     case 'voice': return `<div class="chVoice" data-voice="${m.id}"><button class="vp" aria-label="Play">▶</button><div class="vw">${waveBars(m)}</div><span class="vt">${fmtDur(m.duration)}</span><button class="vs">${CH.rate}×</button>${up}</div>`;
     case 'videonote': return `<div class="chRound" data-round="${m.id}">${url ? `<video src="${esc(url)}#t=0.1" preload="metadata" playsinline></video>` : '<div class="chPh">⭕</div>'}<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"/></svg><span class="chDur">${fmtDur(m.duration)}</span><span class="chPlay">▶</span>${up}</div>`;
     case 'file': return `<a class="chFileC" data-file="${m.id}"><span class="fi">📄</span><div><b>${esc(m.media_name || 'File')}</b><small>${m.media_size ? fmtSize(m.media_size) : ''}</small></div><span>⬇️</span>${up}</a>${cap}`;
-    default: return `<div class="chTxt${emojiOnly(m.body) ? ' big' : ''}">${linkify(esc(m.body || ''))}</div>`;
+    default: return `<div class="chTxt${emojiOnly(chText(m)) ? ' big' : ''}${m._pt == null && window.FU_isEnc && FU_isEnc(m.body) ? ' locked' : ''}">${linkify(esc(chText(m)))}</div>`;
   }
 }
 function chTicks(m) {
@@ -2763,7 +2766,7 @@ function chMsgHtml(m, prev, next) {
   const quote = m.reply_to ? `<div class="chQuote" data-jump="${m.reply_to}"><b>${q ? (chMine(q) ? 'You' : esc(partnerName())) : '↩︎'}</b><span>${esc(q ? chPreview(q) : 'Earlier message')}</span></div>` : '';
   const rx = Object.values(m.reactions || {}); const rc = {}; rx.forEach((e) => { rc[e] = (rc[e] || 0) + 1; });
   const rxH = rx.length ? `<div class="chRx">${Object.entries(rc).map(([e, n]) => `<span class="${(m.reactions || {})[S.user.id] === e ? 'me' : ''}">${e}${n > 1 ? n : ''}</span>`).join('')}</div>` : '';
-  const bare = !m.deleted && (m.kind === 'videonote' || (m.kind === 'text' && emojiOnly(m.body)));
+  const bare = !m.deleted && (m.kind === 'videonote' || (m.kind === 'text' && emojiOnly(chText(m))));
   h += `<div class="chRow ${mine ? 'me' : 'them'}${grpPrev ? ' gp' : ''}${grpNext ? ' gn' : ''}${CH.fresh.has(m.id) ? ' fresh' : ''}" data-id="${m.id}">
     <div class="chB${bare ? ' bare' : ''} k-${m.kind}${m.deleted ? ' del' : ''}">${quote}${chBody(m)}<div class="chMeta">${hhmm(m.created_at)} ${chTicks(m)}</div></div>${rxH}</div>`;
   return h;
@@ -2775,13 +2778,14 @@ function chPatch(box) {
   CH.list.forEach((m, i) => {
     const html = chMsgHtml(m, CH.list[i - 1], CH.list[i + 1]); const key = html.replace(' fresh', '');
     let n = old[m.id];
-    if (n && n.__k === key) delete old[m.id];
-    else { if (n) { n.remove(); delete old[m.id]; } n = document.createElement('div'); n.className = 'chU'; n.dataset.u = m.id; n.innerHTML = html; n.__k = key; }
+    if (n) { delete old[m.id]; if (n.__k !== key) { n.innerHTML = html; n.__k = key; } } // update in place, never detach the anchor
+    else { n = document.createElement('div'); n.className = 'chU'; n.dataset.u = m.id; n.innerHTML = html; n.__k = key; }
     if (n !== at) box.insertBefore(n, at); else at = at.nextSibling;
   });
   Object.values(old).forEach((n) => n.remove());
 }
 function chRender(keep) {
+  if (window.FU_decChat) window.FU_decChat(CH.list);
   const box = $('#chMsgs'), list = $('#chatList'); if (!box) return;
   const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 140;
   const prevH = list.scrollHeight, prevTop = list.scrollTop;
@@ -2899,18 +2903,24 @@ function showTyping() {
   const l = $('#chatList'); if (l.scrollHeight - l.scrollTop - l.clientHeight < 160) l.scrollTop = l.scrollHeight;
   clearTimeout(CH.typingT); CH.typingT = setTimeout(hideTyping, 3500);
 }
-function hideTyping() { $('#chTyping').classList.add('hidden'); $('#chtStatus').textContent = 'our little corner 💞'; $('#chtStatus').classList.remove('typing'); }
+function hideTyping() { $('#chTyping').classList.add('hidden'); $('#chtStatus').textContent = (window.FU_chatStatus && FU_chatStatus()) || 'our little corner 💞'; $('#chtStatus').classList.remove('typing'); }
 function chDownBtn() { const n = CH.newBelow; $('#chDownN').textContent = n ? n : ''; }
 
 // ---- sending ----
 async function chInsert(m) {
   const row = {}; ['id', 'kind', 'body', 'media_path', 'media_type', 'media_name', 'media_size', 'duration', 'meta', 'reply_to'].forEach((k) => { if (m[k] !== undefined && m[k] !== null) row[k] = m[k]; });
+  const locked = m.kind === 'text' && row.body && window.FU_lockOn && FU_lockOn();
+  if (locked) {
+    if (m._pt == null) m._pt = row.body;
+    try { row.body = await FU_enc(m._pt); } catch (e) { m._failed = true; m._pending = false; chRender(); toast('🔒 Unlock our chat to send (Settings → Private lock)'); return; }
+    m.body = row.body;
+  }
   const r = await sb.from('messages').insert(row);
   if (r.queued) { m._queued = true; m._pending = false; }
   else if (r.error) { m._failed = true; m._pending = false; toast('Message failed: ' + errMsg(r.error)); }
   else { m._pending = false; }
   chRender(); chSaveCache();
-  if (!r.error) notify('chat', chPreview(m).slice(0, 100));
+  if (!r.error) notify('chat', locked ? '🔒 sent you a message' : chPreview(m).slice(0, 100));
   if (!r.error && !r.queued && (m.kind === 'image' || m.kind === 'video')) setTimeout(() => loadTable('photos'), 400); // DB trigger mirrors it into Photos
 }
 function chAddLocal(fields) {
@@ -2919,6 +2929,7 @@ function chAddLocal(fields) {
 }
 async function chSendText(text) {
   const body = (text ?? $('#chTxt').value).trim(); if (!body || !S.couple) return;
+  if (window.FU_lockOn && FU_lockOn() && !FU_hasKey()) { FU_unlock(); return; }
   if (text === undefined) { $('#chTxt').value = ''; chAutosize(); chComposeState(); }
   snd('pop'); const m = chAddLocal({ kind: 'text', body: body.slice(0, 4000) }); await chInsert(m);
 }
@@ -3052,7 +3063,7 @@ $('#chMenu').onclick = async (e) => {
   if (r) return chReact(m, r.dataset.r, e);
   const k = a.dataset.a;
   if (k === 'reply') chSetReply(m.id);
-  else if (k === 'copy') { try { await navigator.clipboard.writeText(m.body || ''); toast('Copied 📋'); } catch { toast('Could not copy'); } }
+  else if (k === 'copy') { try { await navigator.clipboard.writeText(chText(m)); toast('Copied 📋'); } catch { toast('Could not copy'); } }
   else if (k === 'open') { if (m.kind === 'file') { const u = chUrl(m.media_path); if (u) window.open(u, '_blank', 'noopener'); } else chView(m); }
   else if (k === 'del') {
     if (!navigator.onLine) return toast('Deleting needs internet 📶');
@@ -3075,7 +3086,7 @@ async function chReact(m, emoji, e) {
 function chView(m) {
   const u = m._local || chUrl(m.media_path); if (!u) return toast('Needs internet to load 📶');
   $('#chViewBox').innerHTML = m.kind === 'image' ? `<img src="${esc(u)}" alt="">` : `<video src="${esc(u)}" controls autoplay playsinline></video>`;
-  if (m.body) $('#chViewBox').insertAdjacentHTML('beforeend', `<p>${esc(m.body)}</p>`);
+  if (m.body) $('#chViewBox').insertAdjacentHTML('beforeend', `<p>${esc(chText(m))}</p>`);
   $('#chViewer').classList.remove('hidden');
 }
 $('#chViewer').onclick = (e) => { if (e.target.closest('video') && !e.target.closest('.chVX')) return; $('#chViewer').classList.add('hidden'); $('#chViewBox').innerHTML = ''; };
@@ -3207,5 +3218,13 @@ addEventListener('online', () => setTimeout(chWake, 1200));
 
 // initial session (onAuthStateChange also fires INITIAL_SESSION)
 sb.auth.getSession().then(({ data }) => { if (!S.user && !data.session && !booting) { show('#authView'); if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗'; } });
+
+// ---- v25 bridge: lets couple.js use the app's internals ----
+window.__FU = {
+  get S() { return S; }, sb, $, $$, esc, toast, uiConfirm, uiPrompt, uiDialog, notify, loadTable, RENDER, TABLES,
+  openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
+  D, hearts, confetti, snd, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet,
+  get CH() { return CH; }, chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
+};
 })();
 
