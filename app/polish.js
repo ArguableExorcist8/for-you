@@ -127,7 +127,7 @@ function autoNav() {
 function navEdge() {
   const n = document.querySelector('.nav'); if (!n) return;
   const away = document.body.classList.contains('navAway') || document.body.classList.contains('kbOpen');
-  if (away) return; // keep the resting height; the ground just slides down by it
+  if (away) { markGround(); return; } // keep the resting height; the ground just slides down by it
   const ty = parseFloat((getComputedStyle(n).transform.split(',')[5]) || 0) || 0;
   const h = Math.max(0, Math.round(innerHeight - n.getBoundingClientRect().top + ty));
   const r = document.documentElement.style; if (r.getPropertyValue('--navTop') !== h + 'px') { r.setProperty('--navTop', h + 'px'); r.setProperty('--navDrop', h + 'px'); setTimeout(markGround, 60); }

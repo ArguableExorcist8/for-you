@@ -1424,7 +1424,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=33'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=34'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -1794,6 +1794,18 @@ $('#pushOff').onclick = async () => {
   toast('Notifications off on this device'); pushState();
 };
 if ('serviceWorker' in navigator) swReg().catch(() => {});
+// v34: when a new version lands, switch to it right away instead of on the next open (unless you're mid-typing)
+if ('serviceWorker' in navigator) {
+  const hadCtrl = !!navigator.serviceWorker.controller; let reloading = false, pending = false;
+  const busy = () => { const t = document.getElementById('chTxt'); const a = document.activeElement; return (t && t.value.trim()) || document.querySelector('.modal:not(.hidden),.uiDlg') || (a && /INPUT|TEXTAREA/.test(a.tagName)); };
+  const swap = () => { if (reloading) return; if (busy()) { pending = true; return; } reloading = true; location.reload(); };
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtrl) swap(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (pending) { swap(); return; }
+    navigator.serviceWorker.getRegistration('./').then((r) => r && r.update()).catch(() => {});
+  });
+}
 
 // ---- distance & time ----
 const myTz = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
