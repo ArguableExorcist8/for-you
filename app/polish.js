@@ -122,6 +122,17 @@ function autoNav() {
   document.addEventListener('click', (e) => { if (e.target.closest('.nav button')) away(false); }, true);
 }
 
+
+// ---------- the theme's ground scenery sits on the nav's real top edge, and drops with it ----------
+function navEdge() {
+  const n = document.querySelector('.nav'); if (!n) return;
+  const away = document.body.classList.contains('navAway') || document.body.classList.contains('kbOpen') || document.body.classList.contains('inChat');
+  const h = away ? 0 : Math.max(0, innerHeight - n.getBoundingClientRect().top + (parseFloat(getComputedStyle(n).transform.split(',')[5]) || 0));
+  document.documentElement.style.setProperty('--navTop', away ? 'env(safe-area-inset-bottom,0px)' : Math.round(h) + 'px');
+}
+new MutationObserver(navEdge).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+addEventListener('resize', navEdge); document.addEventListener('cc:theme', () => setTimeout(navEdge, 120));
+
 // ---------- boot ----------
 function run() {
   markOrnament(); tidySettings(); tidyNotes(); tidyPings(); orderHome();
@@ -130,5 +141,5 @@ function run() {
 const prevEnter = window.FU_enter;
 window.FU_enter = async (...a) => { const p = prevEnter ? prevEnter(...a) : undefined; run(); try { return await p; } finally { run(); } }; // tidy at once, again when data lands
 if (document.readyState !== 'loading') { markOrnament(); tidySettings(); tidyNotes(); tidyPings(); } else document.addEventListener('DOMContentLoaded', run);
-pullToRefresh(); autoNav();
+pullToRefresh(); autoNav(); setTimeout(navEdge, 300);
 })();

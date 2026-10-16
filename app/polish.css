@@ -79,3 +79,9 @@ body.navAway .nav{transform:translateY(calc(100% + 24px))!important;opacity:0;po
 html[data-navs=float] .nav{background:linear-gradient(rgba(var(--cdR),0),rgba(var(--cdR),.88) 38%,rgba(var(--cdR),.97))!important;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   -webkit-mask:linear-gradient(transparent,#000 22px);mask:linear-gradient(transparent,#000 22px)}
 @media (prefers-reduced-motion: reduce){.nav{transition:opacity .2s!important}body.navAway .nav{transform:none!important}}
+/* ground scenery follows the nav up and down */
+#thDeco .sg,#thDecoB .sg{transition:bottom .38s var(--uiEase,cubic-bezier(.22,1,.36,1))}
+/* floating-icon navs: no dead band under the icons */
+html[data-navs=float] .nav{padding-top:4px!important;padding-bottom:max(2px,calc(env(safe-area-inset-bottom,0px) - 12px))!important}
+html[data-navs=float] .nav button{padding-top:2px;padding-bottom:0}
+html[data-navs=float] .nav button span{height:13px;line-height:13px;margin-top:3px}
