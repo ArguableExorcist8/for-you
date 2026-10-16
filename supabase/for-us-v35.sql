@@ -14,3 +14,4 @@ create table if not exists public.checkins (id uuid primary key default gen_rand
 create index if not exists checkins_couple_time on public.checkins (couple_id, created_at desc);
 select public.fu_secure('checkins');
 alter publication supabase_realtime add table public.checkins;
+-- v41 — video messages + photo/video files land in Photos too (applied 2026-10-17; see migration v41_more_chat_media_to_photos)

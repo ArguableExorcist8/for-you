@@ -1431,7 +1431,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=40'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=41'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -2773,11 +2773,12 @@ function chMerge(rows) { rows.forEach((r) => { const old = CH.byId[r.id]; if (ol
 const linkify = (h) => h.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 const emojiOnly = (s) => s && s.length <= 24 && /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\uFE0F|\u200D|\s)+$/u.test(s);
 function waveBars(m) { const w = (m.meta && Array.isArray(m.meta.wave) && m.meta.wave.length) ? m.meta.wave : Array.from({ length: 36 }, (_, i) => .3 + .25 * Math.abs(Math.sin(i * 1.7 + (m.id || '').length))); return w.map((v) => `<i style="height:${Math.round(12 + Math.min(1, v) * 88)}%"></i>`).join(''); }
+const chKind = (m) => (m.kind === 'file' && /^image\//.test(m.media_type || '') && !/heic|heif/.test(m.media_type || '') ? 'image' : m.kind === 'file' && /^video\//.test(m.media_type || '') ? 'video' : m.kind);
 function chBody(m) {
   if (m.deleted) return `<div class="chDel">🚫 This message was deleted</div>`;
   const url = m._local || chUrl(m.media_path); const cap = m.body ? `<div class="chCap">${linkify(esc(m.body))}</div>` : '';
   const up = m._uploading ? '<div class="chUp"><span></span>sending…</div>' : '';
-  switch (m.kind) {
+  switch (chKind(m)) {
     case 'image': return `<div class="chMedia" data-view="${m.id}">${url ? `<img src="${esc(url)}" alt="photo" loading="lazy">` : '<div class="chPh">📷</div>'}${up}</div>${cap}`;
     case 'video': return `<div class="chMedia" data-view="${m.id}">${url ? `<video src="${esc(url)}#t=0.1" preload="metadata" playsinline muted></video>` : '<div class="chPh">🎬</div>'}<span class="chPlay">▶</span><span class="chDur">${fmtDur(m.duration)}</span>${up}</div>${cap}`;
     case 'voice': return `<div class="chVoice" data-voice="${m.id}"><button class="vp" aria-label="Play">▶</button><div class="vw">${waveBars(m)}</div><span class="vt">${fmtDur(m.duration)}</span><button class="vs">${CH.rate}×</button>${up}</div>`;
@@ -2798,7 +2799,7 @@ function chMsgHtml(m, prev, next) {
   const grpPrev = prev && prev.sender === m.sender && new Date(m.created_at) - new Date(prev.created_at) < 300000 && !h;
   const grpNext = next && next.sender === m.sender && new Date(next.created_at) - new Date(m.created_at) < 300000 && new Date(next.created_at).toDateString() === new Date(m.created_at).toDateString();
   const q = m.reply_to ? CH.byId[m.reply_to] : null;
-  const quote = m.reply_to ? `<div class="chQuote" data-jump="${m.reply_to}"><b>${q ? (chMine(q) ? 'You' : esc(partnerName())) : '↩︎'}</b><span>${esc(q ? chPreview(q) : 'Earlier message')}</span></div>` : '';
+  const cx = !m.reply_to && m.meta && m.meta.ctx; const quote = cx ? `<div class="chQuote ctx"><b>${esc(cx.who)}</b><span>${esc(cx.text)}</span></div>` : m.reply_to ? `<div class="chQuote" data-jump="${m.reply_to}"><b>${q ? (chMine(q) ? 'You' : esc(partnerName())) : '↩︎'}</b><span>${esc(q ? chPreview(q) : 'Earlier message')}</span></div>` : '';
   const rx = Object.values(m.reactions || {}); const rc = {}; rx.forEach((e) => { rc[e] = (rc[e] || 0) + 1; });
   const rxH = rx.length ? `<div class="chRx">${Object.entries(rc).map(([e, n]) => `<span class="${(m.reactions || {})[S.user.id] === e ? 'me' : ''}">${e}${n > 1 ? n : ''}</span>`).join('')}</div>` : '';
   const bare = !m.deleted && (m.kind === 'videonote' || (m.kind === 'text' && emojiOnly(chText(m))));
@@ -2966,7 +2967,7 @@ async function chSendText(text) {
   const body = (text ?? $('#chTxt').value).trim(); if (!body || !S.couple) return;
   if (window.FU_lockOn && FU_lockOn() && !FU_hasKey()) { FU_unlock(); return; }
   if (text === undefined) { $('#chTxt').value = ''; chAutosize(); chComposeState(); }
-  snd('pop'); const m = chAddLocal({ kind: 'text', body: body.slice(0, 4000) }); await chInsert(m);
+  snd('pop'); const ctx = CH.ctx; const m = chAddLocal({ kind: 'text', body: body.slice(0, 4000), ...(ctx ? { meta: { ctx: { who: ctx.who, text: ctx.text.slice(0, 140) } } } : {}) }); CH.ctx = null; await chInsert(m);
 }
 const extOf = (type, name) => { const n = (name || '').match(/\.([a-z0-9]{1,8})$/i); if (n) return n[1].toLowerCase(); return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/webm': 'webm', 'audio/ogg': 'ogg' })[(type || '').split(';')[0]] || 'bin'; };
 async function chSendMedia(blob, kind, extra = {}) {
@@ -2992,8 +2993,10 @@ async function chRetry(m) {
 }
 async function chHandleFiles(files, asFile) {
   for (const f of [...files]) {
-    if (!asFile && f.type.startsWith('image/') && f.type !== 'image/gif') { try { const b = await smartImage(f); await chSendMedia(b, 'image'); } catch { await chSendMedia(f, 'image'); } }
-    else if (!asFile && f.type.startsWith('video/')) {
+    const media = /^(image|video)\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif|gif|mp4|mov|m4v)$/i.test(f.name || '');
+    if (media) asFile = false;
+    if (!asFile && (f.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name || '')) && f.type !== 'image/gif') { try { const b = await smartImage(f); await chSendMedia(b, 'image'); } catch { await chSendMedia(f, 'image'); } }
+    else if (!asFile && (f.type.startsWith('video/') || /\.(mp4|mov|m4v)$/i.test(f.name || ''))) {
       if (!navigator.onLine) { toast('Videos need internet 📶'); continue; }
       if (!(await mediaGuard(Math.min(f.size, 25 * MB)))) return;
       const v = await prepVideo(f, (p) => toast(`Shrinking video for you… ${Math.round(p * 100)}% 🪄`, 1500)); if (!v) continue;
@@ -3018,7 +3021,12 @@ $('#chSend').addEventListener('pointerdown', (e) => e.preventDefault()); // keep
 $('#chPlus').onclick = () => { $('#chAttach').classList.toggle('hidden'); $('#chPlus').classList.toggle('on'); };
 ['chGal', 'chCam', 'chCamV'].forEach((id) => { $('#' + id).onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f); e.target.value = ''; }; });
 $('#chFile').onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f, true); e.target.value = ''; };
+function chSetCtx(ctx) {
+  CH.ctx = ctx || null; CH.replyTo = null; $('#chReply').classList.toggle('hidden', !ctx);
+  if (ctx) { $('#chReplyWho').textContent = ctx.who; $('#chReplyTxt').textContent = ctx.text.slice(0, 90); }
+}
 function chSetReply(id) {
+  if (id || CH.ctx) CH.ctx = null;
   CH.replyTo = id; const m = id && CH.byId[id]; $('#chReply').classList.toggle('hidden', !m);
   if (m) { $('#chReplyWho').textContent = chMine(m) ? 'Replying to yourself' : `Replying to ${partnerName()}`; $('#chReplyTxt').textContent = chPreview(m).slice(0, 90); $('#chTxt').focus(); }
 }
@@ -3099,7 +3107,7 @@ $('#chMenu').onclick = async (e) => {
   const k = a.dataset.a;
   if (k === 'reply') chSetReply(m.id);
   else if (k === 'copy') { try { await navigator.clipboard.writeText(chText(m)); toast('Copied 📋'); } catch { toast('Could not copy'); } }
-  else if (k === 'open') { if (m.kind === 'file') { const u = chUrl(m.media_path); if (u) window.open(u, '_blank', 'noopener'); } else chView(m); }
+  else if (k === 'open') { if (chKind(m) === 'file') { const u = chUrl(m.media_path); if (u) window.open(u, '_blank', 'noopener'); } else chView(m); }
   else if (k === 'del') {
     if (!navigator.onLine) return toast('Deleting needs internet 📶');
     if (!(await uiConfirm('Delete this message for both of you?'))) return;
@@ -3120,7 +3128,7 @@ async function chReact(m, emoji, e) {
 // ---- viewer ----
 function chView(m) {
   const u = m._local || chUrl(m.media_path); if (!u) return toast('Needs internet to load 📶');
-  $('#chViewBox').innerHTML = m.kind === 'image' ? `<img src="${esc(u)}" alt="">` : `<video src="${esc(u)}" controls autoplay playsinline></video>`;
+  $('#chViewBox').innerHTML = chKind(m) === 'image' ? `<img src="${esc(u)}" alt="">` : `<video src="${esc(u)}" controls autoplay playsinline></video>`;
   if (m.body) $('#chViewBox').insertAdjacentHTML('beforeend', `<p>${esc(chText(m))}</p>`);
   $('#chViewer').classList.remove('hidden');
 }
@@ -3268,6 +3276,7 @@ window.__FU = {
   get S() { return S; }, sb, $, $$, esc, toast, uiConfirm, uiPrompt, uiDialog, notify, loadTable, RENDER, TABLES,
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
   D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow, chAddLocal, chInsert,
+  chReplyCtx: (ctx) => { goTab('chat'); setTimeout(() => { chSetCtx(ctx); $('#chTxt').focus(); }, 320); },
   get CH() { return CH; }, chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();

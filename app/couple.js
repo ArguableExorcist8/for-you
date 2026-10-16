@@ -198,13 +198,20 @@ function needSheet() {
     <input id="fuNeedNote" maxlength="200" placeholder="Add a few words (optional)">`);
   $('#modalBox').onclick = async (e) => { const b = e.target.closest('[data-need]'); if (!b) return; await setNeed(b.dataset.need, $('#fuNeedNote').value.trim()); F().closeModal(); };
 }
+// their need → a little sheet: reply in chat (quoted), or the gesture that fits
 function answerNeed(k) {
-  const p = pname();
-  if (k === 'hug' || k === 'reassure') return touchSheet(true);
-  if (k === 'talk' || k === 'quiet') return F().goTab('chat');
-  if (k === 'space') return sendLine(`Take the space you need — I'm right here when you're ready 🌙`);
-  if (k === 'fun') return F().goTab('play');
-  sendLine(`I saw you need ${needLabel(k).replace(/^\S+ /, '')} — on it 💗`);
+  const p = pname(); const row = latestNeed(them()); const note = row && row.note && !(window.FU_lockOn && FU_lockOn()) ? String(row.note) : '';
+  const label = needLabel(k); const ctx = { who: `${p} needs`, text: label + (note ? ` — “${note}”` : '') };
+  const extra = k === 'hug' || k === 'reassure' ? ['touch', '🫶 Send a touch'] : k === 'fun' ? ['play', '🎮 Play something together'] : k === 'space' ? ['space', '🌙 “Take the space you need”'] : null;
+  F().openModal(`<div class="fuNeedAns"><div class="naHead"><span>${esc(label.split(' ')[0])}</span><div><b>${esc(p)} needs ${esc(label.replace(/^\S+ /, ''))}</b>${note ? `<small>“${esc(note)}”</small>` : ''}<small>${row ? esc(ago(row.created_at)) : ''}</small></div></div>
+    <button type="button" data-na="chat">💬 Reply in chat</button>${extra ? `<button type="button" class="soft" data-na="${extra[0]}">${esc(extra[1])}</button>` : ''}<button type="button" class="soft" data-close>Not now</button></div>`);
+  $('#modalBox').onclick = (e) => {
+    const b = e.target.closest('[data-na],[data-close]'); if (!b) return; F().closeModal(); const a = b.dataset.na;
+    if (a === 'chat') F().chReplyCtx(ctx);
+    else if (a === 'touch') setTimeout(() => touchSheet(true), 260);
+    else if (a === 'play') F().goTab('play');
+    else if (a === 'space') sendLine(`Take the space you need — I'm right here when you're ready 🌙`);
+  };
   void p;
 }
 async function sendLine(t) { const ok = await F().uiConfirm(`Send to ${pname()}?\n\n“${t}”`); if (!ok) return; await F().chSendText(t); F().toast('Sent 💗'); }

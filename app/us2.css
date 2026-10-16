@@ -205,3 +205,8 @@ html:is([data-pic=hero],[data-pic=bg]) #coupleTitle{color:#fff!important;-webkit
 html[data-pic=bg] :is(.secHead,.setHead,.gsec,#gameHome > .card:first-child :is(h2,p),#usHome > .card:first-child :is(h2,p)),html:is([data-pic=hero],[data-pic=bg]) :is(#homeHi small,#homeHi b){color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 16px rgba(0,0,0,.6)!important}
 html[data-dark="1"] #homeHi :is(small,b){text-shadow:0 1px 4px rgba(0,0,0,.85),0 0 14px rgba(0,0,0,.5)}
 html[data-dark="1"] #homeHi small{color:rgba(255,255,255,.82)!important;-webkit-text-fill-color:rgba(255,255,255,.82)!important}
+/* reply to a need */
+.fuNeedAns{display:grid;gap:8px}.fuNeedAns button{margin:0!important}
+.naHead{display:flex;align-items:center;gap:12px;margin-bottom:6px;text-align:left}
+.naHead > span{font-size:40px;line-height:1}.naHead b{display:block;font-size:18px}.naHead small{display:block;color:var(--mu);font-size:13px;margin-top:2px}
+.chQuote.ctx{border-left-color:var(--ac)!important}
