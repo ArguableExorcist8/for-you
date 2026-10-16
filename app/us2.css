@@ -211,3 +211,21 @@ html[data-dark="1"] #homeHi small{color:rgba(255,255,255,.82)!important;-webkit-
 .naHead > span{font-size:40px;line-height:1}.naHead b{display:block;font-size:18px}.naHead small{display:block;color:var(--mu);font-size:13px;margin-top:2px}
 .chQuote.ctx{border-left-color:var(--ac)!important}
 .fuNeedFor{margin:-2px 0 6px;font-size:14px;color:var(--act,var(--ac))}
+/* check-ins: pick your own */
+.ckTop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.ckTop .ckHead{margin:0 2px}
+.ckEdit{width:32px;height:32px;margin:0!important;padding:0!important;border-radius:50%!important;font-size:14px;flex:0 0 auto;background:rgba(var(--acR),.12)!important;color:var(--tx)!important;box-shadow:none!important;border:0!important}
+.ckEdit::before,.ckEdit::after{content:none!important}
+.ckEd h2{margin-bottom:4px}
+.ckSlots{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0 6px}
+.ckSlot{display:flex;align-items:center;gap:8px;min-height:46px;margin:0!important;padding:8px 10px!important;border-radius:14px!important;font-size:13.5px;text-align:left}
+.ckSlot::before,.ckSlot::after{content:none!important}
+.ckSlot.on{background:rgba(var(--acR),.16)!important;color:var(--tx)!important;border:1px solid rgba(var(--acR),.35)!important;box-shadow:none!important;animation:rcPop .35s cubic-bezier(.34,1.56,.64,1)}
+.ckSlot.on i{font-style:normal;font-size:20px}.ckSlot.on span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}.ckSlot.on b{opacity:.5;font-size:12px}
+.ckSlot.empty{justify-content:center;border:1.5px dashed rgba(var(--txR),.22);color:var(--mu);font-weight:700}
+.ckLib{margin:14px 2px 6px;font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.ckLibG{display:flex;flex-wrap:wrap;gap:6px}
+.ckLibG button{display:flex;align-items:center;gap:5px;margin:0!important;padding:7px 11px!important;border-radius:999px!important;font-size:13px;background:rgba(var(--txR),.06)!important;color:var(--tx)!important;box-shadow:none!important;border:1px solid rgba(var(--txR),.1)!important}
+.ckLibG button::before,.ckLibG button::after{content:none!important}
+.ckLibG button i{font-style:normal}
+.ckOwn{display:flex;gap:6px;align-items:center}.ckOwn input{margin:0!important}.ckOwn #ckE{width:54px;flex:0 0 54px;text-align:center;font-size:18px}.ckOwn #ckL{flex:1;min-width:0}.ckOwn button{margin:0!important;flex:0 0 auto}
+.ckBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.ckBtns button{margin:0!important}

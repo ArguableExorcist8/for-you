@@ -21,7 +21,7 @@ const TBL = {
   needs: ['created_at', false, 80], dq_guesses: ['day', false, 160], dq_verdicts: ['created_at', false, 300],
   repairs: ['created_at', false, 30], repair_notes: ['created_at', false, 60], touches: ['created_at', false, 20],
   goodnights: ['day', false, 30], weekly_extra: ['week', false, 60], future_map: ['topic', true, 200],
-  feature_usage: ['n', false, 200], couple_vault: ['created_at', false, 1], checkins: ['created_at', false, 20],
+  feature_usage: ['n', false, 200], couple_vault: ['created_at', false, 1], checkins: ['created_at', false, 20], member_prefs: ['created_at', false, 4],
 };
 const RENDERERS = {};
 const missing = (e) => e && (/PGRST20[0-9]|42P01/.test(e.code || '') || /does not exist|schema cache|Could not find the table/i.test(e.message || ''));
@@ -52,7 +52,7 @@ function onChange(t, p) {
   if (t === 'touches' && p.eventType === 'INSERT' && row.created_by !== me()) setTimeout(() => replayUnplayed(), 600);
   if (t === 'repairs' && p.eventType === 'INSERT' && row.created_by !== me()) F().toast(`🕊️ ${pname()} asked for a pause. Breathe — you'll talk soon.`, 5000);
   if (t === 'goodnights' && p.eventType === 'INSERT' && row.created_by !== me()) { const mo = row.kind === 'morning'; F().toast(mo ? `☀️ ${pname()} said good morning` : `🌙 ${pname()} said goodnight`, 3500); greetFx(mo ? 'morning' : 'night'); }
-  if (t === 'checkins' && p.eventType === 'INSERT' && row.created_by !== me()) { const c = CHECK[row.status]; if (c) F().toast(`${c.e} ${pname()} ${c.them}`, 4000); }
+  if (t === 'checkins' && p.eventType === 'INSERT' && row.created_by !== me()) { const c = ckOf(row); if (c) F().toast(`${c.e} ${pname()} ${row.label ? '· ' + c.l : c.them}`, 4000); }
   if (t === 'needs' && p.eventType === 'INSERT' && row.created_by !== me()) F().toast(`${pname()} needs ${needLabel(row.need)}`, 4000);
   reload(t);
 }
@@ -492,7 +492,7 @@ function chatStatus() {
 }
 window.FU_chatStatus = () => {
   const r = activeRepair(); if (r && new Date(r.ends_at) > Date.now()) return `🕊️ pausing until ${F().hhmm(r.ends_at)}`;
-  const ck = activeCheck(them()); if (ck) return `${CHECK[ck.status].e} ${CHECK[ck.status].l.toLowerCase()} · ${ckAgo(ck.created_at)}${together ? ' · here now 🟢' : ''}`;
+  const ck = activeCheck(them()); const ckc = ck && ckOf(ck); if (ckc) return `${ckc.e} ${ckc.l.toLowerCase()} · ${ckAgo(ck.created_at)}${together ? ' · here now 🟢' : ''}`;
   return together ? 'here now 🟢' : lockOn() ? '🔒 private · our little corner' : 'our little corner 💞';
 };
 const nightDay = () => { const d = new Date(); if (d.getHours() < 5) d.setDate(d.getDate() - 1); return F().dayStr(d); };
@@ -528,29 +528,85 @@ function greetFx(kind, mine) {
   o.innerHTML = `<i class="glow"></i><b>${mo ? '☀️' : '🌙'}</b>${mo ? '' : '<s>✦</s><s>✧</s><s>✦</s><s>·</s><s>✧</s>'}`;
   document.body.appendChild(o); setTimeout(() => o.remove(), 2600);
 }
-// ---------- quick check-ins ----------
+// ---------- quick check-ins (each of you picks your own 6) ----------
 const CHECK = {
   way: { e: '🚗', l: 'On my way', them: 'is on the way', h: 3 }, home: { e: '🏠', l: 'Home safe', them: 'got home safe', h: 5 },
   work: { e: '💼', l: 'At work', them: 'is at work', h: 9 }, study: { e: '📚', l: 'Studying', them: 'is studying', h: 4 },
   bed: { e: '😴', l: 'Heading to bed', them: 'is heading to bed', h: 10 }, busy: { e: '🤐', l: 'Busy, talk later', them: 'is busy — talk later', h: 2 },
+  free: { e: '📱', l: 'Free to talk', them: 'is free to talk', h: 2 }, miss: { e: '🥺', l: 'Missing you', them: 'is missing you', h: 3 },
+  gym: { e: '🏋️', l: 'At the gym', them: 'is at the gym', h: 2 }, eat: { e: '🍽️', l: 'Eating', them: 'is eating', h: 1.5 },
+  cook: { e: '🍳', l: 'Cooking', them: 'is cooking', h: 1.5 }, shower: { e: '🚿', l: 'In the shower', them: 'is in the shower', h: 0.75 },
+  drive: { e: '🚘', l: 'Driving', them: 'is driving', h: 1 }, out: { e: '🛍️', l: 'Out & about', them: 'is out & about', h: 3 },
+  friends: { e: '👯', l: 'With friends', them: 'is with friends', h: 4 }, family: { e: '👨‍👩‍👧', l: 'With family', them: 'is with family', h: 4 },
+  class: { e: '🎓', l: 'In class', them: 'is in class', h: 3 }, pray: { e: '🤲', l: 'Praying', them: 'is praying', h: 0.5 },
+  game: { e: '🎮', l: 'Gaming', them: 'is gaming', h: 2 }, tired: { e: '😮‍💨', l: 'Tired', them: 'is tired', h: 3 },
+  sick: { e: '🤒', l: 'Not feeling well', them: "isn't feeling well", h: 8 }, landed: { e: '✈️', l: 'Landed safe', them: 'landed safe', h: 4 },
 };
+const CK_DEF = ['way', 'home', 'work', 'study', 'bed', 'busy'];
+const myPrefRow = () => (T.member_prefs || []).find((r) => r.created_by === me());
+function myFavs() {
+  const f = myPrefRow() && Array.isArray(myPrefRow().favs) ? myPrefRow().favs : null;
+  const list = (f || CK_DEF).map((x) => (typeof x === 'string' ? (CHECK[x] ? { k: x, ...CHECK[x] } : null) : x && x.k && x.e && x.l ? { h: 4, them: `· ${x.e} ${x.l}`, ...x } : null)).filter(Boolean);
+  return list.length ? list.slice(0, 6) : CK_DEF.map((k) => ({ k, ...CHECK[k] }));
+}
+// a row can be a library item (status = key) or a custom one (label + emoji carried on the row)
+const ckOf = (row) => (row.label && row.emoji ? { e: row.emoji, l: row.label, them: `· ${row.emoji} ${row.label}` } : CHECK[row.status] || null);
 const ckAgo = (t) => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.round(m / 60)}h ago`; };
-const activeCheck = (who) => (T.checkins || []).filter((c) => c.created_by === who && new Date(c.expires_at) > Date.now() && CHECK[c.status]).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+const activeCheck = (who) => (T.checkins || []).filter((c) => c.created_by === who && new Date(c.expires_at) > Date.now() && ckOf(c)).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
 function paintCheck() {
   const box = $('#fuCheck'); if (!box) return;
   if (!has('checkins')) { box.classList.add('hidden'); return; } box.classList.remove('hidden');
-  const theirs = activeCheck(them()), mine = activeCheck(me()), p = esc(pname());
-  box.innerHTML = `${theirs ? `<div class="ckThem"><span>${CHECK[theirs.status].e}</span><div><b>${p} · ${esc(CHECK[theirs.status].l)}</b><small>${esc(ckAgo(theirs.created_at))}</small></div></div>` : ''}
-    <p class="ckHead">${mine ? `You: <b>${CHECK[mine.status].e} ${esc(CHECK[mine.status].l)}</b> · ${esc(ckAgo(mine.created_at))}` : 'Quick check-in'}</p>
-    <div class="ckChips">${Object.entries(CHECK).map(([k, c]) => `<button type="button" data-ck="${k}" class="${mine && mine.status === k ? 'on' : ''}"><i>${c.e}</i>${esc(c.l)}</button>`).join('')}</div>`;
+  const theirs = activeCheck(them()), mine = activeCheck(me()), p = esc(pname()), tc = theirs && ckOf(theirs), mc = mine && ckOf(mine);
+  const favs = myFavs();
+  box.innerHTML = `${tc ? `<div class="ckThem"><span>${esc(tc.e)}</span><div><b>${p} · ${esc(tc.l)}</b><small>${esc(ckAgo(theirs.created_at))}</small></div></div>` : ''}
+    <div class="ckTop"><p class="ckHead">${mc ? `You: <b>${esc(mc.e)} ${esc(mc.l)}</b> · ${esc(ckAgo(mine.created_at))}` : 'Quick check-in'}</p><button type="button" class="ckEdit" id="ckEdit" aria-label="Choose your check-ins">✏️</button></div>
+    <div class="ckChips">${favs.map((c, i) => `<button type="button" data-ck="${i}" class="${mine && (mine.status === c.k) ? 'on' : ''}"><i>${esc(c.e)}</i>${esc(c.l)}</button>`).join('')}</div>`;
+  $('#ckEdit').onclick = editFavs;
   $$('[data-ck]', box).forEach((b) => b.onclick = async () => {
-    const k = b.dataset.ck, c = CHECK[k]; b.classList.add('sent');
-    const { error } = await F().sb.from('checkins').insert({ status: k, expires_at: new Date(Date.now() + c.h * 3600e3).toISOString() });
+    const c = favs[Number(b.dataset.ck)]; if (!c) return; b.classList.add('sent');
+    const custom = !CHECK[c.k]; const exp = new Date(Date.now() + (c.h || 4) * 3600e3).toISOString();
+    const row = { status: c.k.slice(0, 24), expires_at: exp, ...(custom ? { label: c.l, emoji: c.e } : {}) };
+    const { error } = await F().sb.from('checkins').insert(row);
     if (error) { b.classList.remove('sent'); return F().toast(error.message); }
-    (T.checkins = T.checkins || []).unshift({ created_by: me(), status: k, created_at: new Date().toISOString(), expires_at: new Date(Date.now() + c.h * 3600e3).toISOString() }); paintCheck();
-    F().notify('ping', `${c.them} ${c.e}`); F().toast(`${c.e} Sent to ${pname()}`); try { navigator.vibrate && navigator.vibrate(10); } catch { /* */ }
+    (T.checkins = T.checkins || []).unshift({ created_by: me(), created_at: new Date().toISOString(), ...row }); paintCheck();
+    F().notify('ping', custom ? `· ${c.e} ${c.l}` : `${c.them} ${c.e}`); F().toast(`${c.e} Sent to ${pname()}`); try { navigator.vibrate && navigator.vibrate(10); } catch { /* */ }
     reload('checkins');
   });
+}
+// pick your 6: from the library or make your own
+function editFavs() {
+  let sel = myFavs().map((c) => (CHECK[c.k] ? c.k : { k: c.k, e: c.e, l: c.l, h: c.h || 4 }));
+  const keyOf = (x) => (typeof x === 'string' ? x : x.k);
+  const view = (x) => (typeof x === 'string' ? { k: x, ...CHECK[x] } : x);
+  const paint = () => {
+    const chosen = sel.map(view);
+    $('#modalBox').innerHTML = `<div class="ckEd"><h2>Your check-ins</h2><p class="muted">Pick up to 6 for your Home screen. ${esc(pname())} picks their own.</p>
+      <div class="ckSlots">${Array.from({ length: 6 }, (_, i) => chosen[i] ? `<button type="button" class="ckSlot on" data-rm="${i}"><i>${esc(chosen[i].e)}</i><span>${esc(chosen[i].l)}</span><b>✕</b></button>` : `<div class="ckSlot empty">${i + 1}</div>`).join('')}</div>
+      <p class="ckLib">Tap to add</p>
+      <div class="ckLibG">${Object.entries(CHECK).filter(([k]) => !sel.some((x) => keyOf(x) === k)).map(([k, c]) => `<button type="button" data-add="${k}"><i>${c.e}</i>${esc(c.l)}</button>`).join('')}</div>
+      <p class="ckLib">Make your own</p>
+      <div class="ckOwn"><input id="ckE" maxlength="4" placeholder="🙂" aria-label="Emoji"><input id="ckL" maxlength="22" placeholder="e.g. At grandma's" aria-label="Label"><button type="button" id="ckAddOwn">Add</button></div>
+      <div class="ckBtns"><button type="button" id="ckSave">Save</button><button type="button" class="soft" id="ckReset">Reset</button><button type="button" class="soft" data-close>Cancel</button></div></div>`;
+    const box = $('#modalBox');
+    $$('[data-rm]', box).forEach((b) => b.onclick = () => { sel.splice(Number(b.dataset.rm), 1); paint(); });
+    $$('[data-add]', box).forEach((b) => b.onclick = () => { if (sel.length >= 6) return F().toast('6 max — tap one above to remove it'); sel.push(b.dataset.add); paint(); });
+    $('#ckAddOwn').onclick = () => {
+      const e = $('#ckE').value.trim(), l = $('#ckL').value.trim(); if (!e || !l) return F().toast('Add an emoji and a few words');
+      if (sel.length >= 6) return F().toast('6 max — tap one above to remove it');
+      sel.push({ k: 'c' + Math.random().toString(36).slice(2, 8), e: [...e].slice(0, 2).join(''), l: l.slice(0, 22), h: 4 }); paint();
+    };
+    $('#ckReset').onclick = () => { sel = [...CK_DEF]; paint(); };
+    $$('[data-close]', box).forEach((b) => b.onclick = () => F().closeModal());
+    $('#ckSave').onclick = async () => {
+      if (!sel.length) return F().toast('Pick at least one');
+      const row = { couple_id: S().couple.id, created_by: me(), favs: sel };
+      const { error } = await F().sb.from('member_prefs').upsert(row, { onConflict: 'created_by' });
+      if (error) return F().toast('Couldn\'t save — try again');
+      const r = myPrefRow(); if (r) r.favs = sel; else (T.member_prefs = T.member_prefs || []).push(row);
+      F().closeModal(); paintCheck(); F().toast('Saved ✨');
+    };
+  };
+  F().openModal('<div></div>'); paint();
 }
 
 // ===================== on this day =====================

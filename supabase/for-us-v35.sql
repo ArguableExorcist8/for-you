@@ -15,3 +15,7 @@ create index if not exists checkins_couple_time on public.checkins (couple_id, c
 select public.fu_secure('checkins');
 alter publication supabase_realtime add table public.checkins;
 -- v41 — video messages + photo/video files land in Photos too (applied 2026-10-17; see migration v41_more_chat_media_to_photos)
+-- v43 — pick-your-own check-ins (applied 2026-10-17)
+alter table public.checkins add column if not exists label text check (char_length(label) <= 30);
+alter table public.checkins add column if not exists emoji text check (char_length(emoji) <= 16);
+alter table public.member_prefs add column if not exists favs jsonb;
