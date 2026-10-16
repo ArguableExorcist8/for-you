@@ -197,3 +197,11 @@ html.fuLocked #app,html.fuLocked .nav,html.fuLocked #fuMom,html.fuLocked .fuPet{
 @media (prefers-reduced-motion: reduce){.fuGreetFx{display:none}.fuNightIn .sun{animation:none}}
 /* the fortune slip is always paper-coloured, so its ink is too */
 .paperSlip,.paperSlip p,#fortune{color:#4a3424!important;-webkit-text-fill-color:#4a3424}
+
+/* ---------- readable text on pictures & light headers (found by the pixel check) ---------- */
+html[data-dark="0"]:not([data-pic=hero]):not([data-pic=bg]) #coupleTitle,
+html[data-dark="0"]:not([data-pic=hero]):not([data-pic=bg]) #thHero .hw{color:var(--tx)!important;-webkit-text-fill-color:var(--tx)!important;text-shadow:0 1px 0 rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.55)!important}
+html:is([data-pic=hero],[data-pic=bg]) #coupleTitle{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 14px rgba(0,0,0,.55)!important}
+html[data-pic=bg] :is(.secHead,.setHead,.gsec,#gameHome > .card:first-child :is(h2,p),#usHome > .card:first-child :is(h2,p)),html:is([data-pic=hero],[data-pic=bg]) :is(#homeHi small,#homeHi b){color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 16px rgba(0,0,0,.6)!important}
+html[data-dark="1"] #homeHi :is(small,b){text-shadow:0 1px 4px rgba(0,0,0,.85),0 0 14px rgba(0,0,0,.5)}
+html[data-dark="1"] #homeHi small{color:rgba(255,255,255,.82)!important;-webkit-text-fill-color:rgba(255,255,255,.82)!important}
