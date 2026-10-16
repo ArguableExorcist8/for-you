@@ -2713,13 +2713,26 @@ function chMsgHtml(m, prev, next) {
     <div class="chB${bare ? ' bare' : ''} k-${m.kind}${m.deleted ? ' del' : ''}">${quote}${chBody(m)}<div class="chMeta">${hhmm(m.created_at)} ${chTicks(m)}</div></div>${rxH}</div>`;
   return h;
 }
+function chPatch(box) {
+  if (!box.querySelector(':scope > .chU')) box.innerHTML = '';
+  const old = {}; box.querySelectorAll(':scope > .chU').forEach((n) => { old[n.dataset.u] = n; });
+  let at = box.firstChild;
+  CH.list.forEach((m, i) => {
+    const html = chMsgHtml(m, CH.list[i - 1], CH.list[i + 1]); const key = html.replace(' fresh', '');
+    let n = old[m.id];
+    if (n && n.__k === key) delete old[m.id];
+    else { if (n) { n.remove(); delete old[m.id]; } n = document.createElement('div'); n.className = 'chU'; n.dataset.u = m.id; n.innerHTML = html; n.__k = key; }
+    if (n !== at) box.insertBefore(n, at); else at = at.nextSibling;
+  });
+  Object.values(old).forEach((n) => n.remove());
+}
 function chRender(keep) {
   const box = $('#chMsgs'), list = $('#chatList'); if (!box) return;
   const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 140;
   const prevH = list.scrollHeight, prevTop = list.scrollTop;
   if (!CH.ready && !CH.list.length) box.innerHTML = `<div class="chSkel">${[60, 40, 70, 35, 55].map((w, i) => `<div class="${i % 2 ? 'me' : ''}" style="width:${w}%"></div>`).join('')}</div>`;
   else if (!CH.list.length) box.innerHTML = `<div class="chEmpty"><div class="chEmHearts"><span>💗</span><span>💌</span><span>💕</span></div><h3>No messages yet</h3><p>Say hi to <b class="pname">${esc(partnerName())}</b> — your own little corner 💞</p><div class="chips">${['Hi love 💗', 'Miss you 🥺', 'Good morning ☀️', 'Thinking of you 💭'].map((t) => `<span data-quick="${esc(t)}">${t}</span>`).join('')}</div></div>`;
-  else box.innerHTML = CH.list.map((m, i) => chMsgHtml(m, CH.list[i - 1], CH.list[i + 1])).join('');
+  else chPatch(box);
   $('#chTop').innerHTML = CH.list.length && CH.ready ? (CH.loading ? '<div class="chLoadMore">💗 loading older…</div>' : CH.more ? '' : '<div class="chBegin">✨ the beginning of our chat ✨</div>') : '';
   CH.fresh.clear();
   if (keep === 'top') list.scrollTop = prevTop + (list.scrollHeight - prevH);
@@ -2893,13 +2906,14 @@ function mediaDuration(blob) { return new Promise((res) => { const v = document.
 
 // ---- composer ----
 function chAutosize() { const t = $('#chTxt'); t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; }
-function chComposeState() { const has = !!$('#chTxt').value.trim(); $('#chSend').classList.toggle('hidden', !has); $('#chMic').classList.toggle('hidden', has); $('#chVid').classList.toggle('hidden', has); }
+function chComposeState() { const has = !!$('#chTxt').value.trim(); $('#chCompose').classList.toggle('has', has); $('#chSend').tabIndex = has ? 0 : -1; }
 $('#chTxt').addEventListener('input', () => {
   chAutosize(); chComposeState();
   if (CH.ch && shared('chat_typing', true) && Date.now() - CH.lastTyping > 2000) { CH.lastTyping = Date.now(); CH.ch.send({ type: 'broadcast', event: 'typing', payload: { uid: S.user.id } }); }
 });
 $('#chTxt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window) && shared('chat_enter_send', true)) { e.preventDefault(); chSendText(); } });
-$('#chSend').onclick = () => { chSendText(); $('#chTxt').focus(); };
+$('#chSend').onclick = () => { if (navigator.vibrate) navigator.vibrate(8); chSendText(); $('#chTxt').focus(); };
+$('#chSend').addEventListener('pointerdown', (e) => e.preventDefault()); // keep the keyboard open on tap
 $('#chPlus').onclick = () => { $('#chAttach').classList.toggle('hidden'); $('#chPlus').classList.toggle('on'); };
 ['chGal', 'chCam', 'chCamV'].forEach((id) => { $('#' + id).onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f); e.target.value = ''; }; });
 $('#chFile').onchange = (e) => { const f = e.target.files; $('#chAttach').classList.add('hidden'); $('#chPlus').classList.remove('on'); if (f && f.length) chHandleFiles(f, true); e.target.value = ''; };
@@ -2917,12 +2931,41 @@ $('#chDown').onclick = () => { const l = $('#chatList'); l.scrollTo({ top: l.scr
 
 // ---- message interactions ----
 let lpT = null, lpStart = null, lastTap = { id: null, t: 0 };
+const SW = { row: null, dx: 0, on: false, hit: false, pid: null, ic: null };
+const SW_MAX = 88, SW_HIT = 56;
+const swIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 7 4.5 12l5 5"/><path d="M5 12h9a5.5 5.5 0 0 1 5.5 5.5V19"/></svg>';
+function swReset(fire) {
+  const r = SW.row; if (!r) return; const id = r.dataset.id;
+  r.classList.remove('swiping', 'swiped'); r.classList.add('snap'); r.style.transform = '';
+  if (SW.ic) { SW.ic.style.opacity = '0'; SW.ic.style.transform = 'scale(.4)'; const ic = SW.ic; setTimeout(() => ic.remove(), 380); }
+  setTimeout(() => r.classList.remove('snap'), 400);
+  Object.assign(SW, { row: null, dx: 0, on: false, hit: false, pid: null, ic: null });
+  if (fire) { const m = CH.byId[id]; if (m && !m.deleted && !m._pending) chSetReply(id); }
+}
 $('#chMsgs').addEventListener('pointerdown', (e) => {
-  const row = e.target.closest('.chRow'); if (!row) return; lpStart = [e.clientX, e.clientY];
-  clearTimeout(lpT); lpT = setTimeout(() => { lpT = null; chMenu(row.dataset.id); }, 480);
+  const row = e.target.closest('.chRow'); if (!row || e.button > 0) return; lpStart = [e.clientX, e.clientY];
+  SW.row = row; SW.pid = e.pointerId; SW.on = false; SW.dx = 0;
+  clearTimeout(lpT); lpT = setTimeout(() => { lpT = null; if (!SW.on) { SW.row = null; chMenu(row.dataset.id); } }, 450);
 });
-$('#chMsgs').addEventListener('pointermove', (e) => { if (lpT && lpStart && Math.hypot(e.clientX - lpStart[0], e.clientY - lpStart[1]) > 10) { clearTimeout(lpT); lpT = null; } });
-['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('#chMsgs').addEventListener(ev, () => { clearTimeout(lpT); }));
+$('#chMsgs').addEventListener('pointermove', (e) => {
+  if (!lpStart || !SW.row || e.pointerId !== SW.pid) return;
+  const dx = e.clientX - lpStart[0], dy = e.clientY - lpStart[1];
+  if (!SW.on) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { clearTimeout(lpT); lpT = null; SW.row = null; return; }
+    if (dx > 10 && dx > Math.abs(dy) * 1.4) {
+      clearTimeout(lpT); lpT = null; SW.on = true; SW.row.classList.add('swiping');
+      try { SW.row.setPointerCapture(e.pointerId); } catch { /* */ }
+      SW.ic = document.createElement('span'); SW.ic.className = 'chSwIc'; SW.ic.innerHTML = swIcon; SW.row.appendChild(SW.ic);
+    } else return;
+  }
+  // rubber-band past the max, like iOS
+  const x = Math.max(0, dx - 10); const t = x < SW_MAX ? x : SW_MAX + (x - SW_MAX) * 0.2;
+  SW.dx = t; SW.row.style.transform = `translate3d(${t}px,0,0)`;
+  const p = Math.min(1, t / SW_HIT); SW.ic.style.opacity = String(p); SW.ic.style.transform = `scale(${0.4 + 0.6 * p})`;
+  const hit = t >= SW_HIT; if (hit !== SW.hit) { SW.hit = hit; SW.row.classList.toggle('swiped', hit); if (hit && navigator.vibrate) navigator.vibrate(10); }
+});
+['pointerup', 'pointercancel'].forEach((ev) => $('#chMsgs').addEventListener(ev, (e) => { clearTimeout(lpT); lpT = null; if (SW.on) { e.preventDefault(); swReset(ev === 'pointerup' && SW.hit); } else SW.row = null; lpStart = null; }));
+$('#chMsgs').addEventListener('click', (e) => { if (SW.on || (e.target.closest('.chRow') && e.target.closest('.chRow').classList.contains('snap'))) { e.stopImmediatePropagation(); } }, true);
 $('#chMsgs').addEventListener('contextmenu', (e) => { const row = e.target.closest('.chRow'); if (row) { e.preventDefault(); chMenu(row.dataset.id); } });
 $('#chMsgs').addEventListener('click', (e) => {
   const q = e.target.closest('[data-quick]'); if (q) return chSendText(q.dataset.quick);
@@ -2941,9 +2984,9 @@ function chJump(id) { const el = document.querySelector(`.chRow[data-id="${id}"]
 function chMenu(id) {
   const m = CH.byId[id]; if (!m || m.deleted || m._pending) return; if (navigator.vibrate) navigator.vibrate(15);
   $('#chReacts').innerHTML = CH_REACTS.map((e) => `<button data-r="${e}" class="${(m.reactions || {})[S.user.id] === e ? 'on' : ''}">${e}</button>`).join('');
-  const acts = [['reply', '↩️ Reply']]; if (m.kind === 'text') acts.push(['copy', '📋 Copy']); if (m.media_path) acts.push(['open', m.kind === 'file' ? '⬇️ Download' : '🔍 Open']);
-  if (chMine(m)) acts.push(['del', '🗑️ Delete for both']);
-  $('#chActs').innerHTML = acts.map(([k, l]) => `<button data-a="${k}" class="${k === 'del' ? 'danger' : ''}">${l}</button>`).join('');
+  const acts = [['reply', 'Reply', '↩️']]; if (m.kind === 'text') acts.push(['copy', 'Copy', '📋']); if (m.media_path) acts.push(['open', m.kind === 'file' ? 'Download' : 'Open', m.kind === 'file' ? '⬇️' : '🔍']);
+  if (chMine(m)) acts.push(['del', 'Delete for both', '🗑️']);
+  $('#chActs').innerHTML = acts.map(([k, l, i]) => `<button data-a="${k}" class="${k === 'del' ? 'danger' : ''}"><span>${l}</span><span class="ai">${i}</span></button>`).join('');
   const box = $('#chMenu'); box.classList.remove('hidden'); box.dataset.id = id;
   document.querySelector(`.chRow[data-id="${id}"]`)?.classList.add('lp');
 }

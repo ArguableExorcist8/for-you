@@ -12,8 +12,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=21"><link rel="stylesheet" href="skins.css?v=21">
-<script src="themes.js?v=21"></script>
+<link rel="stylesheet" href="style.css?v=22"><link rel="stylesheet" href="skins.css?v=22"><link rel="stylesheet" href="chat.css?v=22">
+<script src="themes.js?v=22"></script>
 </head>
 <body data-tab="home">
 <div id="app">
@@ -133,21 +133,21 @@
       <div class="chatApp" id="chatApp">
         <div class="chatHead"><span class="chAv" id="chAv">💗</span><div class="chWho"><b class="pname"></b><small id="chtStatus">our little corner 💞</small></div></div>
         <div class="chatList" id="chatList"><div class="chTop" id="chTop"></div><div id="chMsgs"></div><div class="chTyping hidden" id="chTyping"><span></span><span></span><span></span></div></div>
-        <button class="chDown hidden" id="chDown" aria-label="Scroll to newest">⬇️<i id="chDownN"></i></button>
-        <div class="chReply hidden" id="chReply"><div><b id="chReplyWho"></b><span id="chReplyTxt"></span></div><button id="chReplyX" aria-label="Cancel reply">✕</button></div>
+        <button class="chDown hidden" id="chDown" aria-label="Scroll to newest"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></svg><i id="chDownN"></i></button>
+        <div class="chReply hidden" id="chReply"><div><b id="chReplyWho"></b><span id="chReplyTxt"></span></div><button id="chReplyX" aria-label="Cancel reply"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <div class="chCompose" id="chCompose">
-          <button class="chIco" id="chPlus" aria-label="Attach">➕</button>
-          <textarea id="chTxt" rows="1" maxlength="4000" placeholder="Message…"></textarea>
-          <button class="chIco" id="chVid" aria-label="Round video note">⭕</button>
-          <button class="chIco chMic" id="chMic" aria-label="Hold to record a voice note">🎙️</button>
-          <button class="chSend hidden" id="chSend" aria-label="Send">➤</button>
+          <button class="chIco chPlusB" id="chPlus" aria-label="Attach"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="chField"><textarea id="chTxt" rows="1" maxlength="4000" placeholder="Message…"></textarea>
+            <button class="chIco chIn" id="chVid" aria-label="Round video note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10.2 9.2v5.6l4.6-2.8z" class="fl"/></svg></button></div>
+          <div class="chAct"><button class="chIco chMic" id="chMic" aria-label="Hold to record a voice note"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button>
+            <button class="chSend" id="chSend" aria-label="Send" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 19.6 20.4 12 4.2 4.4l1.9 6.4 7.4 1.2-7.4 1.2z" class="fl"/></svg></button></div>
         </div>
         <div class="chRec hidden" id="chRec"><span class="chRecDot"></span><span id="chRecT">0:00</span><canvas id="chRecWave" width="300" height="36"></canvas><small>◀ slide to cancel</small></div>
         <div class="chAttach hidden" id="chAttach">
-          <label>🖼️<span>Gallery</span><input type="file" id="chGal" accept="image/*,video/*" multiple hidden></label>
-          <label>📷<span>Camera</span><input type="file" id="chCam" accept="image/*" capture="environment" hidden></label>
-          <label>🎬<span>Video</span><input type="file" id="chCamV" accept="video/*" capture="environment" hidden></label>
-          <label>📎<span>File</span><input type="file" id="chFile" hidden></label>
+          <label><i class="chAtI"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 3.5 3 3-2.5L20 17"/></svg></i><span>Gallery</span><input type="file" id="chGal" accept="image/*,video/*" multiple hidden></label>
+          <label><i class="chAtI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg></i><span>Camera</span><input type="file" id="chCam" accept="image/*" capture="environment" hidden></label>
+          <label><i class="chAtI"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="12.5" height="11" rx="2.5"/><path d="m15.5 10.5 5-3v9l-5-3z"/></svg></i><span>Video</span><input type="file" id="chCamV" accept="video/*" capture="environment" hidden></label>
+          <label><i class="chAtI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/></svg></i><span>File</span><input type="file" id="chFile" hidden></label>
         </div>
       </div>
     </div>
@@ -499,11 +499,11 @@
 <div id="chMenu" class="chMenu hidden"><div class="chMenuBox"><div class="chReacts" id="chReacts"></div><div class="chActs" id="chActs"></div></div></div>
 <div id="chVN" class="chVN hidden"><div class="chVNring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="bg"/><circle cx="60" cy="60" r="56" class="pr" id="chVNpr"/></svg><video id="chVNprev" playsinline muted autoplay></video></div><p id="chVNt">Tap ⏺ to record (max 60s)</p><div class="row"><button class="soft" id="chVNx">Cancel</button><button id="chVNgo">⏺ Record</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="config.js?v=21"></script>
-<script src="data.js?v=21"></script>
-<script src="trivia.js?v=21"></script>
-<script src="anim.js?v=21"></script>
-<script src="app.js?v=21"></script>
-<script src="cute.js?v=21"></script>
+<script src="config.js?v=22"></script>
+<script src="data.js?v=22"></script>
+<script src="trivia.js?v=22"></script>
+<script src="anim.js?v=22"></script>
+<script src="app.js?v=22"></script>
+<script src="cute.js?v=22"></script>
 </body>
 </html>
