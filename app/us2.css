@@ -229,3 +229,11 @@ html[data-dark="1"] #homeHi small{color:rgba(255,255,255,.82)!important;-webkit-
 .ckLibG button i{font-style:normal}
 .ckOwn{display:flex;gap:6px;align-items:center}.ckOwn input{margin:0!important}.ckOwn #ckE{width:54px;flex:0 0 54px;text-align:center;font-size:18px}.ckOwn #ckL{flex:1;min-width:0}.ckOwn button{margin:0!important;flex:0 0 auto}
 .ckBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.ckBtns button{margin:0!important}
+
+/* ---------- chat bubbles: soft, rounded, no tails — in every theme ---------- */
+html[data-theme] #chatApp .chRow .chB:not(.bare),html #chatApp .chRow .chB:not(.bare){border-radius:20px!important;clip-path:none!important;-webkit-mask:none!important;mask:none!important}
+html[data-theme] #chatApp .chRow.me.gn .chB:not(.bare){border-bottom-right-radius:8px!important}
+html[data-theme] #chatApp .chRow.me.gp .chB:not(.bare){border-top-right-radius:8px!important}
+html[data-theme] #chatApp .chRow.them.gn .chB:not(.bare){border-bottom-left-radius:8px!important}
+html[data-theme] #chatApp .chRow.them.gp .chB:not(.bare){border-top-left-radius:8px!important}
+html #chatApp .chB .chMedia,html #chatApp .chB .chQuote{border-radius:14px!important}
