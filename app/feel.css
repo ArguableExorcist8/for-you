@@ -27,3 +27,6 @@ html[data-dark="0"] #fuMom .mo.spk{color:rgba(var(--acR),.85);text-shadow:0 0 6p
 html[data-dark="1"] #fuMom .mo.drop::before{border-color:rgba(255,255,255,.55)}
 
 @media (prefers-reduced-motion: reduce){#fuMom{display:none}#thAmb,#fuAlive{translate:none}}
+
+/* no sideways wobble while a tab slides in */
+html,body{overflow-x:clip}

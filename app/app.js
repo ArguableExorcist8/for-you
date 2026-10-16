@@ -175,6 +175,9 @@ function enqueue(item) {
   const sig = JSON.stringify([item.kind, item.t, item.op, item.args, item.chain, item.name, item.body]);
   const i = q.findIndex((x) => JSON.stringify([x.kind, x.t, x.op, x.args, x.chain, x.name, x.body]) === sig);
   if (i >= 0) q.splice(i, 1);
+  // v34: offline taps don't pile up — at most 3 queued pings, one queued notification per kind
+  if (item.kind === 'db' && item.t === 'pings' && item.op === 'insert' && q.filter((x) => x.t === 'pings' && x.op === 'insert').length >= 3) return;
+  if (item.kind === 'fn' && item.name === 'notify' && item.body) { const k = q.findIndex((x) => x.kind === 'fn' && x.name === 'notify' && x.body && x.body.kind === item.body.kind); if (k >= 0) q.splice(k, 1); }
   q.push(item); qSave(q); updateQueueBadge();
 }
 function updateQueueBadge() { const p = document.getElementById('offPill'); const n = qLoad().length; if (p) p.dataset.q = ''; }
@@ -523,12 +526,16 @@ document.addEventListener('visibilitychange', async () => { if (!document.hidden
 $$('.nav button').forEach((b) => b.onclick = () => goTab(b.dataset.tab));
 
 // ---- pings ----
+let pingLast = 0, pingNotified = 0;
 async function sendPing() {
   if (!S.couple) { toast('Connect with your partner first 💞'); return false; }
+  // v34: rapid taps don't become a flood of pings + notifications
+  if (Date.now() - pingLast < 1200) { floatHearts(document.body, 4); return true; }
+  pingLast = Date.now();
   const { error } = await sb.from('pings').insert({});
   if (error) { toast('Ping failed: ' + errMsg(error)); return false; }
   floatHearts(document.body, 14);
-  notify('ping', TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)]);
+  if (Date.now() - pingNotified > 20000) { pingNotified = Date.now(); notify('ping', TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)]); }
   TP('sound', 'ping'); toast(TP('pingSent', partnerName()) || `Ping sent to ${partnerName()}! 💗`);
   return true;
 }
@@ -1424,7 +1431,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=34'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=35'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
