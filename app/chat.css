@@ -13,6 +13,16 @@
 #chatApp .chWho b{font-size:16.5px;letter-spacing:-.01em}
 #chatApp .chWho small{font-size:12px;display:block;margin-top:1px;transition:color .2s}
 
+/* one header in chat: the app bar steps aside, the chat header takes the safe area + settings */
+body.inChat #mainView>header.top{display:none}
+body.inChat #chatApp .chatHead{padding-top:calc(env(safe-area-inset-top,0px) + 10px)}
+#chatApp .chWho{flex:1;min-width:0}
+#chatApp .chWho b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#chatApp .chatHead::before{content:none!important}
+#chatApp .chGear{color:var(--mu)}
+#chatApp .chGear svg{transition:transform .5s var(--spring)}
+#chatApp .chGear:active svg{transform:rotate(60deg)}
+
 /* ---- list ---- */
 #chatApp .chatList{padding:6px 12px 16px;scroll-padding-bottom:16px;overflow-anchor:none}
 #chatApp .chDay{position:sticky;top:6px;z-index:2;margin:14px 0 8px;pointer-events:none}

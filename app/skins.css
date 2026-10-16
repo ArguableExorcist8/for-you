@@ -10,6 +10,7 @@
 @font-face{font-family:'FU Gochi';src:url(themes/fonts/gochi.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'FU Amatic';src:url(themes/fonts/amatic.woff2) format('woff2');font-weight:400 700;font-style:normal;font-display:swap}
 @font-face{font-family:'FU Pacifico';src:url(themes/fonts/pacifico.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'FU Creep';src:url(themes/fonts/creepster.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}
 html[data-theme=blush],.thP[data-th=blush] .mk{--skTex:linear-gradient(180deg,rgba(255,255,255,.06),transparent 40%);--skTexS:auto;--skBd:1px solid rgba(var(--acR),.14);--skOR:'🌸'}
 html[data-theme=lavender],.thP[data-th=lavender] .mk{--skTex:linear-gradient(180deg,rgba(255,255,255,.06),transparent 40%);--skTexS:auto;--skBd:1px solid rgba(var(--acR),.14);--skOR:'💜'}
 html[data-theme=ocean],.thP[data-th=ocean] .mk{--skTex:linear-gradient(180deg,rgba(255,255,255,.06),transparent 40%);--skTexS:auto;--skBd:1px solid rgba(var(--acR),.14);--skOR:'🐚'}
@@ -44,6 +45,7 @@ html[data-theme=bridgerton],.thP[data-th=bridgerton] .mk{--skF:'FU Corm';--skHs:
 html[data-theme=bridgerton] .card{border-top:0}html[data-theme=bridgerton] .card h2{background:radial-gradient(circle,#fff 2px,#e8dcef 3px,transparent 3.5px) center bottom/12px 7px repeat-x;padding-bottom:9px}
 html[data-theme=gilmore],.thP[data-th=gilmore] .mk{--skF:'FU Elite';--skHs:.95em;--skTex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cpath d='M12 18h16v8a8 8 0 0 1-16 0zM28 20h4a3 3 0 0 1 0 6h-3' stroke='#6b3a1f' stroke-opacity='.18' fill='none' stroke-width='2'/%3E%3C/svg%3E"),linear-gradient(180deg,rgba(255,255,255,.3),transparent);--skTexS:44px,auto;--skBd:0;--skSh:0 0 0 3px #c8a07a,0 6px 16px rgba(80,40,20,.2);--skRad:10px;--skOR:'☕';--skChat:repeating-linear-gradient(0deg,rgba(160,40,40,.07) 0 6px,transparent 6px 22px),repeating-linear-gradient(90deg,rgba(40,70,120,.06) 0 6px,transparent 6px 22px);--skTail:'☕';--skTop:repeating-linear-gradient(0deg,rgba(160,40,40,.22) 0 6px,transparent 6px 22px),repeating-linear-gradient(90deg,rgba(40,70,120,.18) 0 6px,transparent 6px 22px),#f4e6d0;--skNav:repeating-linear-gradient(90deg,#8a5a3a 0 2px,#a06a44 2px 34px);--skNavC:#fff3e0}
 html[data-theme=stranger],.thP[data-th=stranger] .mk{--skF:'FU Cinzel';--skTex:linear-gradient(180deg,rgba(255,40,40,.08),transparent 30%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .3 0 0 0 0 .15 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(#n)'/%3E%3C/svg%3E");--skTexS:auto,auto;--skBd:1px solid rgba(255,42,42,.5);--skSh:0 0 12px rgba(255,42,42,.35),inset 0 0 18px rgba(255,42,42,.08);--skRad:6px;--skOR:'🎄';--skChat:radial-gradient(ellipse at 50% 120%,rgba(120,0,0,.35),transparent 60%);--skTail:'💡';--skDlgBd:1px solid #ff2a2a}
+html[data-theme=halloween],.thP[data-th=halloween] .mk{--skF:'FU Creep';--skHs:1.08em;--skTex:linear-gradient(180deg,rgba(255,122,26,.07),transparent 40%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.05'%3E%3Cpath d='M0 0L90 90M90 0L0 90M45 0V90M0 45H90'/%3E%3Ccircle cx='45' cy='45' r='14'/%3E%3Ccircle cx='45' cy='45' r='30'/%3E%3C/g%3E%3C/svg%3E");--skTexS:auto,90px 90px;--skBd:1px solid rgba(255,122,26,.42);--skSh:0 0 14px rgba(255,122,26,.22),inset 0 0 18px rgba(155,92,255,.08);--skRad:14px;--skOR:'🎃';--skTail:'🕸️';--skBtnBd:1px solid rgba(255,190,120,.45);--skDlgBd:1px solid #ff7a1a;--skChat:radial-gradient(ellipse at 50% 120%,rgba(255,110,20,.22),transparent 60%)}
 html[data-theme=twilight],.thP[data-th=twilight] .mk{--skF:'FU Corm';--skTex:linear-gradient(180deg,rgba(200,220,200,.06),transparent),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .3 0 0 0 0 .15 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(#n)'/%3E%3C/svg%3E");--skTexS:auto,auto;--skBd:1px solid rgba(180,30,40,.45);--skSh:0 8px 26px rgba(0,0,0,.55);--skRad:6px;--skOR:'🍎';--skOL:'🌲';--skChat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M8 30c0-12 10-20 22-22-2 12-10 22-22 22z' fill='#6a8a6a' opacity='.12'/%3E%3C/svg%3E") 0 0/40px;--skTail:'🍎'}
 html[data-theme=notebook],.thP[data-th=notebook] .mk{--skF:'FU Caveat';--skHs:1.35em;--skTex:repeating-linear-gradient(180deg,transparent 0 23px,rgba(70,110,170,.18) 23px 24px),linear-gradient(90deg,transparent 30px,rgba(210,80,80,.3) 30px 31px,transparent 31px);--skTexS:auto,auto;--skBd:0;--skSh:0 6px 16px rgba(80,60,30,.18);--skRad:4px 18px 4px 4px;--skOR:'📝';--skChat:repeating-linear-gradient(180deg,transparent 0 23px,rgba(70,110,170,.1) 23px 24px);--skTail:'🦢';--skCard:#fbf5e6}
 html[data-theme=notebook] :is(.card,.uiBox,.gtile,.polaroid),.thP[data-th=notebook] .mkCard{background-color:#fbf5e6}
@@ -250,3 +252,36 @@ html[data-theme] .chSend{box-shadow:0 2px 8px rgba(var(--acR),.4)}
 html[data-pic=bg] .chatApp{background:transparent}
 html[data-pic=bg] .chatList{background:var(--skChat,none),linear-gradient(180deg,rgba(var(--cdR),.55),rgba(var(--cdR),.7))}
 
+
+/* ================= v22 Halloween scenery ================= */
+#thDeco{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
+#thDeco .dw{position:absolute;width:min(46vw,210px);height:auto;filter:drop-shadow(0 0 4px rgba(255,255,255,.18))}
+#thDeco .dw.tl{left:-4px;top:-4px}
+#thDeco .dw.tr{right:-4px;top:-4px;transform:scaleX(-1)}
+#thDeco .dw.bl{left:-4px;bottom:calc(env(safe-area-inset-bottom,0px) + 58px);transform:scaleY(-1);width:min(30vw,130px);opacity:.75}
+#thDeco .ds{position:absolute;top:0;width:1px;background:linear-gradient(rgba(243,238,232,.7),rgba(243,238,232,.35));transform-origin:top center;animation:dsDrop 7s ease-in-out infinite}
+#thDeco .ds b{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:22px;font-weight:normal;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+#thDeco .ds.s1{right:min(20vw,92px);height:120px}
+#thDeco .ds.s2{left:min(26vw,120px);height:60px;animation-duration:9s;animation-delay:-3s}
+#thDeco .ds.s2 b{font-size:16px}
+@keyframes dsDrop{0%,100%{height:var(--h0,70px);transform:rotate(-2deg)}45%{height:var(--h1,150px);transform:rotate(2deg)}60%{height:var(--h1,150px)}}
+#thDeco .ds.s1{--h0:80px;--h1:170px}#thDeco .ds.s2{--h0:40px;--h1:96px}
+#thDecoB{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+#thDecoB .dmoon{position:absolute;right:14%;top:calc(env(safe-area-inset-top,0px) + 54px);width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#fff6dc,#ffd98a 55%,#e8a948);box-shadow:0 0 40px 12px rgba(255,214,140,.28),0 0 120px 40px rgba(255,150,50,.12);opacity:.9}
+#thDecoB .dmoon::after{content:'';position:absolute;left:18px;top:22px;width:10px;height:8px;border-radius:50%;background:rgba(200,140,60,.35);box-shadow:16px 12px 0 -1px rgba(200,140,60,.3),6px 22px 0 -2px rgba(200,140,60,.25)}
+#thDecoB .dgy{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 52px);width:100%;height:110px;object-fit:cover;object-position:bottom;opacity:.95}
+/* the moon + skyline live behind content, webs & spiders in front */
+html[data-theme=halloween] #thDeco{z-index:45}
+body.inChat #thDeco .dw.bl{display:none}
+html[data-theme=halloween] #chatApp .chWho small{font-family:inherit;font-size:12px}
+html[data-theme=halloween] #thAmb .fly{background:#ffb347;box-shadow:0 0 8px 3px rgba(255,140,40,.7)}
+html[data-theme=halloween] #thAmb .drift{opacity:.75;filter:brightness(.6) drop-shadow(0 0 4px rgba(155,92,255,.5))}
+html[data-theme=halloween] #thAmb .mist{background:radial-gradient(ellipse at 50% 60%,rgba(170,140,210,.22),transparent 65%)}
+html[data-theme=halloween] #thAmb .glow{background:radial-gradient(circle,rgba(255,120,30,.14),transparent 65%)}
+html[data-theme=halloween] #thHero .hw,html[data-theme=halloween] .thWord{text-shadow:0 0 14px rgba(255,122,26,.65),0 2px 0 #3a1408;letter-spacing:.04em}
+html[data-theme=halloween] .chRow.me .chB{color:#1a0c05}
+html[data-theme=halloween] .nav button.on,html[data-theme=halloween] .nav button.on i{text-shadow:0 0 10px rgba(255,122,26,.8)}
+html[data-theme=halloween] #chatApp .chatList::before{opacity:.06}
+html[data-theme=halloween] #thDeco .ds{animation-play-state:running}
+#thAmb.still~#thDeco .ds,html.still #thDeco .ds{animation:none}
+@media (prefers-reduced-motion: reduce){#thDeco .ds{animation:none!important}}

@@ -2528,7 +2528,7 @@ function themeGo(id, at) {
   CC_applyTheme(id, { preview: !!thPreview });
   renderThemePicker();
 }
-const TH_CATS = [['Colours', '🎨 Colours'], ['Animals', '🐾 Animals'], ['Stories', '📖 Stories'], ['Series', '📺 Series'], ['Movies', '🎬 Movies'], ['Animations', '🎨 Animations'], ['Anime', '🌸 Anime'], ['Seasonal', '🗓️ Seasonal']];
+const TH_CATS = [['Colours', '🎨 Colours'], ['Animals', '🐾 Animals'], ['Stories', '📖 Stories'], ['Series', '📺 Series'], ['Movies', '🎬 Movies'], ['Animations', '🎨 Animations'], ['Anime', '🌸 Anime'], ['Spooky', '🎃 Spooky'], ['Seasonal', '🗓️ Seasonal']];
 const thUI = { open: false, sec: {} };
 function thMock(t, big) {
   const v = t.v, vars = `--bg:${v.bg};--cd:${v.cd};--tx:${v.tx};--mu:${v.mu};--ac:${v.ac};--on:${v.on};--ac2:${v.ac2};--ac3:${v.ac3};--sf:${v.sf};--bubA:${v.bubA || v.ac2}`;
@@ -3143,6 +3143,7 @@ function chOnTab(tab) {
   $('#chAv').textContent = partnerEmoji();
 }
 $$('.nav button').forEach((b) => b.addEventListener('click', () => chOnTab(b.dataset.tab)));
+$('#chGear').onclick = () => $('#gearBtn').click();
 const origGoTab = goTab; goTab = function (tab) { origGoTab(tab); chOnTab(tab); };
 const chWake = () => { if (!S.couple || !CH.ready) return; chSync(); chUnreadCount(); if (chOpen()) chMarkSoon(); if (CH.ch && CH.rtStatus && CH.rtStatus !== 'SUBSCRIBED') chSubscribe(); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) chWake(); });

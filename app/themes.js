@@ -105,6 +105,10 @@
       parts: ['🌙', '⭐', '💖', '✨', '🎀'], stick: ['🌙', '⭐', '🎀', '💖', '🪐'], hearts: ['💖', '💗', '🌙'], conf: ['#c8387f', '#ff9ccf', '#f7d15a', '#9fb0e6', '#fff'], mascot: '🌙', game: { bear: '🎀' } },
     { id: 'spirited', cat: 'Anime', name: 'Spirited Away', em: '🏮', dark: true, logo: 'themes/spirited-away.png', v: pal({ dark: true, bg: 'linear-gradient(180deg,#16244a,#2f3366 55%,#5a3550)', cd: '#1d2a50', tx: '#fff3e2', mu: '#d8c8b8', ac: '#c23a24', act: '#ff8a6a', ac2: '#ff8a6a', ac3: '#3d4a7a', sf: '#26345e', sf2: '#30406c', sf3: '#222f58', deep: '#16244a' }),
       parts: ['🏮', '☁️', '🌸', '✨', '🐉'], stick: ['🏮', '🐉', '🐸', '🍙', '🚂'], hearts: ['❤️', '🏮', '🤍'], conf: ['#c23a24', '#ff8a6a', '#f6c94c', '#fff3e2'], mascot: '🏮', game: { bear: '🐉' } },
+
+    // ---------- spooky ----------
+    { id: 'halloween', cat: 'Spooky', name: 'Halloween', em: '🎃', dark: true, word: { t: 'Halloween', f: "'FU Creep'", c: '#ff8a1f' }, v: pal({ dark: true, bg: 'radial-gradient(circle at 78% 9%,rgba(255,214,140,.30),rgba(255,140,40,.10) 9%,transparent 22%),linear-gradient(180deg,#0d0716,#1c0d26 50%,#2a1020 85%,#3a160c)', cd: '#1a1022', tx: '#fbefe3', mu: '#cdb6a4', ac: '#ff7a1a', act: '#ffa04d', ac2: '#9b5cff', ac3: '#3f2340', sf: '#251830', sf2: '#33213f', sf3: '#1d1327', deep: '#0b0610', bubA: '#ff9a3c', on: '#1a0c05', dg: '#ff5a6a' }),
+      parts: ['🎃', '🦇', '👻', '🕸️', '🍬', '✦'], stick: ['🎃', '👻', '🦇', '🕷️', '🍬', '💀', '🧙‍♀️'], hearts: ['🧡', '🖤', '💜'], conf: ['#ff7a1a', '#9b5cff', '#5fd35f', '#ffd36b', '#2a1a33'], mascot: '🎃', game: { bear: '👻' } },
   ];
   // v20 immersive extras: hero art, fonts, nav icons, ambient effects
   const X = {
@@ -128,6 +132,7 @@
     hp: { font: "'FU CinzelDec'", nav: { home: '🏰', notes: '📜', us: '💛', memories: '🖼️', chat: '🦉', play: '🪄' }, amb: [['bob', ['🕯️'], 5], ['twinkle', ['✨', '✦'], 10]] },
     bridgerton: { font: "'FU Vibes'", word: { t: 'Bridgerton', f: "'FU Corm'", c: '#5a3f63', ls: '.18em', up: 1 }, nav: { home: '🏛️', notes: '💌', us: '🦢', memories: '🖼️', chat: '🪶', play: '🎻' }, amb: [['fall', ['🌸', '🌸', '🤍'], 8]] },
     gilmore: { font: "'FU Elite'", nav: { home: '🏡', notes: '📚', us: '☕', memories: '📷', chat: '💬', play: '🎲' }, amb: [['steam', null, 3], ['fall', ['🍂', '🍁'], 6]] },
+    halloween: { font: "'FU Creep'", nav: { home: '🏚️', notes: '📜', us: '🖤', memories: '🕯️', chat: '👻', play: '🎃' }, amb: [['drift', ['🦇', '🦇', '🦇'], 5], ['fall', ['🍂', '🍁', '🍂'], 7], ['mist', null, 2], ['fireflies', null, 9], ['glow', null, 2]] },
     stranger: { font: "'FU Cinzel'", nav: { home: '🏠', notes: '📻', us: '❤️', memories: '📷', chat: '💡', play: '🚲' }, amb: [['lights', ['#ff3b3b', '#3db3e0', '#f6c94c', '#5fd38b', '#ff8fd0'], 16], ['mist', null, 2], ['rise', ['·', '•'], 10]] },
     twilight: { font: "'FU Fell'", nav: { home: '🌲', notes: '📖', us: '🍎', memories: '📷', chat: '🌙', play: '🐺' }, amb: [['mist', null, 3], ['fall', ['🍂', '🌧️'], 4]] },
     notebook: { font: "'FU Caveat'", nav: { home: '🏡', notes: '✉️', us: '🦢', memories: '📷', chat: '💌', play: '🛶' }, amb: [['drift', ['🦢', '🦢'], 2], ['fall', ['🌧️', '🍃'], 5]] },
@@ -158,7 +163,7 @@
     titanic: ['💎', '🎨', '🚢', '✉️'], lalaland: ['🎹', '🌃', '🎬', '🎼'], pp: ['🖼️', '🌹', '🕯️', '🪶'], tangled: ['🎨', '🦎', '🏮', '📜'],
     beauty: ['🌹', '🪞', '🕰️', '📚'], frozen: ['❄️', '⛄', '🦌', '📜'], coco: ['🖼️', '💀', '🎸', '🌼'], yourname: ['☄️', '📱', '🌆', '📝'],
     naruto: ['🍥', '🦊', '🌀', '📜'], aot: ['🪽', '🗝️', '🧱', '📜'], demonslayer: ['🪻', '🦋', '🗡️', '📜'], onepiece: ['👒', '🍖', '🏴‍☠️', '🗺️'],
-    sailormoon: ['🌙', '🐈‍⬛', '💫', '💌'], spirited: ['🏮', '🐉', '🐸', '🎫'],
+    sailormoon: ['🌙', '🐈‍⬛', '💫', '💌'], spirited: ['🏮', '🐉', '🐸', '🎫'], halloween: ['🎃', '💀', '🦇', '📜'],
   };
   T.forEach((t) => { if (ATT[t.id]) t.att = ATT[t.id]; });
   const BY = Object.fromEntries(T.map((t) => [t.id, t]));
@@ -207,6 +212,20 @@
     const lb = document.querySelector('#loadingView .big'); if (lb) lb.textContent = t.mascot || '💗';
   }
   // tiles take the theme's own palette (its confetti colours, minus near-whites) and its icon set
+  // v22: fixed scenery for themes that want it (spider webs, dangling spiders, skyline…)
+  const DECO = {
+    halloween: '<img class="dw tl" src="themes/halloween/web.svg" alt=""><img class="dw tr" src="themes/halloween/web.svg" alt=""><img class="dw bl" src="themes/halloween/web.svg" alt="">'
+      + '<i class="ds s1"><b>🕷️</b></i><i class="ds s2"><b>🕷️</b></i>',
+  };
+  const DECO_BACK = { halloween: '<span class="dmoon"></span><img class="dgy" src="themes/halloween/graveyard.svg" alt="">' };
+  function paintDeco(t) {
+    [['thDeco', DECO], ['thDecoB', DECO_BACK]].forEach(([id, map]) => {
+      let el = document.getElementById(id); const h = map[t.id] || '';
+      if (!h) { if (el) el.remove(); return; }
+      if (!el) { el = document.createElement('div'); el.id = id; el.setAttribute('aria-hidden', 'true'); document.body.prepend(el); }
+      if (el.dataset.k !== t.id) { el.dataset.k = t.id; el.innerHTML = h; }
+    });
+  }
   function paintAttach(t) {
     const lum = (h) => { const m = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(String(h).trim()); if (!m) return 1; let x = m[1]; if (x.length === 3) x = x.replace(/./g, '$&$&'); const n = parseInt(x, 16); return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; };
     let cs = (t.conf || []).filter((c) => lum(c) < 0.86);
@@ -222,7 +241,7 @@
     const t = cur;
     document.querySelectorAll('[data-mascot]').forEach((e) => { e.textContent = (t.game && t.game[e.dataset.mascot]) || t.mascot || e.dataset.def || e.textContent; });
     document.querySelectorAll('[data-ni]').forEach((e) => { if (!e.dataset.def) e.dataset.def = e.textContent; e.textContent = (t.nav && t.nav[e.dataset.ni]) || e.dataset.def; });
-    paintAttach(t);
+    paintAttach(t); paintDeco(t);
     document.getElementById('thMark')?.remove();
     paintHero(); paintSeason(); paintAmb(); paintPics();
     paintIcon(BY[LS('cc_theme')] || t);
