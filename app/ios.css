@@ -1,0 +1,57 @@
+/* ================= v52 iPhone touches + motion ================= */
+
+/* ---------- Dynamic Island glow ---------- */
+.fuIsland{position:fixed;left:50%;top:11px;width:126px;height:37px;margin-left:-63px;border-radius:20px;z-index:9999;pointer-events:none;opacity:0}
+html[data-island=notch] .fuIsland{top:-6px;width:162px;height:36px;margin-left:-81px;border-radius:0 0 22px 22px}
+.fuIsland.go{animation:islGlow 1.6s cubic-bezier(.2,.8,.2,1)}
+.fuIsland.love{--ig:255,92,150}.fuIsland.sent{--ig:var(--acR)}
+@keyframes islGlow{0%{opacity:1;box-shadow:0 0 0 0 rgba(var(--ig,var(--acR)),.0)}
+  20%{opacity:1;box-shadow:0 0 0 3px rgba(var(--ig,var(--acR)),.9),0 0 22px 6px rgba(var(--ig,var(--acR)),.55)}
+  60%{opacity:1;box-shadow:0 0 0 2px rgba(var(--ig,var(--acR)),.5),0 0 34px 14px rgba(var(--ig,var(--acR)),.25)}
+  100%{opacity:0;box-shadow:0 0 0 0 rgba(var(--ig,var(--acR)),0),0 0 40px 20px rgba(var(--ig,var(--acR)),0)}}
+
+/* ---------- morphing opens ---------- */
+::view-transition-group(fu-pic),::view-transition-group(fu-tile){animation-duration:.42s;animation-timing-function:cubic-bezier(.2,.9,.25,1)}
+::view-transition-old(fu-pic),::view-transition-new(fu-pic){height:100%;object-fit:cover;overflow:clip}
+::view-transition-old(fu-tile){animation:fuVtOut .3s ease both}::view-transition-new(fu-tile){animation:fuVtIn .42s ease both}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.28s}
+html.fuMorphing #modal,html.fuMorphing #modal .card,html.fuMorphing .feat,html.fuMorphing .game{animation:none!important}
+@keyframes fuVtOut{to{opacity:0}}@keyframes fuVtIn{from{opacity:0}}
+
+/* ---------- springy sheets ---------- */
+#modalBox.fuStretch{transition:none!important}
+
+/* ---------- share ---------- */
+.fuShare{margin-top:6px}
+.fuShareWk{display:block;margin:10px auto 0}
+
+/* ---------- tilt parallax: scenery behind moves more than scenery in front ---------- */
+html.fuTilt #thDecoB{translate:calc(var(--tiltX,0) * -14px) calc(var(--tiltY,0) * -10px);scale:1.04}
+html.fuTilt #thDeco{translate:calc(var(--tiltX,0) * -6px) calc(var(--tiltY,0) * -4px)}
+html.fuTilt .ping{translate:calc(var(--tiltX,0) * 4px) calc(var(--tiltY,0) * 3px)}
+
+/* ---------- hold to your heart ---------- */
+.fuHeartBtn{display:block;margin:10px auto 0}
+.fuHeartHold{position:fixed;inset:0;z-index:9970;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;color:#fff;
+  background:radial-gradient(circle at 50% 42%,rgba(255,70,130,calc(.22 + var(--hp,0) * .4)),transparent 62%),rgba(22,8,22,.93);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .3s}
+.fuHeartHold.on{opacity:1}
+.hhRing{position:relative;width:170px;height:170px;touch-action:none}
+.hhRing svg{width:100%;height:100%;transform:rotate(-90deg)}
+.hhRing circle{fill:none;stroke:rgba(255,255,255,.18);stroke-width:7}
+.hhRing circle.p{stroke:#ff5c96;stroke-linecap:round;stroke-dasharray:340;stroke-dashoffset:340;transition:stroke-dashoffset .15s linear}
+.hhRing b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;animation:hhBeat 1s ease-in-out infinite}
+.fuHeartHold h3{margin:6px 0 0;font-size:22px}.fuHeartHold p{margin:0;opacity:.8}
+.fuHeartHold button{margin-top:14px;color:#fff!important;background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.25)!important}
+.fuHeartHold.sent .hhRing b{animation:hhSent .8s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes hhBeat{0%,40%,100%{transform:scale(1)}15%{transform:scale(1.18)}28%{transform:scale(1.06)}}
+@keyframes hhSent{to{transform:scale(1.6) translateY(-120px);opacity:0}}
+/* the whole screen beats when one arrives */
+body.fuBeat #mainView > .tab:not(.hidden):not(#tab-chat),body.fuBeat #heartTxt{animation:fuBeatAll 1s ease-in-out 4}
+@keyframes fuBeatAll{0%,40%,100%{transform:scale(1)}14%{transform:scale(1.025)}28%{transform:scale(1.008)}}
+
+/* ---------- face-down goodnight ---------- */
+.fuGnOffer{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.fuGnOffer > b{font-size:54px;animation:feBob 3s ease-in-out infinite}
+.fuGnOffer button{width:100%}
+
+@media (prefers-reduced-motion: reduce){html.fuTilt #thDecoB,html.fuTilt #thDeco,html.fuTilt .ping{translate:none;scale:none}body.fuBeat #mainView > .tab{animation:none}}

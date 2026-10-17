@@ -521,7 +521,10 @@ function onMotion(e) {
   const a = e.accelerationIncludingGravity || e.acceleration; if (!a) return;
   const m = Math.sqrt((a.x || 0) ** 2 + (a.y || 0) ** 2 + (a.z || 0) ** 2);
   const now = Date.now(); if (m > 24) { peaks = peaks.filter((t) => now - t < 900); peaks.push(now); }
-  if (peaks.length >= 3 && now - lastShake > 20000 && !document.hidden && S()?.couple) { lastShake = now; peaks = []; shakeHug(); }
+  if (peaks.length >= 3 && now - lastShake > 20000 && !document.hidden && S()?.couple) {
+    const j = $('#fuJar'), r = j && j.getBoundingClientRect(); if (r && document.body.dataset.tab === 'home' && r.top < innerHeight * .8 && r.bottom > innerHeight * .2 && LS('fu_motionfx') === '1') { peaks = []; return; } // the jar is on screen: that shake is for a memory
+    lastShake = now; peaks = []; shakeHug();
+  }
 }
 async function shakeHug() {
   document.body.classList.remove('fuWobble'); void document.body.offsetWidth; document.body.classList.add('fuWobble'); setTimeout(() => document.body.classList.remove('fuWobble'), 700);
