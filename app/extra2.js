@@ -23,7 +23,7 @@ const ago = (d) => {
 // ======================= 1. our list (shared, live) =======================
 function listCard() {
   const home = $('#tab-home'); if (!home || $('#fuList')) return;
-  const c = document.createElement('div'); c.className = 'card fuList'; c.id = 'fuList';
+  const c = document.createElement('div'); c.className = 'card fuOurList'; c.id = 'fuList';
   c.innerHTML = `<h2>🛒 Our list</h2>
     <form class="flAdd" autocomplete="off"><input id="flIn" maxlength="120" placeholder="Add something… milk, book dinner" enterkeyhint="done"><button type="submit" aria-label="Add">＋</button></form>
     <div class="flItems" id="flItems"></div><div class="flFoot"></div>`;

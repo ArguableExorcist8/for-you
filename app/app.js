@@ -1467,7 +1467,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=50'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=51'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -2985,7 +2985,7 @@ async function chInsert(m) {
   const locked = m.kind === 'text' && row.body && window.FU_lockOn && FU_lockOn();
   if (locked) {
     if (m._pt == null) m._pt = row.body;
-    try { row.body = await FU_enc(m._pt); } catch (e) { m._failed = true; m._pending = false; chRender(); toast('🔒 Unlock our chat to send (Settings → Private lock)'); return; }
+    try { row.body = await FU_enc(m._pt); } catch (e) { m._failed = true; m._pending = false; chRender(); toast('🔑 Enter your passphrase to send (Settings → Encrypt our messages)'); return; }
     m.body = row.body;
   }
   const r = await sb.from('messages').insert(row);

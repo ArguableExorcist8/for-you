@@ -122,7 +122,7 @@ function ensureDom() {
   if (meTab && !$('#fuLockCard')) {
     const anchor = [...meTab.querySelectorAll('.card')].find((c) => /Chat/.test(c.querySelector('h2')?.textContent || '')) || meTab.querySelector('.card');
     anchor.insertAdjacentHTML('afterend', `
-      <div class="card" id="fuLockCard"><h2>🔐 Private lock</h2><div id="fuLock"></div></div>
+      <div class="card" id="fuLockCard"><h2>🔐 Encrypt our messages</h2><div id="fuLock"></div></div>
       <div class="card" id="fuBookCard"><h2>📖 Our year book</h2>
         <p class="muted">Every photo, moment, appreciation and answer from a year — as a book you can save as PDF or keep as a file.</p>
         <div class="seg" id="fuBookYear"></div>
@@ -865,7 +865,7 @@ async function vaultInit() {
   const raw = LS(keyName());
   if (raw) { try { const k = await crypto.subtle.importKey('raw', unb64(raw), 'AES-GCM', true, ['encrypt', 'decrypt']); if (await decWith(k, `e1:${v.check_iv}:${v.check_ct}`) === 'for-us-ok') KEY = k; } catch { LS(keyName(), null); } }
   paintLock(); F().chRender(); F().RENDER.journal && F().RENDER.journal();
-  if (!KEY) setTimeout(() => { if (!KEY && lockOn()) F().toast('🔒 Your chat is locked — enter your passphrase in Settings', 4500); }, 2500);
+  if (!KEY) setTimeout(() => { if (!KEY && lockOn()) F().toast('🔑 Your messages are encrypted — enter the passphrase in Settings → Encrypt our messages', 4500); }, 2500);
 }
 // decrypt lazily, then re-render once
 let decBusy = false;
@@ -883,7 +883,7 @@ window.FU_decList = (l, done) => {
 window.FU_unlock = () => unlockSheet();
 function unlockSheet() {
   const v = vault(); if (!v) return lockSetup();
-  F().openModal(`<h2>🔒 Unlock our chat</h2><p class="muted">Type the passphrase you two chose. It stays on this device — the server never sees it.</p>
+  F().openModal(`<h2>🔑 Unlock our messages</h2><p class="muted">Type the passphrase you two chose. It stays on this device — the server never sees it.</p>
     <input id="fuPass" type="password" autocomplete="current-password" placeholder="Our passphrase"><button id="fuPassGo" class="fuWide">Unlock</button><button class="soft fuWide" data-close>Later</button>`);
   $('#fuPassGo').onclick = async () => {
     const k = await derive($('#fuPass').value, v.salt);
@@ -893,25 +893,25 @@ function unlockSheet() {
   };
 }
 function lockSetup() {
-  F().openModal(`<h2>🔐 Lock our chat</h2><p class="muted">Choose a passphrase together. From now on, your text messages and journal entries are encrypted on your phones — the server only stores scrambled text.</p>
+  F().openModal(`<h2>🔐 Encrypt our messages</h2><p class="muted">This is separate from App lock (your PIN / Face ID). Choose a passphrase together. From now on, your text messages and journal entries are encrypted on your phones — the server only stores scrambled text.</p>
     <ul class="fuList"><li>${esc(pname())} enters the same passphrase on their phone.</li><li>New phone? Enter it again there.</li><li><b>If you both forget it, locked messages can't be recovered.</b></li><li>Photos, videos and voice notes stay private to you two, but aren't scrambled.</li></ul>
     <input id="fuP1" type="password" autocomplete="new-password" placeholder="Passphrase (8+ characters)"><input id="fuP2" type="password" autocomplete="new-password" placeholder="Type it again">
-    <button id="fuLockGo" class="fuWide">Lock it 🔐</button><button class="soft fuWide" data-close>Cancel</button>`);
+    <button id="fuLockGo" class="fuWide">Turn on encryption 🔐</button><button class="soft fuWide" data-close>Cancel</button>`);
   $('#fuLockGo').onclick = async () => {
     const a = $('#fuP1').value, b = $('#fuP2').value; if (a.length < 8) return F().toast('At least 8 characters 🙏'); if (a !== b) return F().toast('They don\'t match');
     const salt = b64(crypto.getRandomValues(new Uint8Array(16))), k = await derive(a, salt), chk = (await encWith(k, 'for-us-ok')).split(':');
     const { error } = await F().sb.from('couple_vault').insert({ salt, check_iv: chk[1], check_ct: chk[2] });
     if (error) return F().toast(error.message);
     KEY = k; LS(keyName(), b64(await crypto.subtle.exportKey('raw', k)));
-    F().notify('ping', 'locked your chat 🔐 Ask them for the passphrase'); F().closeModal(); F().toast('Locked 🔐 Tell your love the passphrase in person'); await reload('couple_vault'); paintLock();
+    F().notify('ping', 'turned on message encryption 🔐 Ask them for the passphrase'); F().closeModal(); F().toast('Encryption on 🔐 Tell your love the passphrase in person'); await reload('couple_vault'); paintLock();
   };
 }
 function paintLock() {
   const box = $('#fuLock'); if (!box) return;
   if (!has('couple_vault')) { box.innerHTML = '<p class="muted">Encrypt your messages and journal so only your two phones can read them. Needs the one-time database update.</p>'; return; }
   const v = vault();
-  box.innerHTML = !v ? `<p class="muted">Encrypt text messages and journal entries so only your two phones can read them — not even the server.</p><button id="fuLockOn">Set up the lock 🔐</button>`
-    : KEY ? `<p>🔐 <b>On</b> · unlocked on this device</p><p class="muted">New text messages and journal entries are encrypted.</p><button class="soft" id="fuLockForget">Lock this device</button> <button class="soft danger" id="fuLockOff">Turn lock off</button>`
+  box.innerHTML = !v ? `<p class="muted">Encrypt text messages and journal entries so only your two phones can read them — not even the server.</p><button id="fuLockOn">Set up encryption 🔐</button>`
+    : KEY ? `<p>🔐 <b>On</b> · unlocked on this device</p><p class="muted">New text messages and journal entries are encrypted.</p><button class="soft" id="fuLockForget">Forget passphrase on this phone</button> <button class="soft danger" id="fuLockOff">Turn encryption off</button>`
     : `<p>🔐 <b>On</b> · this device is locked</p><button id="fuLockEnter">Enter passphrase</button>`;
   const on = (id, f) => { const b = document.getElementById(id); if (b) b.onclick = f; };
   on('fuLockOn', lockSetup); on('fuLockEnter', unlockSheet);

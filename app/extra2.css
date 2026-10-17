@@ -7,7 +7,7 @@
 .flItems{display:flex;flex-direction:column}
 .flItem{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed rgba(var(--txR),.12);transition:opacity .3s,transform .3s}
 .flItem:last-child{border-bottom:0}
-.flItem > span{flex:1;min-width:0;display:flex;flex-direction:column}
+.flItem > span{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
 .flItem b{font-weight:600;font-size:15px;line-height:1.3;position:relative;width:fit-content;max-width:100%;overflow-wrap:anywhere}
 .flItem small{color:var(--mu);font-size:11.5px}
 .flChk{all:unset;flex:0 0 26px;width:26px!important;height:26px!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;box-sizing:border-box;border-radius:50%!important;border:2px solid rgba(var(--acR),.6)!important;background:transparent!important;box-shadow:none!important;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,border-color .2s,scale .12s}

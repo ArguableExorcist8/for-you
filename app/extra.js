@@ -313,7 +313,7 @@ function swEnd(cancel) {
 // ======================= F10 Settings: grouped, searchable =======================
 const SET_GROUPS = [
   ['you', '👤 You', /profile|pet names/i],
-  ['us', '💞 Shared with your love', /^\W*notifications|our theme|cute effects|^\W*chat$|date wheel|storage/i],
+  ['us', '💞 Shared with your love', /^\W*notifications|our theme|cute effects|^\W*chat$|date wheel|storage|encrypt/i],
   ['phone', '📱 This phone', /push on this phone|home screen|motion|lock|sound|moments|shake|install/i],
 ];
 function settingsGroups() {
