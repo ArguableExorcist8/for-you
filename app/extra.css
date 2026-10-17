@@ -1,0 +1,184 @@
+/* ================= v49 features + animation pack ================= */
+
+/* ---------- ping streak ---------- */
+.fuPStreak{display:flex;flex-direction:column;align-items:center;gap:2px;margin:6px 0 2px}
+.fuPStreak b{display:inline-flex;align-items:center;gap:6px;font-size:17px;padding:5px 14px;border-radius:999px;background:rgba(var(--acR),.12)}
+.fuPStreak b i{font-style:normal;display:inline-block;transform-origin:50% 90%}
+.fuPStreak b.hot i{animation:psFlick 1.6s ease-in-out infinite}
+.fuPStreak.cold b i{filter:grayscale(1);opacity:.6}
+.fuPStreak small{color:var(--mu);font-size:12px;text-align:center}
+@keyframes psFlick{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.15) rotate(4deg)}}
+
+/* ---------- voice ping ---------- */
+.vpHint{font-size:12px;margin:4px 0 0!important}
+#pingBtn{position:relative}
+#pingBtn.vpRec{transform:scale(calc(1.06 + var(--lv,0) * .12))!important;transition:transform .08s linear!important}
+#pingBtn .vpRing{position:absolute;inset:-9px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .2s;
+  background:conic-gradient(rgba(var(--acR),.95) calc(var(--vp,0) * 360deg),rgba(var(--acR),.15) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px))}
+#pingBtn .vpLbl{position:absolute;left:0;right:0;bottom:16%;font-size:12.5px;font-weight:700;font-style:normal;text-align:center;opacity:0;pointer-events:none}
+#pingBtn.vpRec .vpRing,#pingBtn.vpRec .vpLbl{opacity:1}
+#pingBtn.vpRec small{visibility:hidden}
+
+/* ---------- plan it ---------- */
+.fuPlanBtn{display:block;margin:10px auto 0;animation:fuPopIn .45s cubic-bezier(.34,1.56,.64,1)}
+.fuPlanCd{margin:8px 0}
+
+/* ---------- your week ---------- */
+.fuWeek{position:relative}
+.fuWeekX{all:unset;position:absolute;top:12px;left:14px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;opacity:.55;cursor:pointer;z-index:2}
+.wkGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 10px}
+.wkGrid > div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:14px;background:rgba(var(--acR),.08)}
+.wkGrid b{font-size:20px;line-height:1.1}.wkGrid small{font-size:10.5px;color:var(--mu);text-align:center}
+.wkPic{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/10}
+.wkPic img{width:100%;height:100%;object-fit:cover;display:block}
+.wkPic span{position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.5);color:#fff;font-size:12px;font-weight:600}
+.fuGone{transition:opacity .35s,transform .35s;opacity:0!important;transform:scale(.96)}
+
+/* ---------- chat search ---------- */
+#chatApp .chSearchBtn svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.chSearch{position:fixed;inset:0;z-index:130;display:flex;flex-direction:column;background:var(--cd);background:linear-gradient(rgba(var(--cdR),1),rgba(var(--cdR),1));opacity:0;transform:translateY(-8px);transition:opacity .2s,transform .22s cubic-bezier(.2,.8,.2,1)}
+.chSearch.on{opacity:1;transform:none}
+.chsBar{display:flex;gap:6px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 10px;border-bottom:1px solid rgba(var(--txR),.1)}
+.chsBar input{margin:0!important}
+#chsQ{flex:1;min-width:0}#chsD{width:44px;flex:0 0 44px;padding:8px 4px!important;color:transparent}
+#chsD::-webkit-datetime-edit{display:none}
+.chsX{all:unset;font-weight:700;color:var(--ac);padding:8px 4px;cursor:pointer}
+.chsList{flex:1;overflow-y:auto;padding:6px 10px calc(env(safe-area-inset-bottom,0px) + 30px);-webkit-overflow-scrolling:touch}
+.chsRow{all:unset;display:flex;flex-direction:column;gap:2px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:14px;cursor:pointer}
+.chsRow:active{background:rgba(var(--acR),.1)}
+.chsRow small{color:var(--mu);font-size:11.5px}.chsRow span{font-size:14.5px;line-height:1.35;color:var(--tx)}
+.chsRow mark{background:rgba(var(--acR),.3);color:inherit;border-radius:4px;padding:0 2px}
+
+/* ---------- Home follows the day ---------- */
+#tab-home > .fuQuiet{opacity:.86;filter:saturate(.85);transition:opacity .4s,filter .4s}
+body[data-daypart=night] #tab-home > .fuQuiet{opacity:.78}
+
+/* ---------- friendly empty lists ---------- */
+p.fuEmpty{display:flex!important;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:14px 8px!important;margin:0!important;grid-column:1/-1}
+.feArt{position:relative;display:inline-block;animation:feBob 3.2s ease-in-out infinite}
+.feArt b{font-size:44px;line-height:1;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.12))}
+.feArt i{position:absolute;right:-14px;top:-6px;font-style:normal;font-size:20px;animation:feBob 3.2s ease-in-out -1.6s infinite}
+.feTxt{font-size:14px}
+.feGo{margin:2px 0 0!important}
+@keyframes feBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(2deg)}}
+
+/* ---------- swipe actions ---------- */
+.fuSw{position:relative;overflow:hidden}
+.fuSw > :not(.fuSwBg){transform:translateX(var(--sx,0));will-change:transform}
+.fuSw.fuSwBack > :not(.fuSwBg){transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.fuSwBg{position:absolute;inset:0;z-index:0;display:flex;align-items:center;padding:0 18px;font-weight:800;font-size:14px;color:#fff;border-radius:inherit;pointer-events:none;opacity:0}
+.fuSwBg.r{justify-content:flex-start}.fuSwBg.l{justify-content:flex-end}
+.fuSwBg.ok{background:linear-gradient(90deg,#2fbf71,#5fd99a)}.fuSwBg.del{background:linear-gradient(270deg,#e5484d,#f07a7d)}
+.fuSwBg.go{font-size:15.5px}
+.fuSw > :not(.fuSwBg){position:relative;z-index:1}
+
+/* ---------- Settings: grouped + searchable ---------- */
+.fuSetSearch{margin:4px 0 6px}.fuSetSearch input{width:100%;margin:0!important}
+.fuSetH{margin:18px 6px 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);font-weight:800}
+.fuSetHide{display:none!important}
+.fuSetNone{text-align:center;margin:20px 0}
+
+/* ---------- together glow ---------- */
+.fuTogether{position:fixed;inset:0;z-index:118;pointer-events:none;box-shadow:inset 0 0 0 0 rgba(var(--acR),0);animation:fuTog 2.4s ease-in-out forwards;border-radius:inherit}
+@keyframes fuTog{25%{box-shadow:inset 0 0 60px 12px rgba(var(--acR),.45)}50%{box-shadow:inset 0 0 20px 4px rgba(var(--acR),.2)}75%{box-shadow:inset 0 0 60px 12px rgba(var(--acR),.4)}100%{box-shadow:inset 0 0 0 0 rgba(var(--acR),0)}}
+
+/* ---------- offline chip ---------- */
+#offPill::after{content:none!important}
+#offPill i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0a020;margin-right:7px;vertical-align:1px;animation:offBlink 1.4s ease-in-out infinite}
+#offPill.back i{background:#2fbf71;animation:none}
+#offPill.back{border-color:#2fbf71}
+@keyframes offBlink{50%{opacity:.3}}
+
+/* ---------- low battery: decorations hold still ---------- */
+html.fuLow #thDeco *,html.fuLow #thDecoB *,html.fuLow .floaty,html.fuLow .feArt,html.fuLow .feArt i,html.fuLow .fuPStreak i{animation-play-state:paused!important}
+html.fuLow .fuMom,html.fuLow .fuPet{display:none!important}
+/* off-screen cards skip work until you scroll to them */
+#tab-us > .card,#tab-play .card.game,#tab-notes > .card{content-visibility:auto;contain-intrinsic-size:auto 160px}
+
+/* ---------- A1 ping flight ---------- */
+.fuFly{position:fixed;left:0;top:0;z-index:9980;font-size:34px;pointer-events:none;filter:drop-shadow(0 6px 12px rgba(var(--acR),.45));will-change:transform}
+.fuFly.in{font-size:40px;z-index:9999}
+
+/* ---------- A2 my message lifts off the composer ---------- */
+#chatApp .chRow.me.fuSendIn .chB{animation:fuLiftOff .55s cubic-bezier(.3,1.4,.5,1) both!important;transform-origin:100% 100%}
+#chatApp .chRow.me.fuSendIn .tk{display:inline-block;animation:fuTick .5s .35s ease-out both}
+#chatApp .chRow.them.fuGetIn .chB{animation:fuDrop .5s cubic-bezier(.3,1.4,.5,1) both!important;transform-origin:0 100%}
+@keyframes fuLiftOff{0%{transform:translateY(46px) scale(.82);opacity:0}55%{transform:translateY(-5px) scale(1.03);opacity:1}100%{transform:none}}
+@keyframes fuDrop{0%{transform:translateY(-10px) scale(.85);opacity:0}60%{transform:translateY(2px) scale(1.02);opacity:1}100%{transform:none}}
+@keyframes fuTick{0%{clip-path:inset(0 100% 0 0);opacity:.4}100%{clip-path:inset(0 0 0 0);opacity:1}}
+
+/* ---------- A3 they're here ---------- */
+#chatApp .chAv.fuHere{animation:fuBreath 3.2s ease-in-out infinite}
+#chatApp .chAv.fuArrive{animation:fuArrive .9s cubic-bezier(.34,1.56,.64,1),fuBreath 3.2s 1s ease-in-out infinite}
+@keyframes fuBreath{0%,100%{box-shadow:0 0 0 2px rgba(var(--cdR),1),0 0 0 3.5px #34c77b,0 0 0 0 rgba(52,199,123,.45)}50%{box-shadow:0 0 0 2px rgba(var(--cdR),1),0 0 0 3.5px #34c77b,0 0 0 9px rgba(52,199,123,0)}}
+@keyframes fuArrive{0%{transform:scale(.7)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+
+/* ---------- A4 check-in flips ---------- */
+.fuCkFlip{position:fixed;z-index:9970;pointer-events:none;perspective:500px}
+.fuCkFlip b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;font-size:13px;font-weight:700;animation:fuFlipF .9s cubic-bezier(.4,0,.2,1) forwards}
+.fuCkFlip b i{font-style:normal}
+.fuCkFlip .front{background:rgba(var(--acR),.22);color:var(--tx)}
+.fuCkFlip .back{background:var(--ac);color:#fff;transform:rotateX(180deg);animation-name:fuFlipB}
+@keyframes fuFlipF{0%{transform:rotateX(0)}45%,100%{transform:rotateX(180deg)}}
+@keyframes fuFlipB{0%{transform:rotateX(-180deg)}45%{transform:rotateX(0)}80%{transform:rotateX(0);opacity:1}100%{transform:rotateX(0);opacity:0}}
+.fuCkFloat{position:fixed;z-index:9971;font-size:28px;pointer-events:none;transform:translate(-50%,-50%);animation:fuCkUp 1.25s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes fuCkUp{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-30px) scale(1.3)}100%{opacity:0;transform:translate(-50%,-150px) scale(.9) rotate(14deg)}}
+
+/* ---------- A5 goodnight dims the room, the moon arcs; good morning sweeps light up ---------- */
+.fuGreetFx.pm{animation:gfDim 2.6s ease-in-out forwards}
+.fuGreetFx.pm b{animation-name:gfArc!important}
+.fuGreetFx.am::after{content:'';position:absolute;left:-20%;right:-20%;height:60vh;bottom:-60vh;background:linear-gradient(0deg,transparent,rgba(255,214,140,.38) 45%,rgba(255,240,200,.25) 60%,transparent);animation:gfSweep 2.4s cubic-bezier(.3,.6,.3,1) forwards}
+@keyframes gfDim{0%{background:rgba(6,6,28,0)}30%,70%{background:rgba(6,6,28,.38)}100%{background:rgba(6,6,28,0)}}
+@keyframes gfArc{0%{transform:translate(-34vw,0) scale(.6);opacity:0}30%{opacity:1}60%{transform:translate(0,-56vh) scale(1.1);opacity:1}100%{transform:translate(30vw,-46vh) scale(.85);opacity:0}}
+@keyframes gfSweep{to{transform:translateY(-170vh)}}
+
+/* ---------- A7 bars fill with a wave ---------- */
+.goal .meter{overflow:hidden}
+.goal .barfill{position:relative;overflow:hidden;transition:width 1.1s cubic-bezier(.3,1.15,.4,1)}
+.goal .barfill::after{content:'';position:absolute;inset:0;width:200%;background:repeating-linear-gradient(110deg,rgba(255,255,255,0) 0 14px,rgba(255,255,255,.28) 14px 22px,rgba(255,255,255,0) 22px 36px);animation:fuWave 2.2s linear infinite}
+@keyframes fuWave{to{transform:translateX(-36px)}}
+
+/* ---------- A9 tab icons react ---------- */
+.nav .ni.fuNi-home{animation:niHop .55s cubic-bezier(.3,1.6,.5,1)}
+.nav .ni.fuNi-notes{animation:niWiggle .6s ease}
+.nav .ni.fuNi-us{animation:niBeat .7s ease}
+.nav .ni.fuNi-memories{animation:niFlash .55s ease}
+.nav .ni.fuNi-chat{animation:niPop .5s cubic-bezier(.3,1.6,.5,1)}
+.nav .ni.fuNi-play{animation:niSpin .6s cubic-bezier(.3,1.2,.5,1)}
+@keyframes niHop{30%{transform:translateY(-9px) scale(1.1)}60%{transform:translateY(1px) scale(.95,1.05)}}
+@keyframes niWiggle{20%{transform:rotate(-14deg)}45%{transform:rotate(12deg)}70%{transform:rotate(-6deg)}}
+@keyframes niBeat{15%{transform:scale(1.28)}30%{transform:scale(1)}45%{transform:scale(1.2)}65%{transform:scale(1)}}
+@keyframes niFlash{0%{filter:brightness(1)}25%{filter:brightness(2.4) drop-shadow(0 0 8px #fff);transform:scale(1.15)}100%{filter:none}}
+@keyframes niPop{35%{transform:scale(1.25) rotate(-8deg)}70%{transform:scale(.95) rotate(3deg)}}
+@keyframes niSpin{to{transform:rotate(360deg)}}
+
+/* ---------- A11 milestone ---------- */
+.fuCeleb{position:fixed;inset:0;z-index:9960;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);transition:background .35s;padding:20px}
+.fuCeleb.on{background:rgba(0,0,0,.35)}
+.fcCard{background:var(--cd);color:var(--tx);border-radius:28px;padding:26px 28px 18px;text-align:center;max-width:320px;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:scale(.6);opacity:0;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.fuCeleb.on .fcCard{transform:none;opacity:1}
+.fcCard b{display:block;font-size:64px;line-height:1;animation:fcSpin 1.2s cubic-bezier(.34,1.56,.64,1)}
+.fcCard h3{margin:12px 0 4px;font-size:22px}.fcCard p{margin:0 0 10px;color:var(--mu)}.fcCard small{opacity:.5;font-size:11px}
+@keyframes fcSpin{0%{transform:scale(0) rotate(-180deg)}100%{transform:none}}
+
+/* ---------- A12 shake → the screen wobbles ---------- */
+body.fuWobble #mainView{animation:fuWob .65s ease}
+@keyframes fuWob{15%{transform:rotate(-2deg) translateX(-6px)}35%{transform:rotate(2deg) translateX(6px)}55%{transform:rotate(-1deg) translateX(-3px)}75%{transform:rotate(1deg) translateX(2px)}}
+
+/* ---------- A13 sleepy pet ---------- */
+.fuNap{position:absolute;top:8px;z-index:6;pointer-events:none;animation:napIn .6s cubic-bezier(.34,1.56,.64,1)}
+.fuNap b{display:block;font-size:30px;animation:napBreathe 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.fuNap i{position:absolute;left:26px;top:-6px;font-style:normal;font-weight:800;font-size:12px;color:var(--mu);opacity:0;animation:napZ 3s ease-out infinite}
+.fuNap i:nth-of-type(2){animation-delay:1s;font-size:14px}.fuNap i:nth-of-type(3){animation-delay:2s;font-size:17px}
+.fuNap.wake{animation:napWake .6s cubic-bezier(.4,0,.6,1) forwards}
+@keyframes napIn{from{transform:translateY(14px) scale(.5);opacity:0}}
+@keyframes napBreathe{0%,100%{transform:scale(1,1) rotate(-6deg)}50%{transform:scale(1.06,.94) rotate(-6deg)}}
+@keyframes napZ{0%{opacity:0;transform:translate(0,0)}25%{opacity:.9}100%{opacity:0;transform:translate(18px,-30px)}}
+@keyframes napWake{30%{transform:translateY(-26px) rotate(14deg)}100%{transform:translateY(-60px) rotate(30deg) scale(.6);opacity:0}}
+
+/* ---------- smoother, more directional tab slides ---------- */
+.tab.tabIn{animation-duration:.42s!important;animation-timing-function:cubic-bezier(.2,.9,.25,1)!important;--fx:34px}
+
+@keyframes fuPopIn{from{transform:scale(.6);opacity:0}}
+@media (prefers-reduced-motion: reduce){.fuNap,.feArt,.feArt i,.fuPStreak i,.goal .barfill::after,#chatApp .chAv.fuHere{animation:none!important}}
+html.reduce .fuNap,html.reduce .feArt,html.reduce .goal .barfill::after{animation:none!important}

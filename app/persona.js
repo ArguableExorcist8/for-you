@@ -170,6 +170,7 @@ window.FU_P = {
   rx: () => ['❤️', '😂', ...P().rx],
   hiEm: (h) => (h >= 20 || h < 5 ? P().nt : null),
   sound, buzz, confettiEm, playEgg,
+  em: () => P().sh, // the theme's own little emoji (pull-to-refresh, sleepy pet…)
 };
 
 function apply() { try { F() && F().paintHi && F().paintHi(); } catch { /* */ } applyWords(); setTod(); paintCorner(); }

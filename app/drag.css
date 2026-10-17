@@ -16,7 +16,7 @@ body.fuDragging{overscroll-behavior:none}
 /* 5. countdown: the top one is pinned */
 #cdList > .cdItem{position:relative;padding:4px 0}
 #cdList > .cdItem + .cdItem{border-top:1px dashed rgba(var(--acR),.3);margin-top:8px;padding-top:12px}
-#cdList > .cdItem:first-child:not(:only-child)::before{content:'📌';position:absolute;right:34px;top:2px;font-size:15px;transform:rotate(18deg)}
+#cdList > .cdItem:first-child:not(:only-child)::before{content:'📌';position:absolute;left:4px;top:4px;font-size:15px;transform:rotate(18deg)}
 #cdList > .cdItem:first-child:not(:only-child) .cd{transform:scale(1.06);transform-origin:left center;margin:6px 0 8px}
 #cdList > .cdItem:not(:first-child) .cd{opacity:.85}
 
@@ -60,3 +60,12 @@ body.chDropOn #chatApp::after{content:'Drop to send 💌';position:fixed;inset:1
 #tab-home.fuSorting > #homeHi{opacity:.4}
 .flEm::before,.flEm::after,.phFavX::before,.phFavX::after{content:none!important;display:none!important}
 .flTray{gap:2px}.flEm{padding:6px 5px;font-size:25px}
+
+/* the hold ring: fills while you hold, pops when the item lifts */
+.fuRing{position:fixed;z-index:9991;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;pointer-events:none;
+  background:conic-gradient(rgba(var(--acR),.85) calc(var(--p,0) * 1%),transparent 0);-webkit-mask:radial-gradient(circle,transparent 21px,#000 22px);mask:radial-gradient(circle,transparent 21px,#000 22px);
+  animation:fuRingFill var(--d,380ms) linear forwards;opacity:.9}
+.fuRing.pop{animation:fuRingPop .3s ease-out forwards}
+@property --p{syntax:'<number>';inherits:false;initial-value:0}
+@keyframes fuRingFill{from{--p:0;transform:scale(.7)}to{--p:100;transform:scale(1)}}
+@keyframes fuRingPop{from{--p:100;transform:scale(1);opacity:.9}to{--p:100;transform:scale(1.6);opacity:0}}

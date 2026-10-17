@@ -14,7 +14,7 @@ const buzz = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch {
 // cfg: { root, item, mode:'move'|'ghost', delay, grid, key(el), onDrop(keys, container), targets(), onTarget(el, target), ok(el) }
 const CFG = [];
 let pend = null, st = null, suppressUntil = 0;
-const NOGRAB = 'input,textarea,select,[contenteditable],a[href],.phDel,.flHint';
+const NOGRAB = 'input,textarea,select,[contenteditable],a[href],.phDel,.flHint,#pingBtn';
 
 function findCfg(t) {
   let best = null;
@@ -32,8 +32,12 @@ document.addEventListener('pointerdown', (e) => {
   pend = { ...f, x: e.clientX, y: e.clientY, id: e.pointerId, top: f.it.getBoundingClientRect().top };
   pend.t = setTimeout(() => { if (pend) begin(pend); }, f.c.delay ?? 380);
   f.it.classList.add('fuPress');
+  if (f.c.mode !== 'ghost' || (f.c.delay ?? 380) > 200) { // a ring fills around your finger while you hold
+    const ring = document.createElement('i'); ring.className = 'fuRing'; ring.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--d:${f.c.delay ?? 380}ms`;
+    document.body.appendChild(ring); pend.ring = ring;
+  }
 }, true);
-const unpend = () => { if (!pend) return; clearTimeout(pend.t); pend.it.classList.remove('fuPress'); pend = null; };
+const unpend = () => { if (!pend) return; clearTimeout(pend.t); pend.it.classList.remove('fuPress'); if (pend.ring) pend.ring.remove(); pend = null; };
 addEventListener('pointermove', (e) => {
   if (pend && e.pointerId === pend.id && Math.hypot(e.clientX - pend.x, e.clientY - pend.y) > 9) unpend();
   if (st && e.pointerId === st.id) { e.preventDefault(); move(e.clientX, e.clientY); }
@@ -47,6 +51,7 @@ addEventListener('scroll', () => { if (pend && Math.abs(pend.it.getBoundingClien
 
 function begin(p) {
   const { c, it } = p; pend = null; it.classList.remove('fuPress');
+  if (p.ring) { const rg = p.ring; rg.classList.add('pop'); setTimeout(() => rg.remove(), 320); }
   if (!it.isConnected) return;
   if (c.onBegin) c.onBegin(it);
   let r = it.getBoundingClientRect();
@@ -247,6 +252,7 @@ drag({
   targets: () => [$('#flAv')].filter(Boolean),
   onTarget: async (el, av) => {
     av.classList.remove('got'); void av.offsetWidth; av.classList.add('got');
+    setTimeout(() => window.FU_flyPing && window.FU_flyPing(av, el.dataset.fl), 250); // …and off it goes to them
     await F().sendPing(el.dataset.fl);
   },
 });

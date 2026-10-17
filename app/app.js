@@ -1720,7 +1720,7 @@ document.addEventListener('click', async (e) => {
     }
   }
   const { error } = await sb.from('bucket_items').update(upd).eq('id', id);
-  if (error) toast(errMsg(error)); else { if (act === 'done') { confetti(60); snd('win'); } loadTable('bucket_items'); }
+  if (error) toast(errMsg(error)); else { if (act === 'done') { confetti(60); snd('win'); window.FU_celebrate && window.FU_celebrate('🪣', 'Dream come true', b.title); } loadTable('bucket_items'); }
 });
 function pickFile(accept = 'image/*') {
   return new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => res(i.files[0] || null); window.addEventListener('focus', () => setTimeout(() => res(i.files[0] || null), 800), { once: true }); i.click(); });
@@ -3277,7 +3277,7 @@ window.__FU = {
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
   D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow, chAddLocal, chInsert,
   chReplyCtx: (ctx) => { goTab('chat'); setTimeout(() => { chSetCtx(ctx); $('#chTxt').focus(); }, 320); },
-  get CH() { return CH; }, sendPing, chHandleFiles: (...a) => chHandleFiles(...a), chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
+  get CH() { return CH; }, sendPing, chHandleFiles: (...a) => chHandleFiles(...a), chSendMedia: (...a) => chSendMedia(...a), chLoadOlder: () => chLoadOlder(), chJump: (id) => chJump(id), chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();
 
