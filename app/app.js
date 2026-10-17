@@ -1467,7 +1467,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=52'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=53'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -3089,7 +3089,7 @@ function swReset(fire) {
   if (fire) { const m = CH.byId[id]; if (m && !m.deleted && !m._pending) chSetReply(id); }
 }
 $('#chMsgs').addEventListener('pointerdown', (e) => {
-  const row = e.target.closest('.chRow'); if (!row || e.button > 0) return; lpStart = [e.clientX, e.clientY];
+  const row = e.target.closest('.chRow'); if (!row || e.button > 0 || e.clientX < 22) return; lpStart = [e.clientX, e.clientY]; // the left edge is for swiping back
   SW.row = row; SW.pid = e.pointerId; SW.on = false; SW.dx = 0;
   clearTimeout(lpT); lpT = setTimeout(() => { lpT = null; if (!SW.on) { SW.row = null; chMenu(row.dataset.id); } }, 450);
 });
@@ -3280,7 +3280,7 @@ function chLayout() {
   const kb = window.FU_kb ? window.FU_kb() : (!!vv && innerHeight - vv.height > 120);
   document.body.classList.toggle('kbOpen', kb);
   const head = document.querySelector('#mainView header.top'); const top = head && head.offsetParent ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
-  const nav = document.querySelector('.nav'); const navH = kb ? 0 : (nav ? Math.max(0, vh - nav.offsetTop) : 0); // offsetTop ignores the slide-in animation; floating docks sit above the edge
+  const nav = document.querySelector('.nav'); const navH = kb || document.body.classList.contains('inChat') ? 0 : (nav ? Math.max(0, vh - nav.offsetTop) : 0); // v53: the tab bar steps aside in chat // offsetTop ignores the slide-in animation; floating docks sit above the edge
   const list = $('#chatList'); const nearBottom = list && list.scrollHeight - list.scrollTop - list.clientHeight < 160;
   app.style.top = (off + top) + 'px'; app.style.height = Math.max(160, vh - top - navH) + 'px';
   if (kb !== chKb) { chKb = kb; if (list && nearBottom) requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; }); }

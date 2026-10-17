@@ -55,3 +55,26 @@ body.fuBeat #mainView > .tab:not(.hidden):not(#tab-chat),body.fuBeat #heartTxt{a
 .fuGnOffer button{width:100%}
 
 @media (prefers-reduced-motion: reduce){html.fuTilt #thDecoB,html.fuTilt #thDeco,html.fuTilt .ping{translate:none;scale:none}body.fuBeat #mainView > .tab{animation:none}}
+
+/* ================= v53 chat feels like its own screen ================= */
+/* the tab bar slides away in chat; the composer takes the bottom edge (and the home-bar space) */
+body.inChat .nav{transform:translateY(calc(100% + 30px))!important;opacity:0!important;pointer-events:none!important}
+body.inChat:not(.kbOpen) #chatApp .chCompose{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+body.inChat #chatApp .chRec{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+/* back: a chevron in the header, or swipe in from the left edge */
+#chatApp .chBack{all:unset;flex:0 0 auto;width:34px;height:40px;margin:0 -6px 0 -8px;display:flex;align-items:center;justify-content:center;color:var(--ac);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#chatApp .chBack svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#chatApp .chBack::before,#chatApp .chBack::after{content:none!important}
+#chatApp .chBack:active{opacity:.5}
+#chatApp.fuEdge{transition:none!important;box-shadow:-12px 0 30px rgba(0,0,0,.25)}
+#chatApp.fuEdgeBack{transition:transform .26s cubic-bezier(.2,.8,.2,1)!important}
+.fuEdgeHint{position:fixed;left:14px;top:50%;z-index:4;height:36px;margin-top:-18px;padding:0 14px 0 10px;border-radius:999px;display:flex;align-items:center;gap:6px;background:rgba(var(--cdR),.9);color:var(--tx);box-shadow:0 6px 18px rgba(0,0,0,.22);pointer-events:none;opacity:0;font-size:14px;font-weight:700;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.fuEdgeHint b{color:var(--ac);font-size:22px;line-height:1}
+/* no sideways drift: swiping to reply never scrolls or zooms the chat */
+#chatApp .chatList{overflow-x:hidden!important;overscroll-behavior-x:none}
+#chatApp,#chatApp .chatList{touch-action:pan-y}
+#chatApp .chCompose,#chatApp .chatHead{touch-action:manipulation}
+#chatApp .chRow{touch-action:pan-y}
+#chTxt{font-size:max(16px,1em)!important}
+/* replying: the jump-down arrow and the peek get out of the way */
+#chatApp:has(#chReply:not(.hidden)) :is(#chDown,#chPeek){display:none!important}

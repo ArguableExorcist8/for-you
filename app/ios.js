@@ -271,10 +271,47 @@ function settings() {
 }
 const syncSet = () => { const c = $('#fuMotionSet'); if (c) c.checked = motionOn; };
 
+// ======================= v53 chat as its own screen: back chevron + swipe in from the left edge =======================
+let lastTab = 'home';
+new MutationObserver(() => { const t = document.body.dataset.tab; if (t && t !== 'chat') lastTab = t; }).observe(document.body, { attributes: true, attributeFilter: ['data-tab'] });
+const goBack = () => { try { F().goTab(lastTab || 'home'); } catch { /* */ } };
+function chatBack() {
+  const head = $('#chatApp .chatHead'); if (!head || $('.chBack', head)) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'chBack'; b.setAttribute('aria-label', 'Back');
+  b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'; b.onclick = goBack; head.prepend(b);
+}
+let edge = null;
+document.addEventListener('touchstart', (e) => {
+  if (!document.body.classList.contains('inChat') || document.body.classList.contains('kbOpen') || e.touches.length !== 1) return;
+  const t = e.touches[0]; if (t.clientX > 22 || $('#modal:not(.hidden)') || $('.chViewer:not(.hidden)')) return;
+  edge = { x: t.clientX, y: t.clientY, dx: 0, on: false }; e.stopPropagation();
+}, { capture: true, passive: true });
+document.addEventListener('touchmove', (e) => {
+  if (!edge) return; const t = e.touches[0], dx = t.clientX - edge.x, dy = t.clientY - edge.y;
+  if (!edge.on) {
+    if (Math.abs(dy) > 14 && Math.abs(dy) > dx) { edge = null; return; } if (dx < 10) return; edge.on = true; $('#chatApp').classList.add('fuEdge');
+    const lab = ($(`.nav button[data-tab="${lastTab}"] span`) || {}).textContent || 'Home';
+    edge.hint = document.createElement('div'); edge.hint.className = 'fuEdgeHint'; edge.hint.innerHTML = `<b>‹</b> ${esc(lab)}`; document.body.appendChild(edge.hint);
+  }
+  e.preventDefault(); e.stopPropagation(); edge.dx = Math.max(0, dx);
+  $('#chatApp').style.transform = `translate3d(${edge.dx}px,0,0)`;
+  const k = Math.min(1, edge.dx / 110); edge.hint.style.opacity = String(k); edge.hint.style.transform = `translateX(${-30 + k * 46}px) scale(${.8 + k * .2})`;
+}, { capture: true, passive: false });
+const edgeEnd = (cancel) => {
+  if (!edge) return; const g = edge; edge = null; if (!g.on) return;
+  const app = $('#chatApp'); app.classList.remove('fuEdge'); app.classList.add('fuEdgeBack');
+  if (g.hint) { const h = g.hint; h.style.transition = 'opacity .25s,transform .25s'; h.style.opacity = '0'; setTimeout(() => h.remove(), 280); }
+  const go = !cancel && g.dx > Math.min(110, innerWidth * .28);
+  app.style.transform = go ? `translate3d(${innerWidth}px,0,0)` : '';
+  if (go) { try { navigator.vibrate && navigator.vibrate(8); } catch { /* */ } }
+  setTimeout(() => { app.classList.remove('fuEdgeBack'); if (go) { goBack(); requestAnimationFrame(() => { app.style.transform = ''; }); } }, 260);
+};
+document.addEventListener('touchend', () => edgeEnd(false), true); document.addEventListener('touchcancel', () => edgeEnd(true), true);
+
 // ======================= boot =======================
 function hook() {
   if (!F()) return;
-  badgeSync(); watchRecording.done || (watchRecording(), watchRecording.done = 1); islandInit(); islandHooks(); rubber(); heartBtn(); heartbeatIn(); settings(); shareWeek(); arm();
+  chatBack(); badgeSync(); watchRecording.done || (watchRecording(), watchRecording.done = 1); islandInit(); islandHooks(); rubber(); heartBtn(); heartbeatIn(); settings(); shareWeek(); arm();
   const box = $('#modalBox'); if (box && !box.dataset.fuSh) { box.dataset.fuSh = '1'; new MutationObserver(() => setTimeout(shareButtons, 30)).observe(box, { childList: true }); }
 }
 const prevEnter = window.FU_enter;
