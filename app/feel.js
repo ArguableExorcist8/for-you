@@ -153,3 +153,28 @@ window.FU_enter = async (...a) => { const r = prevEnter ? prevEnter(...a) : unde
   new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
   scan();
 })();
+
+// ---------- glass chat bubbles: the theme's colour stays rich, the scene behind shows through ----------
+(() => {
+  const A = 0.8;
+  const fix = (s) => s.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g, `rgba($1, $2, $3, ${A})`).replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/g, (m, r, g, b, al) => `rgba(${r}, ${g}, ${b}, ${Math.min(+al, A)})`);
+  let done = '';
+  function build() {
+    const theme = document.documentElement.dataset.theme || ''; if (done === theme) return;
+    const st = document.getElementById('fuGlass'); if (st) st.disabled = true; // read the theme's own colours
+    const rules = [];
+    for (const side of ['me', 'them']) {
+      const b = document.querySelector(`#chatApp .chRow.${side} .chB:not(.bare):not(.greet):not(.del)`); if (!b) { if (st) st.disabled = false; return; }
+      const cs = getComputedStyle(b); const solid = /rgba?\(/.test(cs.backgroundColor) && !/,\s*0\)$/.test(cs.backgroundColor) ? `linear-gradient(${fix(cs.backgroundColor)}, ${fix(cs.backgroundColor)})` : ''; const tex = cs.backgroundImage && cs.backgroundImage !== 'none' && !/repeating-|url\(/.test(cs.backgroundImage) ? fix(cs.backgroundImage) : ''; // paper/metal textures don't survive see-through — keep the colour
+      const img = [tex, solid].filter(Boolean).join(', ') || 'none';
+      rules.push(`html[data-theme] #chatApp .chRow.${side} .chB:not(.bare):not(.greet):not(.del){background-color:transparent!important;background-image:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06) 45%,rgba(255,255,255,0) 60%),${img}!important}`);
+    }
+    rules.push(`html[data-theme] #chatApp .chRow .chB:not(.bare):not(.del){-webkit-backdrop-filter:blur(14px) saturate(1.9) brightness(1.05);backdrop-filter:blur(14px) saturate(1.9) brightness(1.05);border:1px solid rgba(255,255,255,.32)!important;box-shadow:0 6px 18px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.42)!important}`);
+    let s = st; if (!s) { s = document.createElement('style'); s.id = 'fuGlass'; document.head.appendChild(s); }
+    s.textContent = rules.join('\n'); s.disabled = false; done = theme;
+  }
+  document.addEventListener('cc:theme', () => { done = ''; setTimeout(build, 200); });
+  const watch = () => { const box = document.getElementById('chMsgs'); if (!box) return setTimeout(watch, 1000); new MutationObserver(() => { if (done !== (document.documentElement.dataset.theme || '')) build(); }).observe(box, { childList: true }); build(); };
+  if (document.readyState !== 'loading') watch(); else document.addEventListener('DOMContentLoaded', watch);
+})();
+
