@@ -237,3 +237,4 @@ html[data-theme] #chatApp .chRow.me.gp .chB:not(.bare){border-top-right-radius:8
 html[data-theme] #chatApp .chRow.them.gn .chB:not(.bare){border-bottom-left-radius:8px!important}
 html[data-theme] #chatApp .chRow.them.gp .chB:not(.bare){border-top-left-radius:8px!important}
 html #chatApp .chB .chMedia,html #chatApp .chB .chQuote{border-radius:14px!important}
+#fuNight.fuGone{animation:gnGone 2.8s ease forwards}@keyframes gnGone{0%,70%{opacity:1;transform:none}100%{opacity:0;transform:scale(.96) translateY(-6px)}}

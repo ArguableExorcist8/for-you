@@ -495,17 +495,23 @@ window.FU_chatStatus = () => {
   const ck = activeCheck(them()); const ckc = ck && ckOf(ck); if (ckc) return `${ckc.e} ${ckc.l.toLowerCase()} · ${ckAgo(ck.created_at)}${together ? ' · here now 🟢' : ''}`;
   return together ? 'here now 🟢' : lockOn() ? '🔒 private · our little corner' : 'our little corner 💞';
 };
-const nightDay = () => { const d = new Date(); if (d.getHours() < 5) d.setDate(d.getDate() - 1); return F().dayStr(d); };
+const nightDay = () => { const d = new Date(); if (d.getHours() < 8) d.setDate(d.getDate() - 1); return F().dayStr(d); };
+let greetSentAt = 0;
 const greetWord = (k) => { const w = window.FU_P && window.FU_P.w && window.FU_P.w(k === 'morning' ? 'gm' : 'gn'); return w || (k === 'morning' ? 'Good morning ☀️' : 'Goodnight 🌙'); };
 function paintNight() {
   const box = $('#fuNight'); if (!box) return;
-  const h = new Date().getHours(); const kind = h >= 5 && h < 11 ? 'morning' : (h >= 20 || h < 5) ? 'night' : null;
-  const show = has('goodnights') && !!kind;
+  // 8 AM–8 PM good morning, 8 PM–8 AM goodnight — and it goes away once you've sent yours
+  const h = new Date().getHours(); const kind = h >= 8 && h < 20 ? 'morning' : 'night';
+  const show = has('goodnights');
   box.classList.toggle('hidden', !show); if (!show) return;
   const mo = kind === 'morning'; const d = mo ? F().dayStr(new Date()) : nightDay(), l = T.goodnights || [];
   const is = (g, who) => g.created_by === who && String(g.day) === d && (g.kind || 'night') === kind;
   const mineN = l.find((g) => is(g, me())), theirN = l.find((g) => is(g, them()));
   const p = esc(pname()), ic = mo ? '<span class="sun">☀️</span>' : '<span class="moon">🌙</span>', word = esc(greetWord(kind));
+  const fresh = Date.now() - greetSentAt < 2800;
+  if (mineN && !fresh) { box.classList.add('hidden'); return; }
+  box.classList.toggle('fuGone', !!(mineN && fresh));
+  if (mineN && fresh) setTimeout(() => paintNight(), 2900);
   box.classList.toggle('both', !!(mineN && theirN)); box.classList.toggle('morning', mo);
   box.innerHTML = mineN && theirN ? `<div class="fuNightIn">${ic}<div><h2>${mo ? 'Morning, you two' : 'Goodnight, you two'}</h2><p class="muted">${mo ? `You both said it — ${esc(F().hhmm(theirN.created_at))} ✨` : 'Sleep close, even if you\'re apart ✨'}</p></div></div>`
     : mineN ? `<div class="fuNightIn">${ic}<div><h2>${mo ? 'You said good morning' : 'You said goodnight'}</h2><p class="muted">Sent ${esc(F().hhmm(mineN.created_at))} · waiting for ${p}…</p></div></div>`
@@ -513,7 +519,7 @@ function paintNight() {
        <button id="fuGN">${word}</button><button class="fuGNx" id="fuGNx" type="button">✏️ add a line</button></div>`;
   const send = async (extra) => {
     const { error } = await F().sb.from('goodnights').insert({ day: d, kind }); if (error) return F().toast(error.message);
-    (T.goodnights = T.goodnights || []).unshift({ created_by: me(), day: d, kind, created_at: new Date().toISOString() }); paintNight();
+    greetSentAt = Date.now(); (T.goodnights = T.goodnights || []).unshift({ created_by: me(), day: d, kind, created_at: new Date().toISOString() }); paintNight();
     // the same words land in the chat as a little sunrise / moon bubble
     try { const text = (greetWord(kind) + (extra ? ' ' + extra : '')).slice(0, 4000); const m = F().chAddLocal({ kind: 'text', body: text, meta: { greet: kind } }); F().chInsert(m); } catch (e) { console.warn('greet chat', e); }
     F().hearts(6); greetFx(kind, true); reload('goodnights');
