@@ -423,7 +423,7 @@ function watchChat() {
       if (!mine && document.body.classList.contains('inChat') && !document.hidden) haptic('got');
     });
   };
-  new MutationObserver(scan).observe(box, { childList: true, subtree: true }); scan();
+  let sq = 0; new MutationObserver(() => { if (!sq) sq = requestAnimationFrame(() => { sq = 0; scan(); }); }).observe(box, { childList: true, subtree: true }); scan(); // once per frame, however many rows changed
   const st = $('#chtStatus'), av = $('#chAv'); if (!st || !av) return;
   let here = false;
   const sync = () => { const h = /here now/.test(st.textContent); av.classList.toggle('fuHere', h); if (h && !here && lively()) { av.classList.remove('fuArrive'); void av.offsetWidth; av.classList.add('fuArrive'); } here = h; };

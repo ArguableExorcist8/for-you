@@ -67,7 +67,8 @@ document.addEventListener('pointerdown', (e) => {
 let raf = 0;
 addEventListener('scroll', () => {
   if (raf || !motion()) return;
-  raf = requestAnimationFrame(() => { raf = 0; const y = Math.min(scrollY, 2400); root.style.setProperty('--par', (-y * .06).toFixed(1) + 'px'); root.style.setProperty('--par2', (-y * .12).toFixed(1) + 'px'); });
+  raf = requestAnimationFrame(() => { raf = 0; const y = Math.min(scrollY, 2400), v = (-y * .06).toFixed(1) + 'px'; // v55: only the two layers that drift move — a root variable restyled the whole page every frame
+    for (const id of ['thAmb', 'fuAlive']) { const el = document.getElementById(id); if (el) el.style.translate = '0 ' + v; } });
 }, { passive: true });
 
 // ---------- boot: first screen arrives too ----------

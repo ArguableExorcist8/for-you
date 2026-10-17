@@ -14,7 +14,7 @@
 .nav button:active{scale:1}
 
 /* depth: background layers drift slower than the page */
-#thAmb,#fuAlive{translate:0 var(--par,0)}
+#thAmb,#fuAlive{will-change:translate}
 
 /* theme moments layer */
 #fuMom{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}

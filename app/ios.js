@@ -59,7 +59,10 @@ document.addEventListener('play', (e) => { if (e.target.tagName === 'VIDEO' || e
 ['pause', 'ended'].forEach((k) => document.addEventListener(k, () => { if (!$$('video,audio').some((m) => !m.paused && !m.ended)) awake('media', false); }, true));
 function watchRecording() {
   const check = () => awake('rec', !!($('#chatApp.recording') || $('#pingBtn.vpRec') || $('#owRec.rec') || $('.chVN.rec')));
-  new MutationObserver(check).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  // v55: watch just the few things that can record, not every class change on the page
+  const mo = new MutationObserver(check); const seen = new WeakSet();
+  const attach = () => ['#chatApp', '#pingBtn', '#owRec', '#chVN', '.chVN'].forEach((s) => { const el = $(s); if (el && !seen.has(el)) { seen.add(el); mo.observe(el, { attributes: true, attributeFilter: ['class'] }); } });
+  attach(); setInterval(attach, 4000);
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && why.size && !wl) awake([...why][0], true); });
 
@@ -184,7 +187,8 @@ function onTilt(e) {
 }
 function tiltFrame() {
   raf = 0; if (!lively()) return; cx += (tx - cx) * .12; cy += (ty - cy) * .12;
-  root.style.setProperty('--tiltX', cx.toFixed(3)); root.style.setProperty('--tiltY', cy.toFixed(3));
+  const X = cx.toFixed(3), Y = cy.toFixed(3); // set only where it's used, never on the whole page
+  for (const el of [document.getElementById('thDeco'), document.getElementById('thDecoB'), document.getElementById('chatApp'), document.querySelector('.ping-card')]) if (el) { el.style.setProperty('--tiltX', X); el.style.setProperty('--tiltY', Y); }
   if (Math.abs(tx - cx) > .002 || Math.abs(ty - cy) > .002) raf = requestAnimationFrame(tiltFrame);
 }
 

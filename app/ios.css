@@ -78,3 +78,7 @@ body.inChat #chatApp .chRec{padding-bottom:calc(env(safe-area-inset-bottom,0px) 
 #chTxt{font-size:max(16px,1em)!important}
 /* replying: the jump-down arrow and the peek get out of the way */
 #chatApp:has(#chReply:not(.hidden)) :is(#chDown,#chPeek){display:none!important}
+
+/* ================= v55 smoothness: off-screen cards skip layout & paint until you scroll near them ================= */
+#tab-me > .card,#tab-notes > .card,#tab-memories > .card,#tab-us .card.feat,#tab-play .card.game,#usHome > .card{content-visibility:auto;contain-intrinsic-size:auto 220px}
+#tab-me > .card:first-of-type,#tab-notes > .card:first-of-type{content-visibility:visible}

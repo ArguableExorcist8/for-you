@@ -641,11 +641,14 @@ RENDER.countdowns = () => {
   tickCountdowns();
 };
 function tickCountdowns() {
+  if (document.hidden || $('#tab-home').classList.contains('hidden')) return; // v55: nothing to tick when nobody's looking
   $$('[data-cd]').forEach((el) => {
     let s = Math.max(0, Math.floor((new Date(el.dataset.cd) - Date.now()) / 1000));
     const box = el.querySelector('.cd'); if (!box) return;
     if (s === 0) { box.innerHTML = '<div style="padding:8px 14px">🎉 It\'s here! 🎉</div>'; return; }
     const d = Math.floor(s / 86400); s %= 86400; const h = Math.floor(s / 3600); s %= 3600; const m = Math.floor(s / 60); s %= 60;
+    const vals = [d, h, m, s], bs = box.querySelectorAll('b');
+    if (bs.length === 4) { vals.forEach((v, i) => { const t = String(v); if (bs[i].textContent !== t) bs[i].textContent = t; }); return; } // only the digits that changed
     box.innerHTML = [[d, 'days'], [h, 'hrs'], [m, 'min'], [s, 'sec']].map(([v, l]) => `<div><b>${v}</b>${l}</div>`).join('');
   });
 }
@@ -735,7 +738,7 @@ RENDER.photos = async () => {
     (data || []).forEach((d) => { if (d.signedUrl) S.signedUrls[d.path] = { url: d.signedUrl, exp: Date.now() + 3600 * 5 * 1000 }; });
   }
   await chSign(l.filter((p) => p.bucket === 'chat').map((p) => p.path));
-  $('#gallery').innerHTML = l.length ? l.map((p) => `<div class="polaroid${phIsVid(p) ? ' isVid' : ''}" data-photo="${p.id}"><button class="phDel" data-pdel="${p.id}" aria-label="Delete">✕</button>${p.message_id ? '<span class="phSrc" title="From our chat">💬</span>' : ''}${phIsVid(p) ? `<div class="phVid"><video src="${esc(phUrl(p))}#t=0.1" preload="metadata" muted playsinline></video><span class="chPlay">▶</span>${p.duration ? `<span class="chDur">${fmtDur(p.duration)}</span>` : ''}</div>` : `<img loading="lazy" src="${esc(phUrl(p))}" alt="">`}<p>${esc(p.caption || '')}</p></div>`).join('') : `<p class="muted" style="grid-column:1/-1">${esc(TP('w', 'empty') || 'No photos yet 📷')} — photos & videos you send in Chat land here too 💬</p>`;
+  $('#gallery').innerHTML = l.length ? l.map((p) => `<div class="polaroid${phIsVid(p) ? ' isVid' : ''}" data-photo="${p.id}"><button class="phDel" data-pdel="${p.id}" aria-label="Delete">✕</button>${p.message_id ? '<span class="phSrc" title="From our chat">💬</span>' : ''}${phIsVid(p) ? `<div class="phVid"><video src="${esc(phUrl(p))}#t=0.1" preload="metadata" muted playsinline></video><span class="chPlay">▶</span>${p.duration ? `<span class="chDur">${fmtDur(p.duration)}</span>` : ''}</div>` : `<img loading="lazy" decoding="async" src="${esc(phUrl(p))}" alt="">`}<p>${esc(p.caption || '')}</p></div>`).join('') : `<p class="muted" style="grid-column:1/-1">${esc(TP('w', 'empty') || 'No photos yet 📷')} — photos & videos you send in Chat land here too 💬</p>`;
 };
 async function photoDelete(p) {
   const fromChat = !!p.message_id || p.bucket === 'chat';
@@ -1467,7 +1470,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=54'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=55'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -1483,7 +1486,7 @@ function goTab(tab) {
   $$('.tab').forEach((t) => t.classList.add('hidden'));
   const el = $('#tab-' + tab); el.classList.remove('hidden', 'tabIn', 'fromL');
   if (prev && motionOn()) {
-    void el.offsetWidth; el.classList.add('tabIn'); if (TAB_ORDER.indexOf(tab) < TAB_ORDER.indexOf(prev)) el.classList.add('fromL');
+    el.classList.add('tabIn'); // v55: it was display:none a moment ago, so the animation starts fresh — no forced layout needed if (TAB_ORDER.indexOf(tab) < TAB_ORDER.indexOf(prev)) el.classList.add('fromL');
     el.addEventListener('animationend', function done(ev) { if (ev.target === el) { el.classList.remove('tabIn', 'fromL'); el.removeEventListener('animationend', done); } });
   }
   window.scrollTo({ top: tabScroll[tab] || 0, behavior: 'instant' });
@@ -2817,7 +2820,7 @@ function chBody(m) {
   const url = m._local || chUrl(m.media_path); const cap = m.body ? `<div class="chCap">${linkify(esc(m.body))}</div>` : '';
   const up = m._uploading ? '<div class="chUp"><span></span>sending…</div>' : '';
   switch (chKind(m)) {
-    case 'image': return `<div class="chMedia" data-view="${m.id}">${url ? `<img src="${esc(url)}" alt="photo" loading="lazy">` : '<div class="chPh">📷</div>'}${up}</div>${cap}`;
+    case 'image': return `<div class="chMedia" data-view="${m.id}">${url ? `<img src="${esc(url)}" alt="photo" loading="lazy" decoding="async">` : '<div class="chPh">📷</div>'}${up}</div>${cap}`;
     case 'video': return `<div class="chMedia" data-view="${m.id}">${url ? `<video src="${esc(url)}#t=0.1" preload="metadata" playsinline muted></video>` : '<div class="chPh">🎬</div>'}<span class="chPlay">▶</span><span class="chDur">${fmtDur(m.duration)}</span>${up}</div>${cap}`;
     case 'voice': return `<div class="chVoice" data-voice="${m.id}"><button class="vp" aria-label="Play">▶</button><div class="vw">${waveBars(m)}</div><span class="vt">${fmtDur(m.duration)}</span><button class="vs">${CH.rate}×</button>${up}</div>`;
     case 'videonote': return `<div class="chRound" data-round="${m.id}">${url ? `<video src="${esc(url)}#t=0.1" preload="metadata" playsinline></video>` : '<div class="chPh">⭕</div>'}<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"/></svg><span class="chDur">${fmtDur(m.duration)}</span><span class="chPlay">▶</span>${up}</div>`;
