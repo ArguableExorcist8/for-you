@@ -82,3 +82,7 @@ body.inChat #chatApp .chRec{padding-bottom:calc(env(safe-area-inset-bottom,0px) 
 /* ================= v55 smoothness: off-screen cards skip layout & paint until you scroll near them ================= */
 #tab-me > .card,#tab-notes > .card,#tab-memories > .card,#tab-us .card.feat,#tab-play .card.game,#usHome > .card{content-visibility:auto;contain-intrinsic-size:auto 220px}
 #tab-me > .card:first-of-type,#tab-notes > .card:first-of-type{content-visibility:visible}
+
+/* v57: Demon Slayer wisteria hangs shorter and softer, so it never sits on top of words */
+html[data-theme=demonslayer] .ds-w i{scale:1 .55;opacity:.75}
+html[data-theme=demonslayer] body.scrolled .ds-w{opacity:.35;transition:opacity .4s}

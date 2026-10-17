@@ -278,7 +278,21 @@ const syncSet = () => { const c = $('#fuMotionSet'); if (c) c.checked = motionOn
 // ======================= v53 chat as its own screen: back chevron + swipe in from the left edge =======================
 let lastTab = 'home';
 new MutationObserver(() => { const t = document.body.dataset.tab; if (t && t !== 'chat') lastTab = t; }).observe(document.body, { attributes: true, attributeFilter: ['data-tab'] });
-const goBack = () => { try { F().goTab(lastTab || 'home'); } catch { /* */ } };
+const goBack = () => { if (history.state && history.state.fu === 'chat') { history.back(); return; } try { F().goTab(lastTab || 'home'); } catch { /* */ } };
+// v56: in Safari the left-edge swipe is the browser's own "back". Give it a step inside the app so it goes chat → Home,
+// and never back out to the sign-in pages you came through.
+if (!standalone) {
+  try { if (!history.state || !history.state.fu) { history.replaceState({ fu: 'root' }, ''); history.pushState({ fu: 'app' }, ''); } } catch { /* */ }
+  new MutationObserver(() => {
+    const inC = document.body.classList.contains('inChat');
+    try { if (inC && (!history.state || history.state.fu !== 'chat')) history.pushState({ fu: 'chat' }, ''); else if (!inC && history.state && history.state.fu === 'chat') history.back(); } catch { /* */ }
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  addEventListener('popstate', (e) => {
+    const st = e.state && e.state.fu;
+    if (document.body.classList.contains('inChat') && st !== 'chat') { try { F().goTab(lastTab || 'home'); } catch { /* */ } return; }
+    if (st === 'root') { try { history.pushState({ fu: 'app' }, ''); } catch { /* */ } } // back from Home stays in the app
+  });
+}
 function chatBack() {
   const head = $('#chatApp .chatHead'); if (!head || $('.chBack', head)) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'chBack'; b.setAttribute('aria-label', 'Back');
@@ -286,7 +300,7 @@ function chatBack() {
 }
 let edge = null;
 document.addEventListener('touchstart', (e) => {
-  if (!document.body.classList.contains('inChat') || document.body.classList.contains('kbOpen') || e.touches.length !== 1) return;
+  if (!standalone || !document.body.classList.contains('inChat') || document.body.classList.contains('kbOpen') || e.touches.length !== 1) return; // in Safari the browser's own swipe does this
   const t = e.touches[0]; if (t.clientX > 22 || $('#modal:not(.hidden)') || $('.chViewer:not(.hidden)')) return;
   edge = { x: t.clientX, y: t.clientY, dx: 0, on: false }; e.stopPropagation();
 }, { capture: true, passive: true });

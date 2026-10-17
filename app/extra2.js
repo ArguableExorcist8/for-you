@@ -192,11 +192,13 @@ function applySize() {
 applySize();
 
 // ======================= 7. compact Home =======================
-const compactOn = () => LS('fu_compact') === '1';
+// v56: compact Home is shared too — it's how Home looks for both of you
+const compactOn = () => { const v = (((F() && F().shRow && F().shRow()) || {}).orders || {}).compact; return typeof v === 'boolean' ? v : LS('fu_compact') === '1'; };
+const setCompact = (on) => { LS('fu_compact', on ? '1' : null); try { const r = (F().shRow && F().shRow()) || {}; F().saveShared({ orders: { ...(r.orders || {}), compact: on } }, true); } catch { /* */ } };
 function applyCompact() { root.classList.toggle('fuCompact', compactOn()); $$('#tab-home > .fuOpen').forEach((el) => el.classList.remove('fuOpen')); paintCompactBtn(); }
 function paintCompactBtn() {
   const hi = $('#homeHi'); if (!hi) return; let b = $('#fuCompactBtn');
-  if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'fuCompactBtn'; b.className = 'fuCompactBtn'; hi.after(b); b.onclick = () => { LS('fu_compact', compactOn() ? null : '1'); applyCompact(); hap('tap'); syncSetting(); }; }
+  if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'fuCompactBtn'; b.className = 'fuCompactBtn'; hi.after(b); b.onclick = () => { setCompact(!compactOn()); applyCompact(); hap('tap'); syncSetting(); }; }
   b.innerHTML = compactOn() ? '<i>▤</i> Full view' : '<i>☰</i> Compact';
   b.setAttribute('aria-pressed', String(compactOn()));
 }
@@ -262,11 +264,11 @@ function settings() {
   const c = document.createElement('div'); c.className = 'card'; c.id = 'fuViewCard';
   c.innerHTML = `<h2>🔠 Text &amp; view</h2>
     <p class="muted">Text size on this phone</p><div class="seg fuSizeSeg" id="fuSizeSeg">${SIZES.map(([k, l]) => `<button type="button" data-sz="${k}">${l}</button>`).join('')}</div>
-    <label class="tgl"><input type="checkbox" id="fuCompactSet"> <span>Compact Home <small>cards as slim rows — tap one to open it</small></span></label>
+    <label class="tgl"><input type="checkbox" id="fuCompactSet"> <span>Compact Home <small>cards as slim rows — tap one to open it · shared with both of you</small></span></label>
     <label class="tgl"><input type="checkbox" id="fuDarkSet"> <span>Follow phone dark mode <small>light themes get a night version when your phone is dark</small></span></label>`;
   anchor.before(c);
   $('#fuSizeSeg').onclick = (e) => { const b = e.target.closest('[data-sz]'); if (!b) return; LS('fu_size', b.dataset.sz === 'm' ? null : b.dataset.sz); applySize(); syncSetting(); hap('tap'); };
-  $('#fuCompactSet').onchange = (e) => { LS('fu_compact', e.target.checked ? '1' : null); applyCompact(); };
+  $('#fuCompactSet').onchange = (e) => { setCompact(e.target.checked); applyCompact(); };
   $('#fuDarkSet').onchange = (e) => { LS('fu_dark', e.target.checked ? '1' : null); darkFollow(); cardArt(); if (e.target.checked && !DM.matches) F().toast('It\'ll switch when your phone goes dark 🌙'); };
   syncSetting();
 }
@@ -319,7 +321,8 @@ function unreadPeek() {
 let wrapped = false;
 function wrapRenders() {
   const f = F(); if (wrapped || !f || !f.RENDER) return; wrapped = true;
-  const R = f.RENDER; const o = R.open_when; R.open_when = (...a) => { const r = o ? o(...a) : undefined; try { owMarks(); } catch { /* */ } return r; };
+  const R = f.RENDER; const cs = R.couple_settings; R.couple_settings = async (...a) => { const r = cs ? await cs(...a) : undefined; try { applyCompact(); syncSetting(); } catch { /* */ } return r; };
+  const o = R.open_when; R.open_when = (...a) => { const r = o ? o(...a) : undefined; try { owMarks(); } catch { /* */ } return r; };
   R.todos = paintList;
 }
 function hook() {

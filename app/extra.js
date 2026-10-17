@@ -232,11 +232,12 @@ const DAY_QUIET = { night: ['#daily', '#homeDist', '#pingList'], morning: ['#pin
 function homeByDay() {
   const home = $('#tab-home'); if (!home) return;
   const part = daypart(); document.body.dataset.daypart = part;
-  const pref = window.FU_myPref && window.FU_myPref();
-  const custom = pref && Array.isArray(pref.home_order) && pref.home_order.length;
+  const pref = window.FU_myPref && window.FU_myPref(); const sh = (((F().shRow && F().shRow()) || {}).orders || {}).home;
+  const custom = Array.isArray(sh) ? sh.length : pref && Array.isArray(pref.home_order) && pref.home_order.length;
   const card = (sel) => { const el = $(sel, home); return el && (el.parentElement === home ? el : el.closest('#tab-home > *')); };
   $$('#tab-home > .fuQuiet').forEach((el) => el.classList.remove('fuQuiet'));
   (DAY_QUIET[part] || []).map(card).filter(Boolean).forEach((el) => el.classList.add('fuQuiet'));
+  window.FU_pinTop && window.FU_pinTop();
   if (custom || document.body.classList.contains('fuDragging')) return; // your own order always wins
   let after = $('#fuCompactBtn', home) || $('#homeHi', home); const wk = $('#fuWeek', home); if (wk) after = wk;
   if (!after) return;

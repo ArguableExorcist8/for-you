@@ -191,7 +191,8 @@ const reapplyAll = () => watched.forEach((fn, sel) => { const el = $(sel); if (e
 const HOME_KEYS = ['#seasonBanner', '#fuTalkHint', '#fuRecapCard', '#fuStatus', '#fuRitual', '#fuThemeQ', '#fuNight', '#fuCheck', '.ping-card', '#fuLove', '#fuOTD', '#cdList', '#homeUpcoming', '#fuSpot', '#homeDist', '#homeBanner', '#daily', '#pingList', '.card.today'];
 const homeKey = (el) => { for (const k of HOME_KEYS) if (el.matches(k) || $(k, el)) return k; return el.id ? '#' + el.id : ''; };
 const HOME_ITEM = '#tab-home > :not(#homeHi):not(#fuCompactBtn):not(.hidden):not(:empty)';
-const homeOrder = () => { const r = window.FU_myPref && window.FU_myPref(); return r && Array.isArray(r.home_order) ? r.home_order : null; };
+// v56: one Home order for both of you (shared); an older personal order is only a fallback
+const homeOrder = () => { const sh = shOrders().home; if (Array.isArray(sh)) return sh.length ? sh : null; const r = window.FU_myPref && window.FU_myPref(); return r && Array.isArray(r.home_order) ? r.home_order : null; };
 drag({
   root: '#tab-home', item: HOME_ITEM, mode: 'move', key: homeKey, delay: 420, grid: () => innerWidth >= 760,
   onBegin: () => $('#tab-home').classList.add('fuSorting'), // every card folds to its title, so a long Home fits under one thumb
@@ -200,8 +201,8 @@ drag({
   onDrop: async (keys) => {
     const all = [...$('#tab-home').children].map(homeKey).filter(Boolean); // hidden cards keep their place too
     const vis = keys.slice(), set = new Set(keys); const ord = all.map((k) => (set.has(k) ? vis.shift() : k));
-    if (window.FU_savePref && !(await window.FU_savePref({ home_order: ord }))) F().toast('Couldn\'t save your Home order');
-    tip('home-done', 'Saved — this is your own Home order ✨ (Settings → Reset Home order)');
+    await saveOrder('home', ord); // they see it live (and a little note) — no push for this
+    tip('home-done2', 'Saved for both of you ✨ (Settings → Reset Home order)');
   },
 });
 
@@ -309,10 +310,24 @@ function tip(k, msg, ms = 4200) { try { if (localStorage.getItem('fu_tip_' + k))
 function resetHomeBtn() {
   const anchor = $('#setReduce'); const card = anchor && anchor.closest('.card'); if (!card || $('#fuHomeReset')) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'soft'; b.id = 'fuHomeReset'; b.textContent = '↺ Reset Home order';
-  b.onclick = async () => { if (window.FU_savePref) await window.FU_savePref({ home_order: null }); try { window.FU_orderHome && window.FU_orderHome(); } catch { /* */ } F().toast('Home is back to the usual order'); };
+  b.onclick = async () => { await saveOrder('home', []); if (window.FU_savePref) window.FU_savePref({ home_order: null }); try { window.FU_orderHome && window.FU_orderHome(); pinTop(); } catch { /* */ } F().toast('Home is back to the usual order — for both of you'); };
   card.appendChild(b);
 }
-function applyHome() { const h = $('#tab-home'); if (!h) return; arrange(h, '*', homeKey, homeOrder()); }
+function applyHome() { const h = $('#tab-home'); if (!h) return; arrange(h, '*', homeKey, homeOrder()); pinTop(); }
+// the greeting, the view toggle and "your week" always lead, whatever order the cards are in
+function pinTop() {
+  const h = $('#tab-home'); if (!h || st) return;
+  const want = ['#homeHi', '#fuCompactBtn', '#fuWeek'].map((s) => $(s, h)).filter((el) => el && el.parentElement === h);
+  want.forEach((el, i) => { if (h.children[i] !== el) h.insertBefore(el, h.children[i] || null); });
+}
+window.FU_pinTop = pinTop;
+// when your love rearranges, you hear about it once
+let homeSig = null;
+function partnerMoved() {
+  const r = (F().shRow && F().shRow()) || {}; const sig = JSON.stringify((r.orders || {}).home || null);
+  if (homeSig !== null && sig !== homeSig && r.created_by && S() && r.created_by !== me()) F().toast(`${F().partnerName()} rearranged our Home ✨`);
+  homeSig = sig;
+}
 
 // ======================= boot =======================
 let hooked = false;
@@ -322,7 +337,7 @@ function hook() {
     hooked = true;
     const R = f.RENDER;
     const wrap = (t, fn) => { const o = R[t]; R[t] = async (...a) => { const r = o ? await o(...a) : undefined; try { fn(); } catch (e) { console.warn(e); } return r; }; };
-    wrap('couple_settings', () => { reapplyAll(); paintFavs(); });
+    wrap('couple_settings', () => { reapplyAll(); paintFavs(); partnerMoved(); });
     wrap('photos', paintFavs);
     wrap('pings', paintFling);
     watch('#tab-home', applyHome);

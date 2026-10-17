@@ -1470,7 +1470,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=55'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=57'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -3293,7 +3293,7 @@ if (window.visualViewport) { visualViewport.addEventListener('resize', chLayout)
 addEventListener('resize', chLayout);
 // iOS: focusing the composer scrolls the page; settle the layout once the keyboard is up
 $('#chTxt').addEventListener('focus', () => { [60, 250, 500].forEach((ms) => setTimeout(chLayout, ms)); });
-$('#chTxt').addEventListener('blur', () => { setTimeout(() => { if (document.body.classList.contains('inChat')) window.scrollTo(0, 0); chLayout(); }, 120); });
+$('#chTxt').addEventListener('blur', () => { [120, 320, 600, 1000].forEach((ms) => setTimeout(() => { if (document.body.classList.contains('inChat')) window.scrollTo(0, 0); chLayout(); }, ms)); }); // v56: re-fit until the keyboard has fully gone (no gap under the composer)
 function chOnTab(tab) {
   document.body.classList.toggle('inChat', tab === 'chat');
   if (tab !== 'chat') { if (CH.audio) CH.audio.pause(); return; }
