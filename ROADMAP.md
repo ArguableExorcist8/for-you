@@ -19,6 +19,23 @@ These need things a Home Screen web app can't do on iPhone.
 - Error alerts, nightly backups, automatic tests before going live.
 - Move hosting to Cloudflare Pages before making the repo private (GitHub Pages needs a paid plan for private repos).
 
+## Suggested next (Oct 2026)
+**Soon**
+- Run `supabase/for-us-v34-fixes.sql` — security hardening + fixes the reminder job timing out
+- Weekly backup: automatic export of messages, photo list and notes to a file we keep
+- Error alerts: crashes on either phone get reported automatically (no more screenshots of bugs)
+- Two-phone test together (~10 min): pings, chat effects, shared list, drag-to-rearrange
+
+**Features**
+- Shared photo albums ("Trip to Dahab", "Our first year") with a cover photo
+- Countdown to the next time we see each other — takes over Home on the last day
+- Daily "one thing": one line each about the day, revealed side by side at night
+- A love plant/creature on Home that grows with streaks and wilts gently when we go quiet
+
+**Polish**
+- 4-screen onboarding tour for new couples
+- Smaller first load: split the app so the first open downloads less on mobile data
+
 ## Ideas for later
 - Promises · listening together · "remember when…" game · couple stats page · wishlist · photo of the day
 - Little reminders about each other · shared calendar · hug from afar (press & hold together)
