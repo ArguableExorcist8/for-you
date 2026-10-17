@@ -74,6 +74,7 @@ function orderHome() {
   const order = ['#seasonBanner', '#homeHi', '#fuTalkHint', '#fuRecapCard', '#fuStatus', '#fuRitual', '#fuThemeQ', '#fuNight', '#fuCheck', '.ping-card', '#fuLove', '#fuOTD', '#cdList', '#homeUpcoming', '#fuSpot', '#homeDist', '#homeBanner', '#daily', '#pingList', '.card.today'];
   order.map(card).filter(Boolean).forEach((el) => home.appendChild(el));
 }
+window.FU_orderHome = orderHome;
 
 // ---------- pull to refresh ----------
 function pullToRefresh() {

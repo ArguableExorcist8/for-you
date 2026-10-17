@@ -580,8 +580,24 @@ function paintCheck() {
   });
 }
 // pick your 6: from the library or make your own
+const favKeys = () => myFavs().map((c) => (CHECK[c.k] ? c.k : { k: c.k, e: c.e, l: c.l, h: c.h || 4 }));
+async function savePref(patch) {
+  if (!S().couple || !me()) return false;
+  const row = { couple_id: S().couple.id, created_by: me(), ...patch };
+  const r = myPrefRow(); if (r) Object.assign(r, patch); else (T.member_prefs = T.member_prefs || []).push(row);
+  const { error } = await F().sb.from('member_prefs').upsert(row, { onConflict: 'created_by' });
+  return !error;
+}
+// v48 drag & drop: reorder your check-ins (home chips or the editor), keep your own Home order
+window.FU_ck = {
+  async reorder(order) { const cur = favKeys(); const sel = order.map((i) => cur[+i]).filter(Boolean); if (sel.length !== cur.length) return; if (!(await savePref({ favs: sel }))) F().toast('Couldn\'t save the order'); paintCheck(); },
+  edReorder: null,
+};
+window.FU_myPref = () => myPrefRow();
+window.FU_savePref = savePref;
 function editFavs() {
-  let sel = myFavs().map((c) => (CHECK[c.k] ? c.k : { k: c.k, e: c.e, l: c.l, h: c.h || 4 }));
+  let sel = favKeys();
+  window.FU_ck.edReorder = (order) => { const n = order.map((i) => sel[+i]).filter(Boolean); if (n.length === sel.length) { sel = n; paint(); } };
   const keyOf = (x) => (typeof x === 'string' ? x : x.k);
   const view = (x) => (typeof x === 'string' ? { k: x, ...CHECK[x] } : x);
   const paint = () => {

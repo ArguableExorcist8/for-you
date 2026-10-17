@@ -19,3 +19,8 @@ alter publication supabase_realtime add table public.checkins;
 alter table public.checkins add column if not exists label text check (char_length(label) <= 30);
 alter table public.checkins add column if not exists emoji text check (char_length(emoji) <= 16);
 alter table public.member_prefs add column if not exists favs jsonb;
+
+-- v48 drag & drop (applied)
+alter table public.pings add column if not exists emoji text check (emoji is null or char_length(emoji) <= 8);
+alter table public.couple_settings add column if not exists orders jsonb not null default '{}'::jsonb;
+alter table public.member_prefs add column if not exists home_order jsonb;

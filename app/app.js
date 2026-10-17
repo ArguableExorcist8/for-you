@@ -527,16 +527,16 @@ $$('.nav button').forEach((b) => b.onclick = () => goTab(b.dataset.tab));
 
 // ---- pings ----
 let pingLast = 0, pingNotified = 0;
-async function sendPing() {
+async function sendPing(emoji) {
   if (!S.couple) { toast('Connect with your partner first 💞'); return false; }
   // v34: rapid taps don't become a flood of pings + notifications
   if (Date.now() - pingLast < 1200) { floatHearts(document.body, 4); return true; }
   pingLast = Date.now();
-  const { error } = await sb.from('pings').insert({});
+  const { error } = await sb.from('pings').insert(emoji ? { emoji } : {});
   if (error) { toast('Ping failed: ' + errMsg(error)); return false; }
-  floatHearts(document.body, 14);
-  if (Date.now() - pingNotified > 20000) { pingNotified = Date.now(); notify('ping', TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)]); }
-  TP('sound', 'ping'); toast(TP('pingSent', partnerName()) || `Ping sent to ${partnerName()}! 💗`);
+  floatHearts(document.body, 14, emoji);
+  if (Date.now() - pingNotified > 20000) { pingNotified = Date.now(); notify('ping', emoji ? `sent you ${emoji}` : TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)]); }
+  TP('sound', 'ping'); toast(emoji ? `${emoji} sent to ${partnerName()}` : TP('pingSent', partnerName()) || `Ping sent to ${partnerName()}! 💗`);
   return true;
 }
 $('#pingBtn').onclick = () => sendPing();
@@ -544,15 +544,15 @@ function showPingFrom(p) {
   if (p.kind === 'hug') { showHugOverlay(`${partnerName()} is hugging you 🤗`); return; }
   const line = TP('pingLine') || D.pingLines[Math.floor(Math.random() * D.pingLines.length)];
   TP('sound', 'ping');
-  $('#heartTxt').textContent = `${partnerName()} ${line}`;
-  const o = $('#heartOverlay'); o.classList.remove('hidden'); floatHearts(o, 24);
+  $('#heartTxt').textContent = p.emoji ? `${partnerName()} sent you ${p.emoji}` : `${partnerName()} ${line}`;
+  const o = $('#heartOverlay'); o.classList.remove('hidden'); floatHearts(o, 24, p.emoji);
   if (navigator.vibrate) navigator.vibrate(TP('buzz', 'ping') || [100, 60, 100]);
 }
 $('#heartOverlay').onclick = () => $('#heartOverlay').classList.add('hidden');
-function floatHearts(el, n) {
+function floatHearts(el, n, em) {
   for (let i = 0; i < n; i++) {
     const h = document.createElement('div'); h.className = 'floaty';
-    h.textContent = ['💗', '💕', '💖', '❤️', '💘'][i % 5];
+    h.textContent = em && i % 3 !== 2 ? em : ['💗', '💕', '💖', '❤️', '💘'][i % 5];
     h.style.left = Math.random() * 100 + 'vw'; h.style.animationDelay = Math.random() * 1.2 + 's';
     h.style.position = 'fixed'; h.style.zIndex = 95;
     document.body.appendChild(h); setTimeout(() => h.remove(), 4500);
@@ -562,7 +562,7 @@ RENDER.pings = () => {
   const l = S.data.pings || [];
   const today = l.filter((p) => new Date(p.created_at).toDateString() === new Date().toDateString());
   $('#pingHint').textContent = `Today: you sent ${today.filter((p) => p.created_by === S.user.id).length}, got ${today.filter((p) => p.created_by !== S.user.id).length} 💞`;
-  $('#pingList').innerHTML = l.length ? l.map((p) => `<div class="row"><span>${esc(emojiOf(p.created_by))} ${p.created_by === S.user.id ? 'You pinged ' + esc(partnerName()) : esc(partnerName()) + ' pinged you'}</span><small>${fmtTime(p.created_at)}</small></div>`).join('') : `<p class="muted">${esc(TP('w', 'empty') || 'No pings yet. Tap the big heart!')}</p>`;
+  $('#pingList').innerHTML = l.length ? l.map((p) => `<div class="row"><span>${esc(emojiOf(p.created_by))} ${p.created_by === S.user.id ? (p.emoji ? 'You sent ' + esc(partnerName()) + ' ' + esc(p.emoji) : 'You pinged ' + esc(partnerName())) : esc(partnerName()) + (p.emoji ? ' sent you ' + esc(p.emoji) : ' pinged you')}</span><small>${fmtTime(p.created_at)}</small></div>`).join('') : `<p class="muted">${esc(TP('w', 'empty') || 'No pings yet. Tap the big heart!')}</p>`;
 };
 async function runPendingAction() {
   const a = localStorage.getItem(ACTION_KEY);
@@ -612,7 +612,7 @@ document.addEventListener('click', async (e) => {
 // ---- countdowns ----
 RENDER.countdowns = () => {
   const l = S.data.countdowns || [];
-  $('#cdList').innerHTML = l.length ? l.map((c) => `<div data-cd="${esc(c.target_at)}"><b>${esc(c.label)}</b> <button class="mini soft" data-del="countdowns:${c.id}">✕</button><div class="cd"></div><small class="muted">${fmtTime(c.target_at)}</small></div>`).join('<hr style="border:0;border-top:1px dashed #ffd1dc">') : '<p class="muted">Add something to look forward to!</p>';
+  $('#cdList').innerHTML = l.length ? l.map((c) => `<div class="cdItem" data-oid="${c.id}" data-cd="${esc(c.target_at)}"><b>${esc(c.label)}</b> <button class="mini soft" data-del="countdowns:${c.id}">✕</button><div class="cd"></div><small class="muted">${fmtTime(c.target_at)}</small></div>`).join('') : '<p class="muted">Add something to look forward to!</p>';
   tickCountdowns();
 };
 function tickCountdowns() {
@@ -1701,7 +1701,7 @@ $('#bkAdd').onclick = async () => {
 };
 RENDER.bucket_items = async () => {
   const l = S.data.bucket_items || [], todo = l.filter((b) => !b.done_at), done = l.filter((b) => b.done_at);
-  $('#bkTodo').innerHTML = todo.length ? todo.map((b) => `<div class="bk"><span class="em">${esc(b.emoji || '✨')}</span><span>${esc(b.title)}<br><small class="muted">added by ${esc(nameOf(b.created_by))}</small></span><button class="mini" data-bk="done:${b.id}">✓</button><button class="mini soft" data-bk="edit:${b.id}">✏️</button><button class="mini soft" data-del="bucket_items:${b.id}">✕</button></div>`).join('') : '<p class="muted">Dream big together ✨</p>';
+  $('#bkTodo').innerHTML = todo.length ? todo.map((b) => `<div class="bk" data-oid="${b.id}"><span class="em">${esc(b.emoji || '✨')}</span><span>${esc(b.title)}<br><small class="muted">added by ${esc(nameOf(b.created_by))}</small></span><button class="mini" data-bk="done:${b.id}">✓</button><button class="mini soft" data-bk="edit:${b.id}">✏️</button><button class="mini soft" data-del="bucket_items:${b.id}">✕</button></div>`).join('') : '<p class="muted">Dream big together ✨</p>';
   await signPaths(done.map((b) => b.photo_path));
   $('#bkDone').innerHTML = done.length ? done.map((b) => `<div class="polaroid">${b.photo_path ? `<img src="${esc(sUrl(b.photo_path))}" alt="">` : `<div style="font-size:48px;padding:20px 0">${esc(b.emoji || '✨')}</div>`}<p>${esc(b.title)}<br><small class="muted">${fmtDate(b.done_at)}${b.note ? ' · ' + esc(b.note) : ''}</small><br><button class="mini soft" data-bk="undo:${b.id}">↩︎ undo</button></p></div>`).join('') : '<p class="muted" style="grid-column:1/-1">Nothing ticked off yet.</p>';
   setFB('bucket', `${done.length}/${l.length} done`);
@@ -1884,7 +1884,7 @@ $('#wAdd').onclick = async () => {
 function renderWish() {
   const l = S.data.wishlist || [], claims = S.data.wish_claims || [];
   const item = (w, own) => { const c = claims.find((x) => x.item_id === w.id);
-    return `<div class="bk"><span class="em">🎁</span><span><b>${esc(w.title)}</b>${w.price ? ` · ${esc(w.price)}` : ''} ${linkHtml(w.url)}${w.note ? `<br><small class="muted">${esc(w.note)}</small>` : ''}${!own && c ? `<br><small>🤫 ${c.created_by === S.user.id ? 'You got this' : 'claimed'}</small>` : ''}</span>${own ? `<button class="mini soft" data-del="wishlist:${w.id}">✕</button>` : c ? (mine(c) ? `<button class="mini soft" data-unclaim="${c.id}">Undo</button>` : '') : `<button class="mini" data-claim="${w.id}">I got this 🤫</button>`}</div>`; };
+    return `<div class="bk" data-oid="${w.id}"><span class="em">🎁</span><span><b>${esc(w.title)}</b>${w.price ? ` · ${esc(w.price)}` : ''} ${linkHtml(w.url)}${w.note ? `<br><small class="muted">${esc(w.note)}</small>` : ''}${!own && c ? `<br><small>🤫 ${c.created_by === S.user.id ? 'You got this' : 'claimed'}</small>` : ''}</span>${own ? `<button class="mini soft" data-del="wishlist:${w.id}">✕</button>` : c ? (mine(c) ? `<button class="mini soft" data-unclaim="${c.id}">Undo</button>` : '') : `<button class="mini" data-claim="${w.id}">I got this 🤫</button>`}</div>`; };
   $('#wishTheirs').innerHTML = l.filter((w) => !mine(w)).map((w) => item(w, false)).join('') || `<p class="muted">${pn()} hasn't added wishes yet.</p>`;
   $('#wishMineList').innerHTML = l.filter(mine).map((w) => item(w, true)).join('');
   const open = l.filter((w) => !mine(w) && !claims.some((c) => c.item_id === w.id)).length; setFB('wish', open ? open + ' ideas' : '');
@@ -1956,7 +1956,7 @@ $('#plAdd').onclick = async () => {
 function renderPlaylist() {
   const l = S.data.playlist || [], likes = S.data.playlist_likes || [];
   $('#plList').innerHTML = l.length ? l.map((s) => { const lk = likes.filter((x) => x.song_id === s.id), myLike = lk.find(mine);
-    return `<div class="bk"><span class="em">🎵</span><span><b>${esc(s.title)}</b>${s.artist ? ' — ' + esc(s.artist) : ''} ${linkHtml(s.url)}${s.note ? `<br><i class="muted">${esc(s.note)}</i>` : ''}<br><small class="muted">added by ${esc(nameOf(s.created_by))}</small></span><button class="mini ${myLike ? '' : 'soft'}" data-like="${s.id}" data-lid="${myLike?.id || ''}">${myLike ? '💖' : '🤍'} ${lk.length}</button>${mine(s) ? `<button class="mini soft" data-del="playlist:${s.id}">✕</button>` : ''}</div>`; }).join('') : '<p class="muted">Add the songs that are “us” 🎧</p>';
+    return `<div class="bk" data-oid="${s.id}"><span class="em">🎵</span><span><b>${esc(s.title)}</b>${s.artist ? ' — ' + esc(s.artist) : ''} ${linkHtml(s.url)}${s.note ? `<br><i class="muted">${esc(s.note)}</i>` : ''}<br><small class="muted">added by ${esc(nameOf(s.created_by))}</small></span><button class="mini ${myLike ? '' : 'soft'}" data-like="${s.id}" data-lid="${myLike?.id || ''}">${myLike ? '💖' : '🤍'} ${lk.length}</button>${mine(s) ? `<button class="mini soft" data-del="playlist:${s.id}">✕</button>` : ''}</div>`; }).join('') : '<p class="muted">Add the songs that are “us” 🎧</p>';
   setFB('playlist', l.length + ' songs');
 }
 RENDER.playlist = renderPlaylist; RENDER.playlist_likes = renderPlaylist;
@@ -2086,7 +2086,7 @@ function renderGoals() {
   const G = S.data.goals || [], C = S.data.goal_contribs || [];
   $('#goalList').innerHTML = G.length ? G.map((g) => { const cs = C.filter((c) => c.goal_id === g.id); const sum = cs.reduce((s, c) => s + Number(c.amount), 0); const pct = Math.min(100, sum / Number(g.target) * 100);
     const by = (uid) => cs.filter((c) => c.created_by === uid).reduce((s, c) => s + Number(c.amount), 0); const unit = g.kind === 'savings' ? ' ' + esc(g.currency || '') : '×';
-    return `<div class="goal"><b>${esc(g.emoji)} ${esc(g.title)}</b>${pct >= 100 ? ' 🎉' : ''}<div class="meter"><div class="barfill" style="width:${pct}%"></div></div><small>${+sum.toFixed(2)}${unit} / ${+Number(g.target)}${unit} (${Math.round(pct)}%) · You ${+by(S.user.id).toFixed(2)} · ${pn()} ${+by(S.partner.id).toFixed(2)}</small><br>
+    return `<div class="goal" data-oid="${g.id}"><b>${esc(g.emoji)} ${esc(g.title)}</b>${pct >= 100 ? ' 🎉' : ''}<div class="meter"><div class="barfill" style="width:${pct}%"></div></div><small>${+sum.toFixed(2)}${unit} / ${+Number(g.target)}${unit} (${Math.round(pct)}%) · You ${+by(S.user.id).toFixed(2)} · ${pn()} ${+by(S.partner.id).toFixed(2)}</small><br>
       <button class="mini" data-gadd="${g.id}">${g.kind === 'savings' ? '+ Add money' : '+1 Done'}</button><button class="mini soft" data-del="goals:${g.id}">✕</button>
       <details><summary>Log (${cs.length})</summary>${cs.slice().reverse().slice(0, 20).map((c) => `<div class="row"><span>${esc(emojiOf(c.created_by))} ${+Number(c.amount)}${unit}${c.note ? ' · ' + esc(c.note) : ''}</span><small>${fmtDate(c.created_at)}${mine(c) ? ` <a href="#" data-del="goal_contribs:${c.id}">✕</a>` : ''}</small></div>`).join('')}</details></div>`; }).join('') : '<p class="muted">Save for a trip, build a habit — together 💪</p>';
   setFB('goals', G.length ? G.length + ' goals' : '');
@@ -3277,7 +3277,7 @@ window.__FU = {
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
   D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow, chAddLocal, chInsert,
   chReplyCtx: (ctx) => { goTab('chat'); setTimeout(() => { chSetCtx(ctx); $('#chTxt').focus(); }, 320); },
-  get CH() { return CH; }, chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
+  get CH() { return CH; }, sendPing, chHandleFiles: (...a) => chHandleFiles(...a), chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();
 

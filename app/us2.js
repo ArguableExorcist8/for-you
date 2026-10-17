@@ -309,7 +309,9 @@ async function gather(y, m) {
   const grat = (D.gratitude || []).filter((x) => inMonth(x.day || x.created_at, y, m));
   const toMe = grat.filter((x) => x.created_by === them && x.body && !String(x.body).startsWith('e1:'));
   const photos = (D.photos || []).filter((p) => inMonth(p.created_at, y, m));
-  const pics = photos.filter((p) => p.media_type !== 'video' && !/video/.test(p.media_type || '')).map((p) => { try { return F().phUrl(p); } catch { return ''; } }).filter(Boolean).slice(0, 6);
+  const favs = (((F().shRow && F().shRow()) || {}).orders || {}).fav_photos || []; // v48: starred photos lead the story
+  const fi = (p) => { const i = favs.indexOf(p.id); return i < 0 ? 1e4 : i; };
+  const pics = photos.filter((p) => p.media_type !== 'video' && !/video/.test(p.media_type || '')).sort((a, b) => fi(a) - fi(b)).map((p) => { try { return F().phUrl(p); } catch { return ''; } }).filter(Boolean).slice(0, 6);
   const moments = [...(D.timeline || []).filter((x) => inMonth(x.event_date, y, m)).map((x) => x.title), ...(D.milestones || []).filter((x) => inMonth(x.day, y, m)).map((x) => `${x.emoji || '✨'} ${x.title}`)].filter(Boolean).slice(0, 4);
   return {
     y, m, msgs: M.length, mineN: M.filter((x) => x.sender === me).length, theirN: M.filter((x) => x.sender === them).length,

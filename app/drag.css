@@ -1,0 +1,62 @@
+/* ================= v48 drag & drop ================= */
+#tab-home > *,#bkTodo > .bk,#plList > .bk,#goalList > .goal,#cdList > .cdItem,#wishMineList > .bk,.ckChips > button,.ckSlot,#gallery > .polaroid,.phFav,.flEm,#flAv{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#gallery img,.phFav img{-webkit-user-drag:none}
+
+/* the press: a gentle squeeze tells you it's about to lift */
+.fuPress{transition:transform .38s cubic-bezier(.3,.7,.4,1)!important;transform:scale(.975)!important}
+.fuLift{transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .2s,opacity .2s!important;will-change:transform;cursor:grabbing}
+.fuLift.up{box-shadow:0 18px 40px rgba(0,0,0,.28),0 4px 10px rgba(0,0,0,.14)!important;scale:1.04;rotate:-1.2deg;opacity:.97}
+.fuLift.flEm.up{scale:1.5;rotate:0deg;box-shadow:none!important;background:none!important;border:0!important}
+.polaroid.fuLift.up{scale:.5;rotate:-4deg}
+.fuPh{box-sizing:border-box;border:2px dashed rgba(var(--acR),.45);background:rgba(var(--acR),.07);transition:none}
+.fuSrc{opacity:.35;transition:opacity .2s}
+body.fuDragging,body.fuDragging *{cursor:grabbing!important}
+body.fuDragging{overscroll-behavior:none}
+
+/* 5. countdown: the top one is pinned */
+#cdList > .cdItem{position:relative;padding:4px 0}
+#cdList > .cdItem + .cdItem{border-top:1px dashed rgba(var(--acR),.3);margin-top:8px;padding-top:12px}
+#cdList > .cdItem:first-child:not(:only-child)::before{content:'📌';position:absolute;right:34px;top:2px;font-size:15px;transform:rotate(18deg)}
+#cdList > .cdItem:first-child:not(:only-child) .cd{transform:scale(1.06);transform-origin:left center;margin:6px 0 8px}
+#cdList > .cdItem:not(:first-child) .cd{opacity:.85}
+
+/* 4. emoji → your love */
+.fuFling{margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.flAv{width:78px;height:78px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(var(--acR),.14);border:2px dashed rgba(var(--acR),.4);transition:transform .25s cubic-bezier(.34,1.56,.64,1),background .2s,border-color .2s}
+.flAv span{font-size:32px;line-height:1}.flAv small{font-size:11px;font-weight:700;color:var(--mu);margin-top:2px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flAv.fuDropOn{transform:scale(1.18);background:rgba(var(--acR),.28);border-style:solid;border-color:rgba(var(--acR),.8)}
+.flAv.got{animation:flGot .6s cubic-bezier(.34,1.56,.64,1)}
+.flAv.wave{animation:flWave .7s ease}
+@keyframes flGot{0%{transform:scale(1.2)}35%{transform:scale(.88)}70%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes flWave{0%,100%{transform:none}30%{transform:scale(1.08) rotate(-6deg)}60%{transform:scale(1.04) rotate(5deg)}}
+.flTray{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.flEm{all:unset;font-size:26px;line-height:1;padding:7px;border-radius:14px;cursor:grab;touch-action:none;transition:transform .15s}
+.flEm:active{transform:scale(1.15)}
+.flEm.nudge{animation:flNudge .5s ease}
+@keyframes flNudge{0%,100%{transform:none}40%{transform:translateY(-10px) scale(1.15)}}
+.flHintTx{font-size:12px;margin:0}
+
+/* 6. photo favourites */
+.phFavs{margin:6px 0 12px;padding:10px 12px;border-radius:16px;border:1.5px dashed rgba(var(--acR),.35);background:rgba(var(--acR),.06);transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .2s,border-color .2s}
+.phFavs.fuDropOn{transform:scale(1.03);background:rgba(var(--acR),.18);border-style:solid;border-color:rgba(var(--acR),.75)}
+.phFavH{margin:0 0 8px;font-weight:700;font-size:14px}.phFavH small{font-weight:500;color:var(--mu);margin-left:6px;font-size:11.5px}
+.phFavRow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.phFavRow::-webkit-scrollbar{display:none}
+.phFav{position:relative;flex:0 0 64px;height:64px;border-radius:12px;overflow:hidden;background:rgba(0,0,0,.08)}
+.phFav img,.phFav video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.phFavX{all:unset;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.phFavEmpty{width:64px;height:64px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:.35;border:1.5px dashed rgba(var(--txR),.25)}
+#gallery > .polaroid.isFav::after{content:'⭐';position:absolute;left:6px;top:6px;font-size:14px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));z-index:2}
+#gallery > .polaroid{position:relative}
+
+/* 7. files dropped on the chat (computers) */
+body.chDropOn #chatApp::after{content:'Drop to send 💌';position:fixed;inset:12px;z-index:9995;display:flex;align-items:center;justify-content:center;border-radius:24px;border:3px dashed rgba(var(--acR),.8);background:rgba(var(--cdR),.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font:700 22px/1.2 inherit;color:var(--tx);pointer-events:none}
+
+#fuHomeReset{margin-top:10px}
+@media (prefers-reduced-motion: reduce){.fuLift.up{rotate:0deg}.fuPress{transform:none!important}}
+
+/* Home reorder: cards fold to their titles while you carry one */
+#tab-home.fuSorting > :not(#homeHi):not(.fuPh){max-height:60px!important;min-height:0!important;overflow:hidden!important;padding-top:14px!important;padding-bottom:0!important;margin-bottom:10px!important;-webkit-mask:linear-gradient(#000 60%,transparent)!important;mask:linear-gradient(#000 60%,transparent)!important}
+#tab-home.fuSorting > .fuLift{-webkit-mask:none!important;mask:none!important;outline:2px solid rgba(var(--acR),.7)}
+#tab-home.fuSorting > #homeHi{opacity:.4}
+.flEm::before,.flEm::after,.phFavX::before,.phFavX::after{content:none!important;display:none!important}
+.flTray{gap:2px}.flEm{padding:6px 5px;font-size:25px}
