@@ -65,7 +65,7 @@ function begin(p) {
     const ph = document.createElement(it.tagName === 'BUTTON' ? 'span' : 'div'); ph.className = 'fuPh';
     const cs = getComputedStyle(it);
     ph.style.cssText = `width:${r.width}px;height:${r.height}px;margin:${cs.margin};border-radius:${cs.borderRadius}`;
-    if (c.grid) ph.style.display = 'inline-block';
+    if (c.grid === true) ph.style.display = 'inline-block';
     it.before(ph); st.ph = ph;
     st.before = order(st).join();
     if (c.onBegin) { // the list just folded up: bring the gap under the finger
@@ -89,7 +89,7 @@ function move(x, y) {
   const sibs = [...st.container.children].filter((el) => el !== st.it && el !== st.ph && el.matches(st.c.item) && (!st.c.ok || st.c.ok(el)));
   if (!sibs.length) return;
   let ref = null, after = false;
-  if (st.c.grid) {
+  if (typeof st.c.grid === 'function' ? st.c.grid() : st.c.grid) {
     let bd = 1e9;
     sibs.forEach((el) => { const b = el.getBoundingClientRect(); const d = Math.hypot(x - (b.left + b.width / 2), y - (b.top + b.height / 2)); if (d < bd) { bd = d; ref = el; after = x > b.left + b.width / 2; } });
   } else {
@@ -190,10 +190,10 @@ const reapplyAll = () => watched.forEach((fn, sel) => { const el = $(sel); if (e
 // ======================= 1. Home cards — your own order =======================
 const HOME_KEYS = ['#seasonBanner', '#fuTalkHint', '#fuRecapCard', '#fuStatus', '#fuRitual', '#fuThemeQ', '#fuNight', '#fuCheck', '.ping-card', '#fuLove', '#fuOTD', '#cdList', '#homeUpcoming', '#fuSpot', '#homeDist', '#homeBanner', '#daily', '#pingList', '.card.today'];
 const homeKey = (el) => { for (const k of HOME_KEYS) if (el.matches(k) || $(k, el)) return k; return el.id ? '#' + el.id : ''; };
-const HOME_ITEM = '#tab-home > :not(#homeHi):not(.hidden):not(:empty)';
+const HOME_ITEM = '#tab-home > :not(#homeHi):not(#fuCompactBtn):not(.hidden):not(:empty)';
 const homeOrder = () => { const r = window.FU_myPref && window.FU_myPref(); return r && Array.isArray(r.home_order) ? r.home_order : null; };
 drag({
-  root: '#tab-home', item: HOME_ITEM, mode: 'move', key: homeKey, delay: 420,
+  root: '#tab-home', item: HOME_ITEM, mode: 'move', key: homeKey, delay: 420, grid: () => innerWidth >= 760,
   onBegin: () => $('#tab-home').classList.add('fuSorting'), // every card folds to its title, so a long Home fits under one thumb
   onEnd: (it) => { const t0 = it.getBoundingClientRect().top; $('#tab-home').classList.remove('fuSorting'); scrollBy(0, it.getBoundingClientRect().top - t0); },
   ok: (el) => el.parentElement && el.parentElement.id === 'tab-home' && !!homeKey(el),

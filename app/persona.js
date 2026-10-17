@@ -32,7 +32,8 @@ let AC = null;
 function sound(kind) {
   if (LSg('fu_tsnd') !== '1') return false;
   try {
-    const s = SOUNDS[P().sp] || SOUNDS.chime; const seq = s[kind] || s.send;
+    const s = SOUNDS[P().sp] || SOUNDS.chime;
+    const seq = kind === 'done' ? s.ping.slice(-2).map(([f, d]) => [f, d * .8]) : kind === 'del' ? s.recv.map(([f, d]) => [f * .55, d * 1.1]) : kind === 'tap' ? [[s.send[0][0] * 1.5, .03]] : s[kind] || s.send; // v50: done / delete / tap
     if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume();
     let t = AC.currentTime + .01;
     seq.forEach(([f, d]) => {

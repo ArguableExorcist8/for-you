@@ -24,3 +24,12 @@ alter table public.member_prefs add column if not exists favs jsonb;
 alter table public.pings add column if not exists emoji text check (emoji is null or char_length(emoji) <= 8);
 alter table public.couple_settings add column if not exists orders jsonb not null default '{}'::jsonb;
 alter table public.member_prefs add column if not exists home_order jsonb;
+
+-- v50 our list + voice open-when letters (applied)
+create table if not exists public.todos (id uuid primary key default gen_random_uuid(), couple_id uuid not null, created_by uuid not null,
+  created_at timestamptz not null default now(), title text not null check (char_length(title) between 1 and 120), done_at timestamptz, done_by uuid);
+create index if not exists todos_couple_time on public.todos (couple_id, created_at);
+select public.fu_secure('todos');
+alter publication supabase_realtime add table public.todos;
+alter table public.open_when add column if not exists audio_path text check (audio_path is null or char_length(audio_path) <= 300);
+alter table public.open_when add column if not exists audio_dur real;

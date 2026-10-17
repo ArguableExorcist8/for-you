@@ -290,12 +290,29 @@ async function boot() {
       if (localStorage.getItem(ACTION_KEY)) $('#authMsg').textContent = 'Sign in to send your ping 💗';
       return;
     }
+    if (await quickStart()) return;
     await loadMe();
     await loadCouple();
     if (!S.couple) { renderPair(); show('#pairView'); subscribePairing(); }
     else { await enterCouple(); }
   } catch (e) { console.error(e); toast('Something went wrong: ' + errMsg(e)); }
   finally { booting = false; }
+}
+// v50 instant open: go straight to the last-seen Home from this phone's cache, then check who/what in the background
+async function quickStart() {
+  let me = null, c = null; try { me = await cacheGet('me'); c = await cacheGet('couple'); } catch { return false; }
+  if (!me || me.id !== S.user.id || !c || !c.couple || !c.partner || ![c.couple.user_a, c.couple.user_b].includes(S.user.id)) return false;
+  S.me = me; S.couple = c.couple; S.partner = c.partner;
+  await enterCouple();
+  setTimeout(async () => {
+    try {
+      const was = S.couple && S.couple.id;
+      await loadMe(); await loadCouple();
+      if (!S.couple || S.couple.id !== was) { location.reload(); return; }
+      applyNames(); renderMe();
+    } catch { /* offline: the cached view stays */ }
+  }, 0);
+  return true;
 }
 function teardown() {
   if (S.channel) { sb.removeChannel(S.channel); S.channel = null; }
@@ -394,6 +411,7 @@ function subscribePairing() {
 // ================= COUPLE SPACE =================
 const TABLES = {
   notes: { order: 'created_at', asc: false },
+  todos: { order: 'created_at', asc: true },
   surprises: { order: 'created_at', asc: true },
   countdowns: { order: 'target_at', asc: true },
   timeline: { order: 'event_date', asc: true },
@@ -441,7 +459,7 @@ const TABLES = {
   couple_nicknames: { order: 'updated_at', asc: false }
 };
 const PROGRESS_TABLES = ['daily_answers', 'moods', 'gratitude', 'weekly_checkins', 'q36_answers'];
-const GIFT_TOASTS = { open_when: 'wrote you an Open-when letter ✉️', drawings: 'sent you a drawing 🎨', scratch_cards: 'hid a scratch-card prize for you 🎟️', big_questions: 'asked you an important question 💍', quiz_questions: 'added a quiz question about themselves 📝' };
+const GIFT_TOASTS = { todos: 'added something to our list 🛒', open_when: 'wrote you an Open-when letter ✉️', drawings: 'sent you a drawing 🎨', scratch_cards: 'hid a scratch-card prize for you 🎟️', big_questions: 'asked you an important question 💍', quiz_questions: 'added a quiz question about themselves 📝' };
 const RENDER = {};
 async function loadTable(t) {
   const c = TABLES[t];
@@ -483,11 +501,18 @@ window.CC_partnerName = () => (S.partner ? partnerName() : null);
 const nameOf = (uid) => uid === S.user.id ? 'You' : (partnerName() || 'Your love');
 const emojiOf = (uid) => uid === S.user.id ? S.me.emoji : (partnerEmoji() || '💗');
 
+async function paintCached() {
+  await Promise.all(Object.keys(TABLES).map(async (t) => {
+    if (S.data[t]) return; let c = null; try { c = await cacheGet(`t:${S.couple.id}:${t}`); } catch { /* */ }
+    if (c && !S.data[t]) { S.data[t] = c; try { RENDER[t] && RENDER[t](); } catch { /* */ } }
+  }));
+}
 async function enterCouple() {
   applyNames();
   renderMe();
   show('#mainView');
   initGames();
+  await paintCached(); // v50: last-seen data on screen at once, fresh data replaces it as it lands
   await Promise.all(Object.keys(TABLES).map(loadTable));
   initConnect();
   subscribeCouple();
@@ -650,13 +675,24 @@ RENDER.notes = () => {
 };
 
 // ---- photos ----
-function compress(file, max = 1200, quality = 0.82) {
+async function compress(file, max = 1200, quality = 0.82) {
+  // v50: decode off the main thread (keeps the app smooth), respect phone rotation, resample in high quality
+  try {
+    if (window.createImageBitmap) {
+      const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      const r = Math.min(1, max / Math.max(bmp.width, bmp.height)), w = Math.round(bmp.width * r), h = Math.round(bmp.height * r);
+      const off = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h });
+      const cx = off.getContext('2d'); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high'; cx.drawImage(bmp, 0, 0, w, h); bmp.close && bmp.close();
+      const b = off.convertToBlob ? await off.convertToBlob({ type: 'image/jpeg', quality }) : await new Promise((res) => off.toBlob(res, 'image/jpeg', quality));
+      if (b && b.size) return b;
+    }
+  } catch { /* fall back to the classic way */ }
   return new Promise((resolve, reject) => {
     const img = new Image(); const u = URL.createObjectURL(file);
     img.onload = () => {
       const r = Math.min(1, max / Math.max(img.width, img.height));
       const c = document.createElement('canvas'); c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      const cx = c.getContext('2d'); cx.imageSmoothingQuality = 'high'; cx.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
       c.toBlob((b) => b ? resolve(b) : reject(new Error('Could not compress')), 'image/jpeg', quality);
     };
     img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('Could not read image (try JPEG/PNG)')); };
@@ -1431,7 +1467,7 @@ const sUrl = (p) => S.signedUrls[p]?.url || '';
 let curFeat = null;
 async function openFeat(f) {
   if (window.FU_used) window.FU_used(f);
-  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=47'); TQ = window.CC_TRIVIA || []; }
+  if (f === 'trivia' && !window.CC_TRIVIA) { await loadScript('trivia.js?v=50'); TQ = window.CC_TRIVIA || []; }
   curFeat = f; $('#usHome').classList.add('hidden'); $('#featPanel').classList.remove('hidden');
   $$('.feat').forEach((p) => p.classList.toggle('on', p.dataset.panel === f)); window.scrollTo(0, 0);
   (FEAT_RENDER[f] || (() => {}))();
@@ -2453,7 +2489,8 @@ async function mediaGuard(bytes) {
 // images: ≤1600px long edge, JPEG ~0.8, aim for ~300 KB
 async function smartImage(file) {
   if (file.type === 'image/gif' && file.size < 3 * MB) return file;
-  let b = await compress(file, 1600, 0.8);
+  if (/jpe?g/i.test(file.type) && file.size < 280 * 1024) return file; // already light — no need to touch it
+  let b = await compress(file, 1600, 0.82);
   if (b.size > 300 * 1024) b = await compress(file, 1600, 0.68);
   if (b.size > 300 * 1024) b = await compress(file, 1280, 0.65);
   return b;
@@ -3277,7 +3314,7 @@ window.__FU = {
   openFeat, FEAT_RENDER, goTab, openGame, partnerName, partnerEmoji, pn, mine, dayStr, addDays, parseDay, fmtDay, fmtTime, fmtDate, hhmm, isoWeek,
   D, hearts, confetti, snd, paintHi, saveMood, latestMood, dqIndex, renderDQ, refreshProgress, renderStreak, setFB, cacheGet, cacheSet, saveShared, shRow, chAddLocal, chInsert,
   chReplyCtx: (ctx) => { goTab('chat'); setTimeout(() => { chSetCtx(ctx); $('#chTxt').focus(); }, 320); },
-  get CH() { return CH; }, sendPing, chHandleFiles: (...a) => chHandleFiles(...a), chSendMedia: (...a) => chSendMedia(...a), chLoadOlder: () => chLoadOlder(), chJump: (id) => chJump(id), chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
+  get CH() { return CH; }, signPaths, sUrl, sendPing, chHandleFiles: (...a) => chHandleFiles(...a), chSendMedia: (...a) => chSendMedia(...a), chLoadOlder: () => chLoadOlder(), chJump: (id) => chJump(id), chRender, chSendText, chSign, phUrl, isNetErr, openModal, closeModal, motionOn, hashS, params, nameOf
 };
 })();
 

@@ -1,0 +1,125 @@
+/* ================= v50 ================= */
+
+/* ---------- 1. our list ---------- */
+.flAdd{display:flex;gap:8px;margin:4px 0 8px}
+.flAdd input{flex:1;min-width:0;margin:0!important}
+.flAdd button{flex:0 0 46px;width:46px;height:46px;margin:0!important;padding:0!important;border-radius:14px!important;font-size:22px;line-height:1}
+.flItems{display:flex;flex-direction:column}
+.flItem{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed rgba(var(--txR),.12);transition:opacity .3s,transform .3s}
+.flItem:last-child{border-bottom:0}
+.flItem > span{flex:1;min-width:0;display:flex;flex-direction:column}
+.flItem b{font-weight:600;font-size:15px;line-height:1.3;position:relative;width:fit-content;max-width:100%;overflow-wrap:anywhere}
+.flItem small{color:var(--mu);font-size:11.5px}
+.flChk{all:unset;flex:0 0 26px;width:26px!important;height:26px!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;box-sizing:border-box;border-radius:50%!important;border:2px solid rgba(var(--acR),.6)!important;background:transparent!important;box-shadow:none!important;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,border-color .2s,scale .12s}
+.flChk::before,.flChk::after,.flDel::before,.flDel::after{content:none!important;display:none!important}
+.flChk svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22}
+.flItem.done .flChk{background:var(--ac)!important;border-color:var(--ac)!important}
+.flItem.done .flChk svg{stroke-dashoffset:0}
+.flItem.ticked .flChk{animation:flPop .45s cubic-bezier(.34,1.56,.64,1)}
+.flItem.ticked .flChk svg{transition:stroke-dashoffset .35s .08s ease-out;stroke-dashoffset:22;animation:flDraw .35s .08s ease-out forwards}
+.flItem.done b{opacity:.55}
+.flItem.done b::after{content:'';position:absolute;left:0;top:52%;height:1.5px;width:100%;background:currentColor;transform-origin:left;opacity:.7}
+.flItem.ticked b::after{animation:flStrike .35s .1s ease-out both}
+.flItem.new{animation:flIn .4s cubic-bezier(.34,1.4,.64,1)}
+.flItem.bye{opacity:0;transform:translateX(30px)}
+.flDel{all:unset;width:26px!important;height:26px!important;margin:0!important;padding:0!important;background:none!important;box-shadow:none!important;border:0!important;color:var(--tx)!important;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:11px;opacity:.35;cursor:pointer}
+.flFoot{display:flex;justify-content:flex-end;margin-top:6px}.flFoot small{font-size:12px}
+.flEmpty{text-align:center;margin:6px 0!important}
+@keyframes flPop{40%{scale:1.25}}
+@keyframes flDraw{to{stroke-dashoffset:0}}
+@keyframes flStrike{from{transform:scaleX(0)}}
+@keyframes flIn{from{opacity:0;transform:translateY(-8px) scale(.96)}}
+
+/* ---------- 2. voice letters ---------- */
+.owVoice{margin:2px 0 8px}
+#owRec{width:100%}
+#owRec.rec{background:rgba(229,72,77,.14)!important;color:#e5484d!important;border-color:rgba(229,72,77,.4)!important;animation:owPulse 1.4s ease-in-out infinite}
+.owPrev{display:flex;align-items:center;gap:8px}.owPrev audio{flex:1;min-width:0;height:38px}
+#owBody.owOff{min-height:54px!important}
+.owMic{font-style:normal;font-size:13px;margin-left:4px}
+.owPlay{margin:6px 0 12px;display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.owPlay audio{width:100%}
+.owWave{display:flex;align-items:center;justify-content:center;gap:3px;height:34px}
+.owWave i{width:4px;border-radius:3px;background:var(--ac);height:calc(6px + (var(--i) * 7 % 22) * 1px);opacity:.45;transition:opacity .3s}
+.owPlay.on .owWave i{opacity:.9;animation:owBar .9s calc(var(--i) * -.07s) ease-in-out infinite alternate}
+@keyframes owBar{to{transform:scaleY(.35)}}
+@keyframes owPulse{50%{box-shadow:0 0 0 6px rgba(229,72,77,0),0 0 0 0 rgba(229,72,77,.25)}}
+
+/* ---------- 4. memory jar ---------- */
+.fuJar{text-align:center}
+.jarBtn{all:unset;position:relative;display:inline-block;cursor:pointer;padding:6px 18px;-webkit-tap-highlight-color:transparent}
+.jarGlass{display:block;font-size:64px;line-height:1;filter:drop-shadow(0 8px 14px rgba(0,0,0,.18));transform-origin:50% 90%}
+.jarBtn .jb{position:absolute;font-style:normal;font-size:15px;opacity:.8;animation:jbFloat 3.4s ease-in-out infinite}
+.jarBtn .b1{left:6px;top:4px}.jarBtn .b2{right:4px;top:12px;animation-delay:-1.1s}.jarBtn .b3{left:50%;top:-6px;animation-delay:-2.2s;font-size:13px}
+.jarBtn.shake .jarGlass{animation:jarShake .6s cubic-bezier(.36,.07,.19,.97)}
+.jarHint{margin:2px 0 4px!important;font-size:12.5px}
+.jarOut{min-height:0}
+.jarOut.in .jmCard{animation:jmIn .55s .28s cubic-bezier(.34,1.4,.64,1) both}
+.jmCard{display:flex;flex-direction:column;gap:6px;align-items:center;margin-top:8px;padding:12px;border-radius:18px;background:rgba(var(--acR),.08)}
+.jmPic{width:100%;border-radius:14px;overflow:hidden;aspect-ratio:4/3;background:rgba(0,0,0,.06)}.jmPic img{width:100%;height:100%;object-fit:cover;display:block}
+.jmQuote{margin:0;font-size:16px;line-height:1.45;font-style:italic}
+.jmTitle{margin:0;font-weight:700}.jmTxt{margin:0;font-size:14px;color:var(--mu)}
+.jmCard small{color:var(--mu);font-size:11.5px}
+@keyframes jarShake{15%{transform:rotate(-12deg)}30%{transform:rotate(10deg)}45%{transform:rotate(-8deg)}60%{transform:rotate(6deg)}75%{transform:rotate(-3deg) translateY(-6px)}100%{transform:none}}
+@keyframes jbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes jmIn{from{opacity:0;transform:translateY(-18px) scale(.7)}}
+
+/* ---------- 6. text size (zoom where iPhone's text-size-adjust isn't available) ---------- */
+#app,#chatApp{zoom:var(--fuZoom,1)}
+html[data-size=s]{--fuFs:.92}html[data-size=l]{--fuFs:1.1}html[data-size=xl]{--fuFs:1.2}
+.fuSizeSeg{margin:6px 0 12px;display:grid!important;grid-template-columns:repeat(4,1fr)}.fuSizeSeg button{padding-left:4px!important;padding-right:4px!important;min-width:0!important;font-size:13.5px!important;white-space:nowrap}
+
+/* ---------- 7. compact Home ---------- */
+.fuCompactBtn{all:unset;display:block;width:fit-content;margin:-2px 6px 8px auto;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;color:var(--tx);background:rgba(var(--cdR),.55);border:1px solid rgba(var(--txR),.12);cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.fuCompactBtn i{font-style:normal;margin-right:4px}
+:is(.fuCompactBtn,.chPeek,.jarBtn,.chsRow,.chsX,.fuWeekX,.phFavX)::before,:is(.fuCompactBtn,.chPeek,.jarBtn,.chsRow,.chsX,.fuWeekX,.phFavX)::after{content:none!important;display:none!important}
+html.fuCompact #tab-home > :is(.card,[id^="fu"]):not(#homeHi):not(#fuCompactBtn):not(.fuOpen):not(.hidden){max-height:62px!important;overflow:hidden!important;cursor:pointer;margin-bottom:10px!important;padding-bottom:0!important;
+  -webkit-mask:linear-gradient(#000 55%,transparent);mask:linear-gradient(#000 55%,transparent);transition:max-height .3s}
+html.fuCompact #tab-home > .fuOpen{animation:fuOpenGlow .5s ease}
+@keyframes fuOpenGlow{from{box-shadow:0 0 0 3px rgba(var(--acR),.35)}}
+
+/* ---------- 8. big screens: two columns ---------- */
+@media (min-width:760px){
+  #app{max-width:1080px}
+  #tab-home,#tab-notes,#tab-memories{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-items:start}
+  #tab-home > *,#tab-notes > *,#tab-memories > *{min-width:0}
+  #tab-home > :is(#homeHi,#fuCompactBtn,#seasonBanner,#fuWeek,#homeBanner),#tab-notes > :first-child{grid-column:1/-1}
+  #tab-me{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-items:start}
+  #tab-me > :is(.fuSetSearch,.fuSetH,.fuSetNone){grid-column:1/-1}
+  .chatApp{max-width:760px}
+}
+@media (min-width:1180px){#tab-home{grid-template-columns:1fr 1fr 1fr}}
+
+/* ---------- 9. card art: a little strip of the theme above titles ---------- */
+:is(#tab-home,#tab-notes,#tab-memories) > .card > h2:first-child::before{content:'';display:block;height:16px;margin:-4px 0 6px;background:var(--fuArt) 0 50%/auto 16px repeat-x;opacity:.75;
+  -webkit-mask:linear-gradient(90deg,#000,#000 55%,transparent 92%);mask:linear-gradient(90deg,#000,#000 55%,transparent 92%)}
+html[data-theme=hp] :is(#tab-home,#tab-notes,#tab-memories) > .card > h2:first-child::before{height:14px}
+:is(#tab-home,#tab-notes,#tab-memories) > .card > h2:first-child[style*="text-align:center"]::before,.ping-card > h2::before{-webkit-mask:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent);mask:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent)}
+html.fuCompact #tab-home > .card:not(.fuOpen) > h2::before{display:none}
+
+/* ---------- 12. they're typing → chat tab ---------- */
+.nav button[data-tab=chat]{position:relative}
+.fuTyDots{position:absolute;top:-2px;right:calc(50% - 26px);display:none;gap:2px;padding:4px 6px;border-radius:10px 10px 10px 3px;background:var(--cd);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.fuTyDots i{width:4px;height:4px;border-radius:50%;background:var(--ac);animation:tyDot 1s ease-in-out infinite}
+.fuTyDots i:nth-child(2){animation-delay:.15s}.fuTyDots i:nth-child(3){animation-delay:.3s}
+.nav button.fuTyping .fuTyDots{display:flex;animation:fuPopIn .35s cubic-bezier(.34,1.56,.64,1)}
+.nav button.fuTyping .navBadge{opacity:0}
+@keyframes tyDot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-3px);opacity:1}}
+
+/* ---------- 13. unread peek ---------- */
+.chPeek{all:unset;position:absolute;right:12px;bottom:calc(var(--chComposeH,64px) + 62px);z-index:12;display:flex;align-items:center;gap:8px;max-width:min(78%,320px);padding:8px 14px 8px 10px;border-radius:20px;
+  background:var(--cd);color:var(--tx);box-shadow:0 8px 24px rgba(0,0,0,.2),0 0 0 1px rgba(var(--acR),.25);cursor:pointer;font-size:13.5px}
+.chPeek b{font-size:18px}.chPeek span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.chPeek i{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:var(--ac);border-radius:999px;padding:1px 6px}
+.chPeek.pop{animation:peekIn .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes peekIn{from{opacity:0;transform:translateY(14px) scale(.9)}}
+
+/* ---------- 14. pressed states everywhere ---------- */
+:is(button,.btn,label.btn,.gtile,.polaroid,.env,.thP,.chips span,.emojis span,.seg button,.bk,.flItem,.goal,.cdItem,.phFav,.chsRow,.jmCard,.card.game > h2):not(.nav button):not(#pingBtn):not(.chSend):not(.flEm):not(.jarBtn){transition:scale .14s cubic-bezier(.2,.8,.2,1)}
+:is(button,.btn,label.btn,.gtile,.polaroid,.env,.thP,.chips span,.emojis span,.seg button,.chsRow):not(.nav button):not(#pingBtn):not(.chSend):not(.flEm):not(.jarBtn):not(:disabled):active{scale:.95}
+:is(.bk,.flItem,.goal,.cdItem,.phFav,.jmCard):active{scale:.985}
+html.fuCompact #tab-home > .card:not(.fuOpen):active{scale:.98}
+.jarBtn:active .jarGlass{scale:.92}
+
+@media (prefers-reduced-motion: reduce){.jarBtn .jb,.owPlay.on .owWave i,.fuTyDots i{animation:none!important}}
+html.fuLow .jarBtn .jb{animation-play-state:paused}

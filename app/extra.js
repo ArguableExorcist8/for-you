@@ -171,7 +171,7 @@ async function weekCard(force) {
   const best = photos.find((p) => favs.includes(p.id)) || photos[0];
   const pings = (D.pings || []).filter((p) => new Date(p.created_at) > since).length;
   let pic = ''; if (best) { try { pic = F().phUrl(best); } catch { /* */ } }
-  if (!card) { card = document.createElement('div'); card.id = 'fuWeek'; card.className = 'card fuWeek'; const hi = $('#homeHi'); (hi || home.firstElementChild).after(card); }
+  if (!card) { card = document.createElement('div'); card.id = 'fuWeek'; card.className = 'card fuWeek'; const hi = $('#fuCompactBtn') || $('#homeHi'); (hi || home.firstElementChild).after(card); }
   card.dataset.k = wkKey();
   card.innerHTML = `<button type="button" class="fuWeekX" aria-label="Hide until next week">✕</button><h2>🗓️ Your week</h2>
     <div class="wkGrid">
@@ -238,7 +238,7 @@ function homeByDay() {
   $$('#tab-home > .fuQuiet').forEach((el) => el.classList.remove('fuQuiet'));
   (DAY_QUIET[part] || []).map(card).filter(Boolean).forEach((el) => el.classList.add('fuQuiet'));
   if (custom || document.body.classList.contains('fuDragging')) return; // your own order always wins
-  let after = $('#homeHi', home); const wk = $('#fuWeek', home); if (wk) after = wk;
+  let after = $('#fuCompactBtn', home) || $('#homeHi', home); const wk = $('#fuWeek', home); if (wk) after = wk;
   if (!after) return;
   DAY_FIRST[part].map(card).filter((el) => el && !el.classList.contains('hidden')).forEach((el) => { if (after.nextElementSibling !== el) after.after(el); after = el; });
 }
