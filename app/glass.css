@@ -1,0 +1,28 @@
+/* ================= v46 glass — everything small and floating; cards and text-heavy surfaces stay solid ================= */
+:root{--glB:blur(20px) saturate(1.8);--glBs:blur(12px) saturate(1.8)}
+
+/* bars: nav, scrolled header, chat header + composer */
+html[data-theme] .nav{background:rgba(var(--cdR),.5)!important;background-image:none!important;-webkit-backdrop-filter:var(--glB)!important;backdrop-filter:var(--glB)!important;
+  border-top:1px solid rgba(255,255,255,.18)!important;-webkit-mask:none!important;mask:none!important;box-shadow:0 -6px 24px rgba(0,0,0,.12)!important}
+html[data-navs=dock] .nav{border:1px solid rgba(255,255,255,.22)!important}
+html[data-theme] body.scrolled #mainView>header.top{background:rgba(var(--cdR),.5)!important;-webkit-backdrop-filter:var(--glB);backdrop-filter:var(--glB);border-bottom:1px solid rgba(255,255,255,.14)}
+html[data-theme] #chatApp .chatHead,html[data-theme] #chatApp .chCompose{background-color:rgba(var(--cdR),.5)!important;background-image:none!important;-webkit-backdrop-filter:var(--glB)!important;backdrop-filter:var(--glB)!important}
+html[data-theme] #chatApp .chatHead{border-bottom:1px solid rgba(255,255,255,.14)!important}
+html[data-theme] #chatApp .chCompose{border-top:1px solid rgba(255,255,255,.14)!important}
+
+/* sheets, dialogs, menus, toasts */
+html[data-theme] #modalBox,html[data-theme] .uiDlg .uiBox,html[data-theme] .chMenuBox,html[data-theme] #thBar{background-color:rgba(var(--cdR),.68)!important;-webkit-backdrop-filter:blur(26px) saturate(1.8)!important;backdrop-filter:blur(26px) saturate(1.8)!important;border:1px solid rgba(255,255,255,.2)!important}
+html[data-theme] #toast{-webkit-backdrop-filter:var(--glB);backdrop-filter:var(--glB);box-shadow:0 8px 24px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.25)!important}
+
+/* small floating pieces */
+html[data-theme] :is(.gtile,.ckChips button,.fuTalkHint,#seasonBanner,.fuThemeQ .fuTQb button,.fuChip,.accToggle,.pingMore,#gameBack,.chips span:not(.on),.emojis span:not(.on),.seg button:not(.on),.opt,.tkDays button:not(.on),.ckLibG button,.rcPickL button.soft,#chatApp .chDay span,.ckEdit){
+  background-color:rgba(var(--cdR),.42)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%)!important;
+  -webkit-backdrop-filter:var(--glBs)!important;backdrop-filter:var(--glBs)!important;border:1px solid rgba(255,255,255,.24)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 14px rgba(0,0,0,.08)!important}
+/* tiles keep a little more body so labels stay easy to read */
+html[data-theme] .gtile{background-color:rgba(var(--cdR),.55)!important}
+html[data-pic=bg] .gtile{background-color:rgba(var(--cdR),.62)!important}
+
+/* phones that can't blur get the solid look back */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  html[data-theme] .nav,html[data-theme] #chatApp .chatHead,html[data-theme] #chatApp .chCompose,html[data-theme] #modalBox,html[data-theme] .gtile{background-color:rgba(var(--cdR),.94)!important}
+}
